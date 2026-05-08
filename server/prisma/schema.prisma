@@ -7,290 +7,174 @@ datasource db {
   provider = "postgresql"
 }
 
-enum DeploymentMode {
-  HOSTED
-  SELF_HOSTED
+enum WorkspaceType {
+  PERSONAL
+  STARTUP
+  TEAM
 }
 
-enum UserStatus {
-  ACTIVE
-  SUSPENDED
-  DELETED
+enum WorkspacePlan {
+  Free
+  Pro
+  Team
 }
 
 enum WorkspaceRole {
-  OWNER
-  ADMIN
-  EDITOR
-  VIEWER
-  BILLING_ADMIN
+  Owner
+  Admin
+  Member
+  Viewer
 }
 
-enum WorkspacePermission {
-  WORKSPACE_MANAGE
-  MEMBER_INVITE
-  MEMBER_REMOVE
-  PROVIDER_CONNECT
-  PROVIDER_REMOVE
-  FILE_UPLOAD
-  FILE_DOWNLOAD
-  FILE_DELETE
-  FILE_RENAME
-  FILE_MOVE
-  FILE_SHARE
-  ANALYTICS_VIEW
-  COST_VIEW
-  BILLING_MANAGE
-  AUDIT_VIEW
+enum MemberStatus {
+  Pending
+  Active
 }
 
-enum WorkspaceMemberStatus {
-  INVITED
-  ACTIVE
-  SUSPENDED
-}
-
-enum WorkspaceInviteStatus {
-  PENDING
-  ACCEPTED
-  EXPIRED
-  REVOKED
-}
-
-enum ProviderType {
-  AWS_S3
-  CLOUDFLARE_R2
-}
-
-enum ProviderStatus {
-  PENDING
-  VALIDATING
-  ACTIVE
-  ERROR
-  REVOKED
-}
-
-enum SecretStatus {
-  ACTIVE
-  ROTATED
-  REVOKED
-}
-
-enum FileEntryType {
-  FILE
-  FOLDER
-}
-
-enum StorageOperationType {
-  LIST
-  UPLOAD
-  DOWNLOAD
-  DELETE
-  RENAME
-  MOVE
-  BULK_DELETE
-  BULK_MOVE
-  CREATE_FOLDER
-  SIGNED_URL
-}
-
-enum ShareType {
-  PUBLIC
-  PASSWORD_PROTECTED
-  EMAIL_PROTECTED
-  USER_PROTECTED
-}
-
-enum ShareStatus {
-  ACTIVE
-  EXPIRED
-  REVOKED
-}
-
-enum TransferJobStatus {
-  QUEUED
-  RUNNING
-  SUCCESS
-  FAILED
-  CANCELLED
-}
-
-enum EstimateType {
-  MODELED
-  TELEMETRY_BACKED
-  RECONCILED
-}
-
-enum OptimizationType {
-  HIGH_EGRESS
-  COLD_DATA
-  TOO_MANY_REQUESTS
-  R2_MIGRATION
-  SHARE_LINK_EGRESS
-}
-
-enum OptimizationSeverity {
-  LOW
-  MEDIUM
-  HIGH
-  CRITICAL
-}
-
-enum OptimizationStatus {
-  ACTIVE
-  APPLIED
-  DISMISSED
-}
-
-enum ConfidenceLevel {
-  LOW
-  MEDIUM
-  HIGH
-}
-
-enum AlertType {
-  COST_SPIKE
-  STORAGE_SPIKE
-  PROVIDER_FAILURE
-  FAILED_UPLOAD
-}
-
-enum AlertSeverity {
-  INFO
-  WARNING
-  CRITICAL
-}
-
-enum AlertStatus {
-  ACTIVE
-  DISMISSED
-  RESOLVED
-}
-
-enum PlanType {
-  FREE
-  PRO
-}
-
-enum BillingCycle {
-  MONTHLY
-  YEARLY
+enum PermissionRole {
+  Owner
+  Admin
+  Member
+  Viewer
 }
 
 enum SubscriptionStatus {
-  ACTIVE
-  TRIAL
-  CANCELLED
-  PAST_DUE
-  EXPIRED
+  Incomplete
+  Active
+  PastDue
+  Canceled
+  Expired
+  Trialing
 }
 
-enum PaymentStatus {
-  PAID
-  FAILED
-  REFUNDED
-  PENDING
+model Subscription {
+  id                  String             @id @default(uuid()) @db.Uuid
+  userId              String             @unique
+  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  polarCustomerId     String?
+  polarSubscriptionId String?
+  status              SubscriptionStatus @default(Incomplete)
+  plan                WorkspacePlan
+  currentPeriodStart  DateTime?
+  currentPeriodEnd    DateTime?
+  trialEndsAt         DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
 }
 
-enum AuditActorType {
-  USER
-  SYSTEM
-  ADMIN
-  PUBLIC
+enum StorageProviderType {
+  S3
+  R2
+  GCS
+  Azure
+  MinIO
+  Supabase
+  Other
 }
 
-enum ApiKeyStatus {
-  ACTIVE
-  REVOKED
-  EXPIRED
+enum StorageProviderStatus {
+  Unchecked
+  Active
+  Invalid
+  Error
 }
 
-enum WebhookStatus {
-  ACTIVE
-  DISABLED
-  REVOKED
+enum FileKind {
+  image
+  video
+  document
+  audio
+  archive
+  other
 }
 
-enum WebhookEventType {
+enum FileStatus {
+  uploading
+  uploaded
+  failed
+  deleted
+}
+
+enum ShareAccessType {
+  Public
+  PasswordProtected
+  Private
+}
+
+enum ShareLinkStatus {
+  Active
+  Expired
+  Revoked
+  Disabled
+}
+
+enum UploadSessionStatus {
+  pending
+  uploading
+  completed
+  failed
+  aborted
+}
+
+enum NotificationType {
+  FILE_SHARED
   FILE_UPLOADED
   FILE_DELETED
-  SHARE_CREATED
-  SHARE_VIEWED
-  COST_SPIKE
-  PROVIDER_ERROR
-}
-
-enum WebhookDeliveryStatus {
-  PENDING
-  SUCCESS
-  FAILED
-  RETRYING
+  MEMBER_JOINED
+  MEMBER_LEFT
+  INVITE_SENT
+  STORAGE_ALERT
+  SECURITY_ALERT
+  LINK_EXPIRED
+  LINK_DISABLED
+  SETTINGS_CHANGED
 }
 
 model User {
-  id           String     @id @default(cuid())
-  email        String     @unique
-  name         String?
-  image        String?
-  emailVerified Boolean @default(false)
-  status       UserStatus @default(ACTIVE)
+  id            String      @id
+  name          String
+  email         String
+  emailVerified Boolean     @default(false)
+  image         String?
+  plan          WorkspacePlan @default(Free)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  username      String?
+  bio           String?
+  location      String?
+  website       String?
+  avatar        String?
+  onboarded     Boolean?    @default(false)
+  accounts      Account[]
+  sessions      Session[]
+  workspaces    Workspace[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deletedAt DateTime?
+  // memberships where the user is the
+  memberships WorkspaceMember[] @relation("WorkspaceMemberships")
 
-  // Better Auth relations
-  sessions Session[]
-  accounts Account[]
+  // memberships created/invited by this user
+  invitedMembers WorkspaceMember[] @relation("WorkspaceInvitations")
 
-  // Workspace relations
-  ownedWorkspaces Workspace[] @relation("WorkspaceOwner")
-  workspaceMembers WorkspaceMember[]
-  sentInvites WorkspaceInvite[] @relation("SentWorkspaceInvites")
-  acceptedInvites WorkspaceInvite[] @relation("AcceptedWorkspaceInvites")
-  invitedMembers WorkspaceMember[] @relation("MemberInviter")
+  apiKeys        ApiKey[]
+  preferences    UserPreferences?
+  files          File[]           @relation("FileUploads")
+  shareLinks     ShareLink[]
+  notifications  Notification[]
+  activityLogs   ActivityLog[]
+  uploadSessions UploadSession[]  @relation("UserUploadSessions")
 
-  @@index([email])
-  @@index([status])
-  @@index([deletedAt])
+  subscription Subscription?
+
+  @@unique([email])
   @@map("user")
 }
 
-model Session {
-  id String @id @default(cuid())
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  token String @unique
-
-  // Preserved from BYOC UserSession
-  deviceId   String?
-  deviceType String?
-  deviceName String?
-  ipAddress String?
-  userAgent String?
-  location  String?
-  revokedAt     DateTime?
-  revokedReason String?
-  lastUsedAt DateTime?
-  expiresAt  DateTime
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@index([expiresAt])
-  @@index([revokedAt])
-  @@map("session")
-}
-
 model Account {
-  id                    String    @id @default(cuid())
-  userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                    String    @id
   accountId             String
   providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
   idToken               String?
@@ -302,8 +186,22 @@ model Account {
   updatedAt             DateTime  @updatedAt
 
   @@index([userId])
-  @@index([providerId])
   @@map("account")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Verification {
@@ -311,103 +209,323 @@ model Verification {
   identifier String
   value      String
   expiresAt  DateTime
-  createdAt  DateTime? @default(now())
-  updatedAt  DateTime? @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([identifier])
-  @@index([expiresAt])
-  @@map("verification")
 }
 
+//////////////////////////////////////////////////////
+// WORKSPACES
+//////////////////////////////////////////////////////
 
 model Workspace {
-  id             String         @id @default(cuid())
-  name           String
-  slug           String         @unique
-  description    String?
-  deploymentMode DeploymentMode @default(HOSTED)
+  id   String @id @default(uuid()) @db.Uuid
+  name String @db.VarChar(100)
+  slug String @unique @db.VarChar(50)
 
-  ownerUserId String
-  owner       User   @relation("WorkspaceOwner", fields: [ownerUserId], references: [id])
+  type WorkspaceType
+  plan WorkspacePlan @default(Free)
+
+  color String @default("#6366f1") @db.VarChar(7)
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  deletedAt DateTime?
 
-  members        WorkspaceMember[]
-  invites        WorkspaceInvite[]
+  members         WorkspaceMember[]
+  permissions     WorkspacePermission?
+  security        WorkspaceSecurity?
+  storageProvider StorageProvider?
 
-  @@index([ownerUserId])
-  @@index([deploymentMode])
-  @@index([deletedAt])
-  @@index([slug])
+  folders       Folder[]
+  files          File[]
+  shareLinks     ShareLink[]
+  activityLogs   ActivityLog[]
+  notifications  Notification[]
+  uploadSessions UploadSession[]
+
+  @@index([ownerId])
 }
-
 
 model WorkspaceMember {
-  id          String @id @default(cuid())
-  workspaceId String
-  userId      String
+  id String @id @default(uuid()) @db.Uuid
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  role   WorkspaceRole         @default(OWNER)
-  status WorkspaceMemberStatus @default(ACTIVE)
-
-  invitedBy String?
-  inviter   User?   @relation("MemberInviter", fields: [invitedBy], references: [id], onDelete: SetNull)
-  joinedAt  DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([workspaceId, userId])
-  @@index([workspaceId])
-  @@index([userId])
-  @@index([role])
-  @@index([status])
-}
-
-model WorkspaceRolePermission {
-  id String @id @default(cuid())
-
-  role       WorkspaceRole
-  permission WorkspacePermission
-
-  createdAt DateTime @default(now())
-
-  @@unique([role, permission])
-  @@index([role])
-}
-
-model WorkspaceInvite {
-  id String @id @default(cuid())
-
-  workspaceId String
+  workspaceId String    @db.Uuid
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  email String
-  role  WorkspaceRole @default(VIEWER)
+  userId String
+  user   User   @relation("WorkspaceMemberships", fields: [userId], references: [id], onDelete: Cascade)
 
-  tokenHash String                @unique
-  status    WorkspaceInviteStatus @default(PENDING)
+  role   WorkspaceRole
+  status MemberStatus  @default(Active)
+
+  joinedAt DateTime @default(now())
 
   invitedById String?
-  invitedBy   User?   @relation("SentWorkspaceInvites", fields: [invitedById], references: [id], onDelete: SetNull)
+  invitedBy   User?   @relation("WorkspaceInvitations", fields: [invitedById], references: [id])
 
-  acceptedById String?
-  acceptedBy   User?   @relation("AcceptedWorkspaceInvites", fields: [acceptedById], references: [id], onDelete: SetNull)
+  @@unique([workspaceId, userId])
+}
 
-  expiresAt  DateTime
-  acceptedAt DateTime?
+model WorkspacePermission {
+  workspaceId String    @id @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  canUpload        PermissionRole @default(Member)
+  canCreateFolders PermissionRole @default(Member)
+  canShareFiles    PermissionRole @default(Member)
+  canDeleteFiles   PermissionRole @default(Admin)
+  canManageBilling PermissionRole @default(Owner)
+}
+
+model WorkspaceSecurity {
+  workspaceId String    @id @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  requirePasswordForPublicLinks Boolean @default(false)
+  disablePublicSharing          Boolean @default(false)
+  allowPrivateInviteSharing     Boolean @default(true)
+  enableActivityLogs            Boolean @default(true)
+}
+
+//////////////////////////////////////////////////////
+// API KEYS & USER PREFERENCES
+//////////////////////////////////////////////////////
+
+model ApiKey {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String?   @db.VarChar(100)
+  keyPrefix  String    @db.VarChar(12)
+  keyHash    String    @unique
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
   revokedAt  DateTime?
+
+  @@index([userId])
+}
+
+model UserPreferences {
+  userId             String  @id
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailNotifications Boolean @default(true)
+  pushNotifications  Boolean @default(true)
+  theme              String  @default("system") @db.VarChar(20)
+  language           String  @default("en") @db.VarChar(10)
+}
+
+//////////////////////////////////////////////////////
+// STORAGE
+//////////////////////////////////////////////////////
+
+model StorageProvider {
+  id String @id @default(uuid()) @db.Uuid
+
+  workspaceId String    @unique @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  providerType StorageProviderType
+
+  bucket      String  @db.VarChar(255)
+  region      String? @db.VarChar(100)
+  endpointUrl String? @db.VarChar(500)
+
+  accessKeyIdHint String? @db.VarChar(10)
+
+  encryptedCreds String
+
+  status StorageProviderStatus @default(Unchecked)
+
+  // Sync tracking
+  syncStatus           String   @default("idle") @db.VarChar(20)
+  syncTotalObjects     Int      @default(0)
+  syncCompletedObjects Int      @default(0)
+  lastSyncedAt         DateTime?
+
+  lastChecked DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+//////////////////////////////////////////////////////
+// FILE SYSTEM
+//////////////////////////////////////////////////////
+
+model Folder {
+  id          String    @id @default(uuid()) @db.Uuid
+  workspaceId String    @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  name   String @db.VarChar(255)
+  path   String @db.Text
+
+  parentId String? @db.Uuid
+  parent   Folder? @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children Folder[] @relation("FolderHierarchy")
+
+  source String @default("byoc") @db.VarChar(20)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  files File[]
+  shareLinks ShareLink[]
+
+  @@unique([workspaceId, path])
+  @@index([workspaceId])
+  @@index([parentId])
+  @@map("folders")
+}
+
+model File {
+  id          String    @id @default(uuid()) @db.Uuid
+  workspaceId String    @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  folderId String? @db.Uuid
+  folder   Folder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  name        String   @db.VarChar(255)
+  extension   String?  @db.VarChar(20)
+  storagePath String   @db.VarChar(1000)
+  size        Int      @default(0)
+  mimeType    String?  @db.VarChar(100)
+  kind        FileKind @default(other)
+
+  status FileStatus @default(uploading)
+  source String     @default("byoc") @db.VarChar(20)
+
+  uploadedById String
+  uploadedBy   User   @relation("FileUploads", fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  shareLinks     ShareLink[]
+  uploadSessions UploadSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([workspaceId, storagePath])
+  @@index([workspaceId])
+  @@index([folderId])
+  @@map("files")
+}
+
+//////////////////////////////////////////////////////
+// SHARE LINKS
+//////////////////////////////////////////////////////
+
+model ShareLink {
+  id            String          @id @default(uuid()) @db.Uuid
+  workspaceId   String          @db.Uuid
+  workspace     Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileId        String?         @db.Uuid
+  file          File?           @relation(fields: [fileId], references: [id], onDelete: SetNull)
+  folderId      String?         @db.Uuid
+  folder        Folder?         @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  slug          String          @unique @db.VarChar(50)
+  passwordHash  String?         @db.VarChar(255)
+  accessType    ShareAccessType
+  status        ShareLinkStatus @default(Active)
+  allowDownload Boolean         @default(true)
+  visits        Int             @default(0)
+  createdAt     DateTime        @default(now())
+  expiresAt     DateTime?
+
+  visitRecords ShareLinkVisit[]
+
+  @@index([workspaceId])
+  @@index([fileId])
+  @@index([folderId])
+}
+
+model ShareLinkVisit {
+  id          String    @id @default(uuid()) @db.Uuid
+  shareLinkId String    @db.Uuid
+  shareLink   ShareLink @relation(fields: [shareLinkId], references: [id], onDelete: Cascade)
+  ipAddress   String?   @db.VarChar(45)
+  userAgent   String?   @db.Text
+  visitedAt   DateTime  @default(now())
+
+  @@index([shareLinkId])
+}
+
+//////////////////////////////////////////////////////
+// ACTIVITY LOGS
+//////////////////////////////////////////////////////
+
+model ActivityLog {
+  id          String    @id @default(uuid()) @db.Uuid
+  workspaceId String    @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      String    @db.VarChar(50)
+  details     String?   @db.Text
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId])
+}
+
+//////////////////////////////////////////////////////
+// NOTIFICATIONS
+//////////////////////////////////////////////////////
+
+model Notification {
+  id          String           @id @default(uuid()) @db.Uuid
+  workspaceId String?          @db.Uuid
+  workspace   Workspace?       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        NotificationType
+  title       String           @db.VarChar(200)
+  message     String?          @db.Text
+  link        String?          @db.VarChar(500)
+  read        Boolean          @default(false)
+  dismissed     Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+
+  @@index([userId, read])
+  @@index([userId, dismissed])
+  @@map("notifications")
+}
+
+//////////////////////////////////////////////////////
+// UPLOAD SESSIONS
+//////////////////////////////////////////////////////
+
+model UploadSession {
+  id          String    @id @default(uuid()) @db.Uuid
+  workspaceId String    @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // Populated after upload completes; null while in-flight
+  fileId String? @db.Uuid
+  file   File?   @relation(fields: [fileId], references: [id], onDelete: SetNull)
+
+  uploadedById String
+  uploadedBy   User   @relation("UserUploadSessions", fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  // Metadata cached here so file record can be created post-upload
+  fileName     String  @db.VarChar(500)
+  mimeType     String  @db.VarChar(200)
+  originalSize Int
+  folderId     String? @db.VarChar(36)
+
+  providerUploadId String              @db.VarChar(500)
+  storagePath      String              @db.VarChar(1000)
+  totalChunks      Int
+  completedChunks  Json                @default("[]")
+  status           UploadSessionStatus @default(pending)
+  expiresAt        DateTime
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([workspaceId])
-  @@index([email])
-  @@index([status])
-  @@index([expiresAt])
+  @@map("upload_sessions")
 }
