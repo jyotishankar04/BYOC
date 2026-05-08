@@ -1,32 +1,46 @@
 import type { Request, Response, NextFunction } from 'express';
+import { ZodError } from 'zod';
 import logger from '@/core/logger';
 import { AppError } from '@/core/errors';
 
 export function errorHandler(
-  err: Error | AppError,
+  err: Error,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction,
 ): void {
-  logger.error({ err, path: req.path, method: req.method }, 'Error occurred');
+  const isDev = process.env.NODE_ENV !== 'production';
 
-  if (err instanceof AppError) {
-    res.status(err.statusCode).json({
-      success: false,
+  if (err instanceof ZodError) {
+    res.status(400).json({
       error: {
-        message: err.message,
-        statusCode: err.statusCode,
-        ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+        code: 'VALIDATION_ERROR',
+        message: 'Validation failed',
+        details: err.issues,
+        ...(isDev && { stack: err.stack }),
       },
     });
     return;
   }
 
+  if (err instanceof AppError) {
+    logger.warn({ err, path: req.path, method: req.method }, 'Operational error');
+    res.status(err.statusCode).json({
+      error: {
+        code: err.code ?? 'APP_ERROR',
+        message: err.message,
+        ...(isDev && { stack: err.stack }),
+      },
+    });
+    return;
+  }
+
+  logger.error({ err, path: req.path, method: req.method }, 'Unhandled error');
   res.status(500).json({
-    success: false,
     error: {
-      message: 'Internal server error',
-      ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+      code: 'INTERNAL_ERROR',
+      message: isDev ? err.message : 'Internal server error',
+      ...(isDev && { stack: err.stack }),
     },
   });
 }
