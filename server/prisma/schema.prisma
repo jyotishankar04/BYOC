@@ -1,0 +1,413 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum DeploymentMode {
+  HOSTED
+  SELF_HOSTED
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+  BILLING_ADMIN
+}
+
+enum WorkspacePermission {
+  WORKSPACE_MANAGE
+  MEMBER_INVITE
+  MEMBER_REMOVE
+  PROVIDER_CONNECT
+  PROVIDER_REMOVE
+  FILE_UPLOAD
+  FILE_DOWNLOAD
+  FILE_DELETE
+  FILE_RENAME
+  FILE_MOVE
+  FILE_SHARE
+  ANALYTICS_VIEW
+  COST_VIEW
+  BILLING_MANAGE
+  AUDIT_VIEW
+}
+
+enum WorkspaceMemberStatus {
+  INVITED
+  ACTIVE
+  SUSPENDED
+}
+
+enum WorkspaceInviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+enum ProviderType {
+  AWS_S3
+  CLOUDFLARE_R2
+}
+
+enum ProviderStatus {
+  PENDING
+  VALIDATING
+  ACTIVE
+  ERROR
+  REVOKED
+}
+
+enum SecretStatus {
+  ACTIVE
+  ROTATED
+  REVOKED
+}
+
+enum FileEntryType {
+  FILE
+  FOLDER
+}
+
+enum StorageOperationType {
+  LIST
+  UPLOAD
+  DOWNLOAD
+  DELETE
+  RENAME
+  MOVE
+  BULK_DELETE
+  BULK_MOVE
+  CREATE_FOLDER
+  SIGNED_URL
+}
+
+enum ShareType {
+  PUBLIC
+  PASSWORD_PROTECTED
+  EMAIL_PROTECTED
+  USER_PROTECTED
+}
+
+enum ShareStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+enum TransferJobStatus {
+  QUEUED
+  RUNNING
+  SUCCESS
+  FAILED
+  CANCELLED
+}
+
+enum EstimateType {
+  MODELED
+  TELEMETRY_BACKED
+  RECONCILED
+}
+
+enum OptimizationType {
+  HIGH_EGRESS
+  COLD_DATA
+  TOO_MANY_REQUESTS
+  R2_MIGRATION
+  SHARE_LINK_EGRESS
+}
+
+enum OptimizationSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum OptimizationStatus {
+  ACTIVE
+  APPLIED
+  DISMISSED
+}
+
+enum ConfidenceLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum AlertType {
+  COST_SPIKE
+  STORAGE_SPIKE
+  PROVIDER_FAILURE
+  FAILED_UPLOAD
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+enum AlertStatus {
+  ACTIVE
+  DISMISSED
+  RESOLVED
+}
+
+enum PlanType {
+  FREE
+  PRO
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIAL
+  CANCELLED
+  PAST_DUE
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PAID
+  FAILED
+  REFUNDED
+  PENDING
+}
+
+enum AuditActorType {
+  USER
+  SYSTEM
+  ADMIN
+  PUBLIC
+}
+
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum WebhookStatus {
+  ACTIVE
+  DISABLED
+  REVOKED
+}
+
+enum WebhookEventType {
+  FILE_UPLOADED
+  FILE_DELETED
+  SHARE_CREATED
+  SHARE_VIEWED
+  COST_SPIKE
+  PROVIDER_ERROR
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  RETRYING
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  name         String?
+  image        String?
+  emailVerified Boolean @default(false)
+  status       UserStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // Better Auth relations
+  sessions Session[]
+  accounts Account[]
+
+  // Workspace relations
+  ownedWorkspaces Workspace[] @relation("WorkspaceOwner")
+  workspaceMembers WorkspaceMember[]
+  sentInvites WorkspaceInvite[] @relation("SentWorkspaceInvites")
+  acceptedInvites WorkspaceInvite[] @relation("AcceptedWorkspaceInvites")
+  invitedMembers WorkspaceMember[] @relation("MemberInviter")
+
+  @@index([email])
+  @@index([status])
+  @@index([deletedAt])
+  @@map("user")
+}
+
+model Session {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  token String @unique
+
+  // Preserved from BYOC UserSession
+  deviceId   String?
+  deviceType String?
+  deviceName String?
+  ipAddress String?
+  userAgent String?
+  location  String?
+  revokedAt     DateTime?
+  revokedReason String?
+  lastUsedAt DateTime?
+  expiresAt  DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([providerId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime? @default(now())
+  updatedAt  DateTime? @updatedAt
+
+  @@index([identifier])
+  @@index([expiresAt])
+  @@map("verification")
+}
+
+
+model Workspace {
+  id             String         @id @default(cuid())
+  name           String
+  slug           String         @unique
+  description    String?
+  deploymentMode DeploymentMode @default(HOSTED)
+
+  ownerUserId String
+  owner       User   @relation("WorkspaceOwner", fields: [ownerUserId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  members        WorkspaceMember[]
+  invites        WorkspaceInvite[]
+
+  @@index([ownerUserId])
+  @@index([deploymentMode])
+  @@index([deletedAt])
+  @@index([slug])
+}
+
+
+model WorkspaceMember {
+  id          String @id @default(cuid())
+  workspaceId String
+  userId      String
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  role   WorkspaceRole         @default(OWNER)
+  status WorkspaceMemberStatus @default(ACTIVE)
+
+  invitedBy String?
+  inviter   User?   @relation("MemberInviter", fields: [invitedBy], references: [id], onDelete: SetNull)
+  joinedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([role])
+  @@index([status])
+}
+
+model WorkspaceRolePermission {
+  id String @id @default(cuid())
+
+  role       WorkspaceRole
+  permission WorkspacePermission
+
+  createdAt DateTime @default(now())
+
+  @@unique([role, permission])
+  @@index([role])
+}
+
+model WorkspaceInvite {
+  id String @id @default(cuid())
+
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  email String
+  role  WorkspaceRole @default(VIEWER)
+
+  tokenHash String                @unique
+  status    WorkspaceInviteStatus @default(PENDING)
+
+  invitedById String?
+  invitedBy   User?   @relation("SentWorkspaceInvites", fields: [invitedById], references: [id], onDelete: SetNull)
+
+  acceptedById String?
+  acceptedBy   User?   @relation("AcceptedWorkspaceInvites", fields: [acceptedById], references: [id], onDelete: SetNull)
+
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  revokedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([workspaceId])
+  @@index([email])
+  @@index([status])
+  @@index([expiresAt])
+}
