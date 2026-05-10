@@ -4,20 +4,13 @@ import { useState, useRef, Fragment, useEffect, useRef as useInputRef } from "re
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   CloudUploadIcon,
-  Video01Icon,
-  Image01Icon,
-  LegalDocument01Icon,
-  ZipIcon,
   FileUploadIcon,
   PencilEdit01Icon,
   Share01Icon,
   Download01Icon,
-  GridViewIcon,
-  ListViewIcon,
   Folder01Icon,
   FolderAddIcon,
   FolderOpenIcon,
-  Search01Icon,
   Home01Icon,
   Cancel01Icon,
   CheckmarkCircle01Icon,
@@ -26,7 +19,6 @@ import {
   MoveIcon,
   EyeIcon,
   LinkSquare01Icon,
-  MoreVerticalCircle01Icon,
 } from "@hugeicons/core-free-icons"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
@@ -56,12 +48,16 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu"
 import { cn } from "@/lib/utils"
+import { SearchInput } from "@/components/shared/search-input"
+import { ViewToggle } from "@/components/shared/view-toggle"
+import { KebabTrigger } from "@/components/shared/kebab-trigger"
 import {
   FileDetailsSidebar,
   type FileItem,
   type FileActivity,
-} from "@/components/custom/dashboard/file-details-sidebar"
-import { UploadDialog } from "@/components/custom/dashboard/upload-dialog"
+} from "@/components/custom/dashboard/common/file-details-sidebar"
+import { UploadDialog } from "@/components/custom/dashboard/common/upload-dialog"
+import { CreateShareLinkDialog } from "@/components/custom/dashboard/common/create-share-link-dialog"
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -190,15 +186,7 @@ const INITIAL_TREE: ExplorerNode[] = [
 
 // ─── File type visuals ─────────────────────────────────────────────────────────
 
-const TYPE_VISUAL: Record<
-  FileItem["type"],
-  { icon: typeof Video01Icon; iconColor: string; gradientFrom: string; gradientTo: string }
-> = {
-  Video:    { icon: Video01Icon,         iconColor: "text-blue-500",   gradientFrom: "from-blue-500/15",   gradientTo: "to-blue-600/5"   },
-  Image:    { icon: Image01Icon,         iconColor: "text-violet-500", gradientFrom: "from-violet-500/15", gradientTo: "to-violet-600/5" },
-  Document: { icon: LegalDocument01Icon, iconColor: "text-amber-500",  gradientFrom: "from-amber-500/15",  gradientTo: "to-amber-600/5"  },
-  Archive:  { icon: ZipIcon,            iconColor: "text-slate-500",  gradientFrom: "from-slate-500/15",  gradientTo: "to-slate-600/5"  },
-}
+import { FILE_VISUAL } from "@/components/shared/file-visual"
 
 // ─── Breadcrumb ────────────────────────────────────────────────────────────────
 //
@@ -365,11 +353,13 @@ function FileMenuItems({
   Sep,
   file,
   onPreview,
+  onShare,
 }: {
   as: typeof ContextMenuItem | typeof DropdownMenuItem
   Sep: typeof ContextMenuSeparator | typeof DropdownMenuSeparator
   file: FileNode
   onPreview: () => void
+  onShare: () => void
 }) {
   return (
     <>
@@ -382,7 +372,7 @@ function FileMenuItems({
         Download
       </As>
       <Sep />
-      <As className="gap-2">
+      <As onClick={onShare} className="gap-2">
         <HugeiconsIcon icon={Share01Icon} className="size-3.5" strokeWidth={1.5} />
         {file.status === "Shared" ? "Manage Link" : "Share"}
       </As>
@@ -416,32 +406,14 @@ function FileMenuItems({
   )
 }
 
-// ─── 3-dot trigger button ──────────────────────────────────────────────────────
-
-function KebabTrigger({ className }: { className?: string }) {
-  return (
-    <DropdownMenuTrigger asChild>
-      <button
-        onClick={(e) => e.stopPropagation()}
-        className={cn(
-          "flex size-6 items-center justify-center rounded-md text-muted-foreground",
-          "transition-all hover:bg-accent hover:text-foreground focus:outline-none",
-          className,
-        )}
-      >
-        <HugeiconsIcon icon={MoreVerticalCircle01Icon} className="size-4" strokeWidth={1.5} />
-      </button>
-    </DropdownMenuTrigger>
-  )
-}
-
 // ─── Folder card (grid) ────────────────────────────────────────────────────────
 
 function countItems(folder: FolderNode) {
   let folders = 0
   let files = 0
   for (const item of folder.children) {
-    item.kind === "folder" ? folders++ : files++
+    if (item.kind === "folder") folders++
+    else files++
   }
   return { folders, files }
 }
@@ -504,6 +476,7 @@ function NewFolderCard({
   const inputRef = useInputRef<HTMLInputElement>(null)
 
   // Auto-focus when the card mounts
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { inputRef.current?.focus() }, [])
 
   const confirm = () => {
@@ -554,12 +527,14 @@ function FileCard({
   file,
   isSelected,
   onClick,
+  onShare,
 }: {
   file: FileNode
   isSelected: boolean
   onClick: () => void
+  onShare: () => void
 }) {
-  const visual = TYPE_VISUAL[file.type]
+  const visual = FILE_VISUAL[file.type]
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
@@ -583,7 +558,7 @@ function FileCard({
             <DropdownMenu>
               <KebabTrigger className="bg-background/80 backdrop-blur-sm" />
               <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                <FileMenuItems as={DropdownMenuItem} Sep={DropdownMenuSeparator} file={file} onPreview={onClick} />
+                <FileMenuItems as={DropdownMenuItem} Sep={DropdownMenuSeparator} file={file} onPreview={onClick} onShare={onShare} />
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -605,7 +580,7 @@ function FileCard({
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <FileMenuItems as={ContextMenuItem} Sep={ContextMenuSeparator} file={file} onPreview={onClick} />
+        <FileMenuItems as={ContextMenuItem} Sep={ContextMenuSeparator} file={file} onPreview={onClick} onShare={onShare} />
       </ContextMenuContent>
     </ContextMenu>
   )
@@ -648,11 +623,11 @@ function FolderListRow({ folder, onClick }: { folder: FolderNode; onClick: () =>
 }
 
 function FileListRow({
-  file, isSelected, onClick, showBorder,
+  file, isSelected, onClick, showBorder, onShare,
 }: {
-  file: FileNode; isSelected: boolean; onClick: () => void; showBorder: boolean
+  file: FileNode; isSelected: boolean; onClick: () => void; showBorder: boolean; onShare: () => void
 }) {
-  const visual = TYPE_VISUAL[file.type]
+  const visual = FILE_VISUAL[file.type]
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
@@ -684,13 +659,13 @@ function FileListRow({
           <DropdownMenu>
             <KebabTrigger />
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-              <FileMenuItems as={DropdownMenuItem} Sep={DropdownMenuSeparator} file={file} onPreview={onClick} />
+              <FileMenuItems as={DropdownMenuItem} Sep={DropdownMenuSeparator} file={file} onPreview={onClick} onShare={onShare} />
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <FileMenuItems as={ContextMenuItem} Sep={ContextMenuSeparator} file={file} onPreview={onClick} />
+        <FileMenuItems as={ContextMenuItem} Sep={ContextMenuSeparator} file={file} onPreview={onClick} onShare={onShare} />
       </ContextMenuContent>
     </ContextMenu>
   )
@@ -716,7 +691,7 @@ export default function FilesPage() {
   // Mutable tree: path holds references into treeRef.current so direct mutation
   // is safe — rerender() refreshes the UI after each change.
   const treeRef                      = useRef<ExplorerNode[]>(INITIAL_TREE)
-  const [version, setVersion]        = useState(0)
+  const [, setVersion] = useState(0)
   const rerender                     = () => setVersion((v) => v + 1)
 
   const [path, setPath]              = useState<FolderNode[]>([])
@@ -726,10 +701,13 @@ export default function FilesPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [isCreatingFolder, setIsCreatingFolder] = useState(false)
   const [uploadOpen, setUploadOpen] = useState(false)
+  const [shareFileName, setShareFileName] = useState<string | null>(null)
 
   // ── Derived: items visible in the current directory ────────────────────────
+  /* eslint-disable react-hooks/refs */
   const currentItems: ExplorerNode[] =
     path.length === 0 ? treeRef.current : path[path.length - 1].children
+  /* eslint-enable react-hooks/refs */
 
   const allFolders = currentItems.filter((i): i is FolderNode => i.kind === "folder")
   const allFiles   = currentItems.filter((i): i is FileNode   => i.kind === "file")
@@ -815,19 +793,11 @@ export default function FilesPage() {
 
         {/* ── Toolbar ── */}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <div className="relative flex-1 max-w-xs">
-            <HugeiconsIcon
-              icon={Search01Icon}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground"
-              strokeWidth={1.5}
-            />
-            <Input
-              placeholder="Search in this folder..."
-              className="pl-8 h-7"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+          <SearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Search in this folder..."
+          />
 
           {allFiles.length > 0 && (
             <ButtonGroup>
@@ -844,26 +814,7 @@ export default function FilesPage() {
             </ButtonGroup>
           )}
 
-          <div className="ml-auto flex items-center gap-0.5 rounded-md border p-0.5">
-            {(["grid", "list"] as const).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => setViewMode(mode)}
-                className={cn(
-                  "rounded p-1 transition-colors",
-                  viewMode === mode
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                <HugeiconsIcon
-                  icon={mode === "grid" ? GridViewIcon : ListViewIcon}
-                  className="size-3.5"
-                  strokeWidth={1.5}
-                />
-              </button>
-            ))}
-          </div>
+          <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
         </div>
 
         {/* ── Empty state ── */}
@@ -923,6 +874,7 @@ export default function FilesPage() {
                       file={file}
                       isSelected={selectedFile?.id === file.id}
                       onClick={() => handleFileClick(file)}
+                      onShare={() => setShareFileName(file.name)}
                     />
                   ))}
                 </div>
@@ -966,6 +918,7 @@ export default function FilesPage() {
                 isSelected={selectedFile?.id === file.id}
                 onClick={() => handleFileClick(file)}
                 showBorder={i > 0 || filteredFolders.length > 0 || isCreatingFolder}
+                onShare={() => setShareFileName(file.name)}
               />
             ))}
           </div>
@@ -979,6 +932,11 @@ export default function FilesPage() {
       />
 
       <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} />
+      <CreateShareLinkDialog
+        open={shareFileName !== null}
+        onOpenChange={(open) => { if (!open) setShareFileName(null) }}
+        defaultFileName={shareFileName ?? undefined}
+      />
     </>
   )
 }

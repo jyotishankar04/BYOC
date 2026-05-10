@@ -6,7 +6,6 @@ import {
   CloudUploadIcon,
   Image01Icon,
   Video01Icon,
-  Search01Icon,
   Download01Icon,
   Share01Icon,
   Delete01Icon,
@@ -17,8 +16,6 @@ import {
   LockedIcon,
   Globe02Icon,
   LinkSquare01Icon,
-  GridViewIcon,
-  ListViewIcon,
   EyeIcon,
   Calendar01Icon,
   FolderOpenIcon,
@@ -26,7 +23,6 @@ import {
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
 import {
   Dialog,
   DialogContent,
@@ -41,7 +37,10 @@ import {
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
-import { UploadDialog } from "@/components/custom/dashboard/upload-dialog"
+import { SearchInput } from "@/components/shared/search-input"
+import { ViewToggle } from "@/components/shared/view-toggle"
+import { UploadDialog } from "@/components/custom/dashboard/common/upload-dialog"
+import { CreateShareLinkDialog } from "@/components/custom/dashboard/common/create-share-link-dialog"
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -136,11 +135,13 @@ function Lightbox({
   allItems,
   onClose,
   onNavigate,
+  onShare,
 }: {
   item: GalleryItem
   allItems: GalleryItem[]
   onClose: () => void
   onNavigate: (item: GalleryItem) => void
+  onShare: () => void
 }) {
   const visual  = TYPE_VISUAL[item.type]
   const idx     = allItems.findIndex((i) => i.id === item.id)
@@ -269,7 +270,7 @@ function Lightbox({
               <HugeiconsIcon icon={Download01Icon} className="size-3.5" strokeWidth={1.5} />
               Download
             </Button>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" onClick={onShare}>
               <HugeiconsIcon icon={Share01Icon} className="size-3.5" strokeWidth={1.5} />
               {item.status === "Shared" ? "Manage Link" : "Share"}
             </Button>
@@ -400,7 +401,8 @@ export default function GalleryPage() {
   const [sort, setSort]           = useState<SortBy>("newest")
   const [search, setSearch]       = useState("")
   const [viewMode, setViewMode]   = useState<"grid" | "list">("grid")
-  const [lightbox, setLightbox]   = useState<GalleryItem | null>(null)
+  const [lightbox,   setLightbox]   = useState<GalleryItem | null>(null)
+  const [shareItem,  setShareItem]  = useState<GalleryItem | null>(null)
   const [uploadOpen, setUploadOpen] = useState(false)
 
   const processed = sortItems(filterItems(ITEMS, filter, search), sort)
@@ -431,20 +433,11 @@ export default function GalleryPage() {
 
         {/* ── Toolbar ── */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Search */}
-          <div className="relative min-w-[160px] flex-1 sm:max-w-xs">
-            <HugeiconsIcon
-              icon={Search01Icon}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground"
-              strokeWidth={1.5}
-            />
-            <Input
-              placeholder="Search media..."
-              className="pl-8 h-8"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search media..."
+          />
 
           {/* Type filter */}
           <ButtonGroup>
@@ -473,27 +466,7 @@ export default function GalleryPage() {
             </SelectContent>
           </Select>
 
-          {/* View toggle */}
-          <div className="ml-auto flex items-center gap-0.5 rounded-md border p-0.5">
-            {(["grid", "list"] as const).map((mode) => (
-              <button
-                key={mode}
-                onClick={() => setViewMode(mode)}
-                className={cn(
-                  "rounded p-1 transition-colors",
-                  viewMode === mode
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                <HugeiconsIcon
-                  icon={mode === "grid" ? GridViewIcon : ListViewIcon}
-                  className="size-3.5"
-                  strokeWidth={1.5}
-                />
-              </button>
-            ))}
-          </div>
+          <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
         </div>
 
         {/* ── Empty state ── */}
@@ -535,8 +508,15 @@ export default function GalleryPage() {
           allItems={processed}
           onClose={closeLightbox}
           onNavigate={setLightbox}
+          onShare={() => { setShareItem(lightbox); closeLightbox() }}
         />
       )}
+
+      <CreateShareLinkDialog
+        open={shareItem !== null}
+        onOpenChange={(open) => { if (!open) setShareItem(null) }}
+        defaultFileName={shareItem?.name}
+      />
 
       <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} />
     </>
