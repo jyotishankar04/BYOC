@@ -11,7 +11,7 @@ const CTASection = () => {
         </h2>
         <p className="mx-auto mt-6 max-w-xl text-center text-muted-foreground text-xl/normal">
           Connect your first bucket in minutes — no migration, no vendor
-          lock-in, no surprises. Start free, upgrade when you're ready.
+          lock-in, no surprises. Start free, upgrade when you&apos;re ready.
         </p>
         <div className="mt-8 flex items-center gap-3">
           <Button size={"lg"} asChild>
