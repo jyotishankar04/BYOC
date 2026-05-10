@@ -1,44 +1,53 @@
+"use client"
+
 import { HugeiconsIcon } from "@hugeicons/react"
 import { CloudServerIcon, InformationCircleIcon } from "@hugeicons/core-free-icons"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { StatsCards } from "@/components/custom/dashboard/stats-cards"
-import { StorageUsageCard } from "@/components/custom/dashboard/storage-usage-card"
-import { RecentFilesTable } from "@/components/custom/dashboard/recent-files-table"
-import { QuickActions } from "@/components/custom/dashboard/quick-actions"
-import { RecentActivity } from "@/components/custom/dashboard/recent-activity"
-import { ProviderHealthCard } from "@/components/custom/dashboard/provider-health-card"
+import { StatsCards } from "@/components/custom/dashboard/home/stats-cards"
+import { StorageUsageCard } from "@/components/custom/dashboard/home/storage-usage-card"
+import { RecentFilesTable } from "@/components/custom/dashboard/home/recent-files-table"
+import { QuickActions } from "@/components/custom/dashboard/home/quick-actions"
+import { RecentActivity } from "@/components/custom/dashboard/home/recent-activity"
+import { ProviderHealthCard } from "@/components/custom/dashboard/home/provider-health-card"
+import { useWorkspace } from "@/lib/workspace-context"
 
 export default function DashboardPage() {
+  const { currentWorkspace } = useWorkspace()
+  const provider = currentWorkspace?.storage
+  const ownerName = currentWorkspace?.owner ?? "there"
+
   return (
     <div className="space-y-6">
       {/* Welcome + Connected Provider */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Welcome back, John</h1>
+          <h1 className="text-xl font-semibold tracking-tight">Welcome back, {ownerName}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Manage your cloud files, storage usage, and provider settings from one place.
           </p>
         </div>
-        <Card className="w-full shrink-0 sm:w-auto">
-          <CardContent className="flex items-center gap-3 py-3 px-4">
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
-              <HugeiconsIcon icon={CloudServerIcon} className="size-4 text-amber-600" strokeWidth={1.5} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium">AWS S3</span>
-                <Badge
-                  variant="secondary"
-                  className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"
-                >
-                  Connected
-                </Badge>
+        {provider && (
+          <Card className="w-full shrink-0 sm:w-auto">
+            <CardContent className="flex items-center gap-3 py-3 px-4">
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
+                <HugeiconsIcon icon={CloudServerIcon} className="size-4 text-amber-600" strokeWidth={1.5} />
               </div>
-              <p className="mt-0.5 text-[11px] text-muted-foreground">byoc-user-storage · ap-south-1</p>
-            </div>
-          </CardContent>
-        </Card>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium">{provider.name}</span>
+                  <Badge
+                    variant="secondary"
+                    className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"
+                  >
+                    {provider.status}
+                  </Badge>
+                </div>
+                <p className="mt-0.5 text-[11px] text-muted-foreground">{provider.bucket} · {provider.region}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Stats */}

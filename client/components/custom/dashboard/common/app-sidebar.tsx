@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   DashboardSquare02Icon,
@@ -40,26 +40,33 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Logo } from "@/components/logo"
+import { WorkspaceSwitcher } from "@/components/custom/dashboard/common/workspace-switcher"
 
 const NAV_MAIN = [
-  { label: "Dashboard",    href: "/app",            icon: DashboardSquare02Icon },
-  { label: "Files",        href: "/app/files",      icon: Folder01Icon         },
-  { label: "Gallery",      href: "/app/gallery",    icon: Image01Icon          },
-  { label: "Documents",    href: "/app/documents",  icon: LegalDocument01Icon  },
-  { label: "Videos",       href: "/app/videos",     icon: Video01Icon          },
-  { label: "Shared Links", href: "/app/shared",     icon: LinkSquare01Icon     },
+  { label: "Dashboard",    href: "/app",            icon: DashboardSquare02Icon, exact: true  },
+  { label: "Files",        href: "/app/files",      icon: Folder01Icon,          exact: false },
+  { label: "Gallery",      href: "/app/gallery",    icon: Image01Icon,           exact: false },
+  { label: "Documents",    href: "/app/documents",  icon: LegalDocument01Icon,   exact: false },
+  { label: "Videos",       href: "/app/videos",     icon: Video01Icon,           exact: false },
+  { label: "Shared Links", href: "/app/shared",     icon: LinkSquare01Icon,      exact: false },
 ] as const
 
 const NAV_MANAGE = [
-  { label: "Analytics",    href: "/app/analytics",    icon: Analytics01Icon },
-  { label: "Integrations", href: "/app/integrations", icon: Plug01Icon      },
-  { label: "Billing",      href: "/app/billing",      icon: CreditCardIcon  },
-  { label: "Settings",     href: "/app/settings",     icon: Settings01Icon  },
+  { label: "Analytics",    href: "/app/analytics",    icon: Analytics01Icon, exact: false },
+  { label: "Integrations", href: "/app/integrations", icon: Plug01Icon,      exact: false },
+  { label: "Billing",      href: "/app/billing",      icon: CreditCardIcon,  exact: false },
+  { label: "Settings",     href: "/app/settings",     icon: Settings01Icon,  exact: false },
 ] as const
+
+function isActive(pathname: string, href: string, exact: boolean) {
+  if (exact) return pathname === href
+  return pathname === href || pathname.startsWith(href + "/")
+}
 
 export function AppSidebar() {
   const pathname = usePathname()
   const { state } = useSidebar()
+  const router = useRouter()
 
   return (
     <Sidebar collapsible="icon">
@@ -72,6 +79,13 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
+        {/* Workspace switcher — first item in content so it collapses gracefully */}
+        <SidebarGroup className="pb-0">
+          <SidebarGroupContent>
+            <WorkspaceSwitcher />
+          </SidebarGroupContent>
+        </SidebarGroup>
+
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -79,7 +93,7 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton
                     asChild
-                    isActive={pathname === item.href}
+                    isActive={isActive(pathname, item.href, item.exact)}
                     tooltip={item.label}
                   >
                     <Link href={item.href}>
@@ -101,8 +115,7 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.label}>
                   <SidebarMenuButton
                     asChild
-
-                    isActive={pathname === item.href}
+                    isActive={isActive(pathname, item.href, item.exact)}
                     tooltip={item.label}
                   >
                     <Link href={item.href}>
@@ -135,8 +148,8 @@ export function AppSidebar() {
               <DropdownMenuContent side="top" align="start" className="w-56">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>Profile</DropdownMenuItem>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/app/profile")}>Profile</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/app/settings")}>Settings</DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem variant="destructive">
                   <HugeiconsIcon icon={Logout01Icon} className="size-3.5" strokeWidth={1.5} />
