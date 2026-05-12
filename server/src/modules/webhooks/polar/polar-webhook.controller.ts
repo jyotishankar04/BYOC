@@ -1,0 +1,139 @@
+import type { SubscriptionStatus } from "@/generated/prisma/client";
+import type { Subscription } from "@polar-sh/sdk/models/components/subscription.js";
+import { validateEvent } from "@polar-sh/sdk/webhooks";
+import { BillingRepository } from "@/modules/billing/billing.repository";
+import prisma from "@/config/db.config";
+import env from "@/config/env";
+import logger from "@/core/logger";
+
+const repo = new BillingRepository(prisma);
+
+const PRODUCT_ID_TO_PLAN: Record<string, "Pro" | "Team"> = {};
+if (env.POLAR_PRO_PRODUCT_ID) PRODUCT_ID_TO_PLAN[env.POLAR_PRO_PRODUCT_ID] = "Pro";
+if (env.POLAR_TEAM_PRODUCT_ID) PRODUCT_ID_TO_PLAN[env.POLAR_TEAM_PRODUCT_ID] = "Team";
+if (env.POLAR_PRO_6M_PRODUCT_ID) PRODUCT_ID_TO_PLAN[env.POLAR_PRO_6M_PRODUCT_ID] = "Pro";
+if (env.POLAR_TEAM_6M_PRODUCT_ID) PRODUCT_ID_TO_PLAN[env.POLAR_TEAM_6M_PRODUCT_ID] = "Team";
+
+function mapPolarStatus(polarStatus: string): SubscriptionStatus {
+  switch (polarStatus) {
+    case "active": return "Active";
+    case "canceled": return "Canceled";
+    case "past_due": return "PastDue";
+    case "incomplete": return "Incomplete";
+    case "incomplete_expired": return "Expired";
+    case "trialing": return "Trialing";
+    case "unpaid": return "PastDue";
+    default: return "Incomplete";
+  }
+}
+
+function resolvePlan(data: Subscription): "Pro" | "Team" | null {
+  const fromProduct = PRODUCT_ID_TO_PLAN[data.productId];
+  if (fromProduct) return fromProduct;
+
+  const fromMetadata = data.metadata?.plan;
+  if (fromMetadata === "Pro" || fromMetadata === "Team") return fromMetadata;
+
+  const productName = data.product?.name;
+  if (productName?.toLowerCase().includes("pro")) return "Pro";
+  if (productName?.toLowerCase().includes("team")) return "Team";
+
+  return null;
+}
+
+function resolveUserId(data: Subscription): string | null {
+  const fromMetadata = data.metadata?.userId;
+  if (fromMetadata && typeof fromMetadata === "string") return fromMetadata;
+  return null;
+}
+
+export async function handleSubscriptionActive(payload: { data: Subscription }): Promise<void> {
+  const { data } = payload;
+  await upsertSubscription(data, "Active");
+}
+
+export async function handleSubscriptionCreated(payload: { data: Subscription }): Promise<void> {
+  const { data } = payload;
+  const mapped = mapPolarStatus(data.status);
+  await upsertSubscription(data, mapped);
+}
+
+export async function handleSubscriptionUpdated(payload: { data: Subscription }): Promise<void> {
+  const { data } = payload;
+  const mapped = mapPolarStatus(data.status);
+  await upsertSubscription(data, mapped);
+}
+
+export async function handleSubscriptionCanceled(payload: { data: Subscription }): Promise<void> {
+  const { data } = payload;
+  const mapped = mapPolarStatus(data.status);
+  await upsertSubscription(data, mapped);
+}
+
+export async function handleSubscriptionPastDue(payload: { data: Subscription }): Promise<void> {
+  const { data } = payload;
+  await upsertSubscription(data, "PastDue");
+}
+
+export async function handlePolarWebhookPayload(
+  payload: ReturnType<typeof validateEvent>,
+): Promise<void> {
+  if (payload.type !== "subscription.past_due") {
+    return;
+  }
+
+  await handleSubscriptionPastDue({ data: payload.data });
+}
+
+export async function handleSubscriptionRevoked(payload: { data: Subscription }): Promise<void> {
+  const { data } = payload;
+  const userId = resolveUserId(data);
+  if (!userId) {
+    logger.warn({ polarSubscriptionId: data.id }, "Polar webhook: revoked — no userId in metadata, skipping");
+    return;
+  }
+
+  await repo.upsert(userId, {
+    polarCustomerId: data.customerId,
+    polarSubscriptionId: data.id,
+    status: "Expired",
+    plan: "Free",
+    currentPeriodEnd: data.endedAt ?? data.currentPeriodEnd,
+  });
+  await repo.updateUserPlan(userId, "Free");
+  await repo.syncWorkspacePlans(userId, "Free");
+  logger.info({ userId, polarSubscriptionId: data.id }, "Polar webhook: subscription revoked, reverted to Free");
+}
+
+export async function handleSubscriptionUncanceled(payload: { data: Subscription }): Promise<void> {
+  const { data } = payload;
+  await upsertSubscription(data, "Active");
+}
+
+async function upsertSubscription(data: Subscription, status: SubscriptionStatus): Promise<void> {
+  const userId = resolveUserId(data);
+  if (!userId) {
+    logger.warn({ polarSubscriptionId: data.id }, "Polar webhook: no userId in metadata, skipping");
+    return;
+  }
+
+  const plan = resolvePlan(data);
+  if (!plan) {
+    logger.warn({ polarSubscriptionId: data.id, productId: data.productId }, "Polar webhook: unknown plan, skipping");
+    return;
+  }
+
+  await repo.upsert(userId, {
+    polarCustomerId: data.customerId,
+    polarSubscriptionId: data.id,
+    status,
+    plan,
+    currentPeriodStart: data.currentPeriodStart,
+    currentPeriodEnd: data.currentPeriodEnd,
+    trialEndsAt: data.trialEnd,
+  });
+
+  await repo.updateUserPlan(userId, plan);
+  await repo.syncWorkspacePlans(userId, plan);
+  logger.info({ userId, polarSubscriptionId: data.id, status, plan }, "Polar webhook: subscription upserted");
+}
