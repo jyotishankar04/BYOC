@@ -7,11 +7,12 @@
     "moduleDetection": "force",
     "jsx": "react-jsx",
     "allowJs": true,
+    "rootDir": ".",
     "baseUrl": ".",
     "outDir": "./dist",
     "paths": {
-      "@/*":["src/*"],
-      "@/generated/*":["generated/*"]
+      "@/*": ["src/*"],
+      "@/generated/*": ["generated/*"]
     },
 
     // Bundler mode
@@ -30,7 +31,7 @@
     // Some stricter flags (disabled by default)
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false,
+    "noPropertyAccessFromIndexSignature": false
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
