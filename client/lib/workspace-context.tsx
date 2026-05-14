@@ -1,241 +1,486 @@
-"use client"
+"use client";
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react"
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  type ReactNode,
+} from "react";
+import { useSession } from "@/lib/auth-client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "@/lib/axios";
+import { toast } from "sonner";
+import { fileKeys } from "@/lib/files";
+import { memberKeys } from "@/lib/members";
+
+const STORAGE_KEY = "byoc:currentWorkspaceId";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-export type WorkspacePlan   = "Free" | "Pro" | "Team"
-export type WorkspaceType   = "Personal" | "Student" | "Startup" | "Team"
-export type MemberRole      = "Owner" | "Admin" | "Member" | "Viewer"
-export type PermissionLevel = "Owner" | "Admin" | "Member" | "Viewer"
+export type WorkspacePlan = "Free" | "Pro" | "Team";
+export type WorkspaceType = "Personal" | "Student" | "Startup" | "Team";
+export type MemberRole = "Owner" | "Admin" | "Member" | "Viewer";
+export type PermissionLevel = "Owner" | "Admin" | "Member" | "Viewer";
 
 export interface WorkspaceMember {
-  id: string
-  name: string
-  email: string
-  role: MemberRole
-  initials: string
-  joinedAt: string
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  role: MemberRole;
+  initials: string;
+  joinedAt: string;
 }
 
+export type SyncStatus = "idle" | "pending" | "syncing" | "completed" | "failed";
+
 export interface StorageProvider {
-  name: string
-  bucket: string
-  region: string
-  status: "Connected" | "Error" | "Checking"
-  lastChecked: string
+  name: string;
+  bucket: string;
+  region: string;
+  status: "Connected" | "Error" | "Checking";
+  lastChecked: string;
+  syncStatus: SyncStatus;
+  syncTotalObjects: number;
+  syncCompletedObjects: number;
+  lastSyncedAt: string | null;
 }
 
 export interface WorkspacePermissions {
-  canUpload: PermissionLevel
-  canCreateFolders: PermissionLevel
-  canShareFiles: PermissionLevel
-  canDeleteFiles: PermissionLevel
-  canManageBilling: PermissionLevel
+  canUpload: PermissionLevel;
+  canCreateFolders: PermissionLevel;
+  canShareFiles: PermissionLevel;
+  canDeleteFiles: PermissionLevel;
+  canManageBilling: PermissionLevel;
 }
 
 export interface WorkspaceSecurity {
-  requirePasswordForPublicLinks: boolean
-  disablePublicSharing: boolean
-  allowPrivateInviteSharing: boolean
-  enableActivityLogs: boolean
+  requirePasswordForPublicLinks: boolean;
+  disablePublicSharing: boolean;
+  allowPrivateInviteSharing: boolean;
+  enableActivityLogs: boolean;
 }
 
 export interface Workspace {
-  id: string
-  name: string
-  slug: string
-  type: WorkspaceType
-  plan: WorkspacePlan
-  color: string
-  owner: string
-  ownerEmail: string
-  createdAt: string
-  members: WorkspaceMember[]
-  storage: StorageProvider | null
-  permissions: WorkspacePermissions
-  security: WorkspaceSecurity
+  id: string;
+  name: string;
+  slug: string;
+  type: WorkspaceType;
+  plan: WorkspacePlan;
+  color: string;
+  owner: string;
+  ownerEmail: string;
+  createdAt: string;
+  members: WorkspaceMember[];
+  storage: StorageProvider | null;
+  permissions: WorkspacePermissions;
+  security: WorkspaceSecurity;
 }
 
 export interface CreateWorkspaceData {
-  name: string
-  slug: string
-  type: WorkspaceType
+  name: string;
+  slug: string;
+  type: WorkspaceType;
 }
 
-// ─── Dummy data ────────────────────────────────────────────────────────────────
+type WorkspaceEvent =
+  | { type: "file.uploaded"; payload: unknown }
+  | { type: "file.deleted"; payload: { fileId: string } }
+  | { type: "file.renamed"; payload: { fileId: string; name: string } }
+  | { type: "member.joined"; payload: unknown }
+  | { type: "member.removed"; payload: { memberId: string } }
+  | {
+      type: "notification.new";
+      payload: { title: string; message?: string | null };
+    }
+  | {
+      type: "provider.status";
+      payload: { status: string; lastChecked: string };
+    }
+  | {
+      type: "sync.progress";
+      payload: { completed: number; total: number; status: string };
+    }
+  | { type: "link.expired"; payload: { linkId: string } }
+  | { type: "ping"; payload: null };
+
+// ─── API shape → UI shape ─────────────────────────────────────────────────────
+
+const API_TYPE_MAP: Record<string, WorkspaceType> = {
+  PERSONAL: "Personal",
+  STARTUP: "Startup",
+  TEAM: "Team",
+};
+
+const UI_TYPE_MAP: Record<WorkspaceType, string> = {
+  Personal: "PERSONAL",
+  Student: "PERSONAL",
+  Startup: "STARTUP",
+  Team: "TEAM",
+};
 
 const DEFAULT_PERMISSIONS: WorkspacePermissions = {
-  canUpload:       "Member",
-  canCreateFolders:"Member",
-  canShareFiles:   "Member",
-  canDeleteFiles:  "Admin",
-  canManageBilling:"Owner",
+  canUpload: "Member",
+  canCreateFolders: "Member",
+  canShareFiles: "Member",
+  canDeleteFiles: "Admin",
+  canManageBilling: "Owner",
+};
+
+const AVATAR_COLORS = [
+  "bg-blue-500",
+  "bg-emerald-500",
+  "bg-orange-500",
+  "bg-violet-500",
+  "bg-rose-500",
+  "bg-amber-500",
+  "bg-cyan-500",
+];
+
+function toInitials(name: string): string {
+  return name
+    .split(" ")
+    .slice(0, 2)
+    .map((n) => n[0] ?? "")
+    .join("")
+    .toUpperCase();
 }
 
-const INITIAL_WORKSPACES: Workspace[] = [
-  {
-    id: "personal",
-    name: "Personal Workspace",
-    slug: "personal",
-    type: "Personal",
-    plan: "Free",
-    color: "bg-blue-500",
-    owner: "John Doe",
-    ownerEmail: "john@example.com",
-    createdAt: "Jan 15, 2026",
-    members: [
-      { id: "m1", name: "John Doe", email: "john@example.com", role: "Owner", initials: "JD", joinedAt: "Jan 15, 2026" },
-    ],
-    storage: { name: "AWS S3", bucket: "byoc-user-storage", region: "ap-south-1", status: "Connected", lastChecked: "2 minutes ago" },
-    permissions: DEFAULT_PERMISSIONS,
-    security: { requirePasswordForPublicLinks: false, disablePublicSharing: false, allowPrivateInviteSharing: true,  enableActivityLogs: true  },
-  },
-  {
-    id: "college-project",
-    name: "College Project",
-    slug: "college-project",
-    type: "Student",
-    plan: "Free",
-    color: "bg-emerald-500",
-    owner: "John Doe",
-    ownerEmail: "john@example.com",
-    createdAt: "Feb 10, 2026",
-    members: [
-      { id: "m1", name: "John Doe",     email: "john@example.com",  role: "Owner",  initials: "JD", joinedAt: "Feb 10, 2026" },
-      { id: "m2", name: "Priya Sharma", email: "priya@example.com", role: "Admin",  initials: "PS", joinedAt: "Feb 11, 2026" },
-      { id: "m3", name: "Arjun Mehta",  email: "arjun@example.com", role: "Member", initials: "AM", joinedAt: "Feb 12, 2026" },
-    ],
-    storage: { name: "AWS S3", bucket: "college-project-assets", region: "us-east-1", status: "Connected", lastChecked: "5 minutes ago" },
-    permissions: { ...DEFAULT_PERMISSIONS, canCreateFolders: "Admin" },
-    security: { requirePasswordForPublicLinks: false, disablePublicSharing: false, allowPrivateInviteSharing: true,  enableActivityLogs: false },
-  },
-  {
-    id: "startup-team",
-    name: "Startup Team",
-    slug: "startup-team",
-    type: "Startup",
-    plan: "Pro",
-    color: "bg-orange-500",
-    owner: "John Doe",
-    ownerEmail: "john@example.com",
-    createdAt: "Mar 1, 2026",
-    members: [
-      { id: "m1", name: "John Doe",    email: "john@startup.io",   role: "Owner",  initials: "JD", joinedAt: "Mar 1, 2026" },
-      { id: "m2", name: "Ananya Roy",  email: "ananya@startup.io", role: "Admin",  initials: "AR", joinedAt: "Mar 2, 2026" },
-      { id: "m3", name: "Rahul Patel", email: "rahul@startup.io",  role: "Member", initials: "RP", joinedAt: "Mar 5, 2026" },
-      { id: "m4", name: "Sneha Gupta", email: "sneha@startup.io",  role: "Member", initials: "SG", joinedAt: "Mar 8, 2026" },
-      { id: "m5", name: "Dev Bose",    email: "dev@startup.io",    role: "Viewer", initials: "DB", joinedAt: "Apr 1, 2026" },
-    ],
-    storage: { name: "AWS S3", bucket: "startup-team-assets", region: "eu-west-1", status: "Connected", lastChecked: "Just now" },
-    permissions: { ...DEFAULT_PERMISSIONS, canShareFiles: "Admin" },
-    security: { requirePasswordForPublicLinks: true,  disablePublicSharing: false, allowPrivateInviteSharing: true,  enableActivityLogs: true  },
-  },
-  {
-    id: "client-assets",
-    name: "Client Assets",
-    slug: "client-assets",
-    type: "Team",
-    plan: "Team",
-    color: "bg-violet-500",
-    owner: "John Doe",
-    ownerEmail: "john@example.com",
-    createdAt: "Apr 5, 2026",
-    members: [
-      { id: "m1", name: "John Doe",      email: "john@example.com",  role: "Owner",  initials: "JD", joinedAt: "Apr 5, 2026"  },
-      { id: "m2", name: "Maya Nair",     email: "maya@client.co",    role: "Admin",  initials: "MN", joinedAt: "Apr 6, 2026"  },
-      { id: "m3", name: "Rohan Verma",   email: "rohan@client.co",   role: "Admin",  initials: "RV", joinedAt: "Apr 6, 2026"  },
-      { id: "m4", name: "Ishaan Kapoor", email: "ishaan@client.co",  role: "Member", initials: "IK", joinedAt: "Apr 7, 2026"  },
-      { id: "m5", name: "Tanya Singh",   email: "tanya@client.co",   role: "Member", initials: "TS", joinedAt: "Apr 7, 2026"  },
-      { id: "m6", name: "Kunal Shah",    email: "kunal@client.co",   role: "Member", initials: "KS", joinedAt: "Apr 8, 2026"  },
-      { id: "m7", name: "Meera Joshi",   email: "meera@client.co",   role: "Viewer", initials: "MJ", joinedAt: "Apr 10, 2026" },
-      { id: "m8", name: "Aakash Tiwari", email: "aakash@client.co",  role: "Viewer", initials: "AT", joinedAt: "Apr 12, 2026" },
-    ],
-    storage: { name: "AWS S3", bucket: "client-assets-prod", region: "ap-southeast-1", status: "Connected", lastChecked: "8 minutes ago" },
-    permissions: { ...DEFAULT_PERMISSIONS, canShareFiles: "Admin", canDeleteFiles: "Owner" },
-    security: { requirePasswordForPublicLinks: true,  disablePublicSharing: true,  allowPrivateInviteSharing: false, enableActivityLogs: true  },
-  },
-]
+function formatDate(iso: string | null | undefined): string {
+  if (!iso) return "";
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function fromApiWorkspace(raw: any): Workspace {
+  return {
+    id: raw.id,
+    name: raw.name,
+    slug: raw.slug,
+    type: API_TYPE_MAP[raw.type] ?? "Personal",
+    plan: (raw.plan as WorkspacePlan) ?? "Free",
+    color: raw.color ?? "bg-blue-500",
+    owner: raw.owner?.name ?? "",
+    ownerEmail: raw.owner?.email ?? "",
+    createdAt: formatDate(raw.createdAt),
+    members: (raw.members ?? []).map(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (m: any): WorkspaceMember => ({
+        id: m.id,
+        userId: m.userId,
+        name: m.user?.name ?? m.userId,
+        email: m.user?.email ?? "",
+        role: m.role as MemberRole,
+        initials: toInitials(m.user?.name ?? "?"),
+        joinedAt: formatDate(m.joinedAt),
+      }),
+    ),
+    storage: raw.storageProvider
+      ? {
+          name: raw.storageProvider.providerType,
+          bucket: raw.storageProvider.bucket,
+          region: raw.storageProvider.region ?? "",
+          status:
+            raw.storageProvider.status === "Active" ? "Connected" : "Checking",
+          lastChecked: raw.storageProvider.lastChecked
+            ? formatDate(raw.storageProvider.lastChecked)
+            : "Never",
+          syncStatus: (raw.storageProvider.syncStatus ?? "idle") as SyncStatus,
+          syncTotalObjects: raw.storageProvider.syncTotalObjects ?? 0,
+          syncCompletedObjects: raw.storageProvider.syncCompletedObjects ?? 0,
+          lastSyncedAt: raw.storageProvider.lastSyncedAt
+            ? formatDate(raw.storageProvider.lastSyncedAt)
+            : null,
+        }
+      : null,
+    permissions: raw.permissions
+      ? {
+          canUpload: raw.permissions.canUpload as PermissionLevel,
+          canCreateFolders: raw.permissions.canCreateFolders as PermissionLevel,
+          canShareFiles: raw.permissions.canShareFiles as PermissionLevel,
+          canDeleteFiles: raw.permissions.canDeleteFiles as PermissionLevel,
+          canManageBilling: raw.permissions.canManageBilling as PermissionLevel,
+        }
+      : DEFAULT_PERMISSIONS,
+    security: raw.security ?? {
+      requirePasswordForPublicLinks: false,
+      disablePublicSharing: false,
+      allowPrivateInviteSharing: true,
+      enableActivityLogs: true,
+    },
+  };
+}
+
+// ─── Query functions ───────────────────────────────────────────────────────────
+
+async function fetchWorkspaces(): Promise<Workspace[]> {
+  const res = await api.get<{ workspaces: unknown[] }>("/api/v1/workspaces");
+  return res.data.workspaces.map(fromApiWorkspace);
+}
+
+async function postWorkspace(
+  data: CreateWorkspaceData & { color: string },
+): Promise<Workspace> {
+  const res = await api.post<{ workspace: unknown }>("/api/v1/workspaces", {
+    name: data.name,
+    slug: data.slug,
+    type: UI_TYPE_MAP[data.type] ?? "PERSONAL",
+  });
+  return fromApiWorkspace({ ...(res.data.workspace as object), color: data.color });
+}
 
 // ─── Context ───────────────────────────────────────────────────────────────────
 
 interface WorkspaceContextValue {
-  workspaces: Workspace[]
-  currentWorkspace: Workspace
-  switchWorkspace: (id: string) => void
-  createWorkspace: (data: CreateWorkspaceData) => string
-  updateWorkspace: (id: string, updates: Partial<Pick<Workspace, "name" | "slug">>) => void
-  updateMembers: (id: string, members: WorkspaceMember[]) => void
-  updatePermissions: (id: string, permissions: WorkspacePermissions) => void
-  updateSecurity: (id: string, security: WorkspaceSecurity) => void
+  workspaces: Workspace[];
+  currentWorkspace: Workspace | null;
+  loading: boolean;
+  switchWorkspace: (id: string) => void;
+  createWorkspace: (data: CreateWorkspaceData) => Promise<string>;
+  updateWorkspace: (
+    id: string,
+    updates: Partial<Pick<Workspace, "name" | "slug">>,
+  ) => void;
+  updateMembers: (id: string, members: WorkspaceMember[]) => void;
+  updatePermissions: (id: string, permissions: WorkspacePermissions) => void;
+  updateSecurity: (id: string, security: WorkspaceSecurity) => void;
 }
 
-const WorkspaceContext = createContext<WorkspaceContextValue | null>(null)
-
-const AVATAR_COLORS = [
-  "bg-blue-500", "bg-emerald-500", "bg-orange-500",
-  "bg-violet-500", "bg-rose-500", "bg-amber-500", "bg-cyan-500",
-]
+const WorkspaceContext = createContext<WorkspaceContextValue | null>(null);
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
-  const [workspaces, setWorkspaces] = useState<Workspace[]>(INITIAL_WORKSPACES)
-  const [currentId, setCurrentId]   = useState("personal")
+  const { data: session } = useSession();
+  const queryClient = useQueryClient();
+  const [currentId, setCurrentId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(STORAGE_KEY);
+  });
 
-  const currentWorkspace = workspaces.find((w) => w.id === currentId) ?? workspaces[0]
+  const { data: workspaces = [], isLoading } = useQuery({
+    queryKey: ["workspaces"],
+    queryFn: fetchWorkspaces,
+    enabled: !!session?.user,
+    staleTime: 60 * 1000,
+  });
 
-  const switchWorkspace = useCallback((id: string) => setCurrentId(id), [])
-
-  const createWorkspace = useCallback((data: CreateWorkspaceData): string => {
-    const id    = data.slug || data.name.toLowerCase().replace(/\s+/g, "-")
-    const color = AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)]
-    const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-    const ws: Workspace = {
-      id,
-      name: data.name,
-      slug: data.slug,
-      type: data.type,
-      plan: "Free",
-      color,
-      owner: "John Doe",
-      ownerEmail: "john@example.com",
-      createdAt: today,
-      members: [{ id: "m1", name: "John Doe", email: "john@example.com", role: "Owner", initials: "JD", joinedAt: today }],
-      storage: null,
-      permissions: DEFAULT_PERMISSIONS,
-      security: { requirePasswordForPublicLinks: false, disablePublicSharing: false, allowPrivateInviteSharing: true, enableActivityLogs: false },
+  // Sync currentId: initialize to first workspace if unset, reset if workspace removed
+  useEffect(() => {
+    if (workspaces.length === 0) return;
+    const valid = workspaces.find((w) => w.id === currentId);
+    if (!valid) {
+      const firstId = workspaces[0]!.id;
+      setCurrentId(firstId);
+      localStorage.setItem(STORAGE_KEY, firstId);
     }
-    setWorkspaces((prev) => [...prev, ws])
-    setCurrentId(id)
-    return id
-  }, [])
+  }, [workspaces, currentId]);
 
-  const updateWorkspace = useCallback((id: string, updates: Partial<Pick<Workspace, "name" | "slug">>) => {
-    setWorkspaces((prev) => prev.map((w) => (w.id === id ? { ...w, ...updates } : w)))
-  }, [])
+  const createMutation = useMutation({
+    mutationFn: postWorkspace,
+    onSuccess: (ws) => {
+      queryClient.setQueryData<Workspace[]>(["workspaces"], (prev = []) => [
+        ...prev,
+        ws,
+      ]);
+      setCurrentId(ws.id);
+      localStorage.setItem(STORAGE_KEY, ws.id);
+    },
+    onError: () => {
+      toast.error("Failed to create workspace");
+    },
+  });
 
-  const updateMembers = useCallback((id: string, members: WorkspaceMember[]) => {
-    setWorkspaces((prev) => prev.map((w) => (w.id === id ? { ...w, members } : w)))
-  }, [])
+  const currentWorkspace =
+    workspaces.find((w) => w.id === currentId) ?? workspaces[0] ?? null;
 
-  const updatePermissions = useCallback((id: string, permissions: WorkspacePermissions) => {
-    setWorkspaces((prev) => prev.map((w) => (w.id === id ? { ...w, permissions } : w)))
-  }, [])
+  const patchWorkspaceStorage = useCallback(
+    (
+      workspaceId: string,
+      updater: (storage: StorageProvider | null) => StorageProvider | null,
+    ) => {
+      queryClient.setQueryData<Workspace[]>(["workspaces"], (prev = []) =>
+        prev.map((workspace) =>
+          workspace.id === workspaceId
+            ? { ...workspace, storage: updater(workspace.storage) }
+            : workspace,
+        ),
+      );
+    },
+    [queryClient],
+  );
 
-  const updateSecurity = useCallback((id: string, security: WorkspaceSecurity) => {
-    setWorkspaces((prev) => prev.map((w) => (w.id === id ? { ...w, security } : w)))
-  }, [])
+  useEffect(() => {
+    if (!currentWorkspace?.id) return;
+
+    const workspaceId = currentWorkspace.id;
+    const source = new EventSource(`/api/v1/workspaces/${workspaceId}/events`);
+
+    const refreshFiles = () => {
+      void queryClient.invalidateQueries({ queryKey: fileKeys.all(workspaceId) });
+    };
+
+    const refreshMembers = () => {
+      void queryClient.invalidateQueries({ queryKey: memberKeys.list(workspaceId) });
+      void queryClient.invalidateQueries({ queryKey: memberKeys.invites(workspaceId) });
+      void queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+    };
+
+    source.addEventListener("file.uploaded", refreshFiles);
+    source.addEventListener("file.deleted", refreshFiles);
+    source.addEventListener("file.renamed", refreshFiles);
+    source.addEventListener("member.joined", refreshMembers);
+    source.addEventListener("member.removed", refreshMembers);
+
+    source.addEventListener("provider.status", (event) => {
+      const payload = JSON.parse((event as MessageEvent<string>).data) as Extract<
+        WorkspaceEvent,
+        { type: "provider.status" }
+      >["payload"];
+
+      patchWorkspaceStorage(workspaceId, (storage) =>
+        storage
+          ? {
+              ...storage,
+              status: payload.status === "Active" ? "Connected" : "Error",
+              lastChecked: formatDate(payload.lastChecked),
+            }
+          : storage,
+      );
+    });
+
+    source.addEventListener("sync.progress", (event) => {
+      const payload = JSON.parse((event as MessageEvent<string>).data) as Extract<
+        WorkspaceEvent,
+        { type: "sync.progress" }
+      >["payload"];
+
+      queryClient.setQueryData(["sync-status", workspaceId], {
+        syncStatus: payload.status as SyncStatus,
+        syncTotalObjects: payload.total,
+        syncCompletedObjects: payload.completed,
+        lastSyncedAt:
+          payload.status === "completed" ? new Date().toISOString() : null,
+      });
+
+      patchWorkspaceStorage(workspaceId, (storage) =>
+        storage
+          ? {
+              ...storage,
+              syncStatus: payload.status as SyncStatus,
+              syncTotalObjects: payload.total,
+              syncCompletedObjects: payload.completed,
+              lastSyncedAt:
+                payload.status === "completed"
+                  ? formatDate(new Date().toISOString())
+                  : storage.lastSyncedAt,
+            }
+          : storage,
+      );
+    });
+
+    source.addEventListener("notification.new", (event) => {
+      const payload = JSON.parse((event as MessageEvent<string>).data) as Extract<
+        WorkspaceEvent,
+        { type: "notification.new" }
+      >["payload"];
+
+      toast(payload.title, {
+        description: payload.message ?? undefined,
+      });
+    });
+
+    source.addEventListener("link.expired", () => {
+      toast("Share link expired");
+    });
+
+    source.onerror = () => {
+      // EventSource auto-reconnects. Keep the UI quiet unless the user reports issues.
+    };
+
+    return () => {
+      source.close();
+    };
+  }, [currentWorkspace?.id, patchWorkspaceStorage, queryClient]);
+
+  const switchWorkspace = useCallback((id: string) => {
+    setCurrentId(id);
+    localStorage.setItem(STORAGE_KEY, id);
+  }, []);
+
+  const createWorkspace = useCallback(
+    async (data: CreateWorkspaceData): Promise<string> => {
+      const color =
+        AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)] ??
+        "bg-blue-500";
+      const ws = await createMutation.mutateAsync({ ...data, color });
+      return ws.id;
+    },
+    [createMutation],
+  );
+
+  const updateWorkspace = useCallback(
+    (id: string, updates: Partial<Pick<Workspace, "name" | "slug">>) => {
+      queryClient.setQueryData<Workspace[]>(["workspaces"], (prev = []) =>
+        prev.map((w) => (w.id === id ? { ...w, ...updates } : w)),
+      );
+    },
+    [queryClient],
+  );
+
+  const updateMembers = useCallback(
+    (id: string, members: WorkspaceMember[]) => {
+      queryClient.setQueryData<Workspace[]>(["workspaces"], (prev = []) =>
+        prev.map((w) => (w.id === id ? { ...w, members } : w)),
+      );
+    },
+    [queryClient],
+  );
+
+  const updatePermissions = useCallback(
+    (id: string, permissions: WorkspacePermissions) => {
+      queryClient.setQueryData<Workspace[]>(["workspaces"], (prev = []) =>
+        prev.map((w) => (w.id === id ? { ...w, permissions } : w)),
+      );
+    },
+    [queryClient],
+  );
+
+  const updateSecurity = useCallback(
+    (id: string, security: WorkspaceSecurity) => {
+      queryClient.setQueryData<Workspace[]>(["workspaces"], (prev = []) =>
+        prev.map((w) => (w.id === id ? { ...w, security } : w)),
+      );
+    },
+    [queryClient],
+  );
 
   return (
     <WorkspaceContext.Provider
-      value={{ workspaces, currentWorkspace, switchWorkspace, createWorkspace, updateWorkspace, updateMembers, updatePermissions, updateSecurity }}
+      value={{
+        workspaces,
+        currentWorkspace,
+        loading: isLoading,
+        switchWorkspace,
+        createWorkspace,
+        updateWorkspace,
+        updateMembers,
+        updatePermissions,
+        updateSecurity,
+      }}
     >
       {children}
     </WorkspaceContext.Provider>
-  )
+  );
 }
 
 export function useWorkspace() {
-  const ctx = useContext(WorkspaceContext)
-  if (!ctx) throw new Error("useWorkspace must be used within WorkspaceProvider")
-  return ctx
+  const ctx = useContext(WorkspaceContext);
+  if (!ctx)
+    throw new Error("useWorkspace must be used within WorkspaceProvider");
+  return ctx;
 }
