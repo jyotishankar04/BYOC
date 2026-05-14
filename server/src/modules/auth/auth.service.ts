@@ -174,7 +174,7 @@ export class AuthService implements IAuthService {
 
   generateApiKey(): { fullKey: string; keyPrefix: string; keyHash: string } {
     const raw = crypto.randomBytes(32).toString("hex");
-    const fullKey = `byoc_${raw}`;
+    const fullKey = `bringbucket_${raw}`;
     return {
       fullKey,
       keyPrefix: fullKey.slice(0, 12),

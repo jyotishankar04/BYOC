@@ -69,7 +69,7 @@ export default function UseCasesSection() {
             Built for every kind of file
           </h2>
           <p className="text-muted-foreground">
-            From a few personal photos to terabytes of project assets — BYOC is
+            From a few personal photos to terabytes of project assets — BringBucket is
             the management layer over storage you already own.
           </p>
         </div>

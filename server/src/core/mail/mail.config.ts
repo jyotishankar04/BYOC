@@ -9,5 +9,5 @@ export const transporter = nodemailer.createTransport({
 });
 
 export const mailOptions = {
-  from: `"BYOC" <${env.MAIL_FROM}>`,
+  from: `"BringBucket" <${env.MAIL_FROM}>`,
 };

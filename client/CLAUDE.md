@@ -15,7 +15,7 @@ No test suite is configured yet.
 
 ## Architecture
 
-**BYOC** (Bring Your Own Cloud) is a Next.js 16 App Router project — a file management dashboard where users connect their own S3-compatible cloud storage.
+**BringBucket** (Bring Your Own Cloud) is a Next.js 16 App Router project — a file management dashboard where users connect their own S3-compatible cloud storage.
 
 ### Route structure
 

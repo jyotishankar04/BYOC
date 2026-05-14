@@ -203,7 +203,7 @@ export default function HeroPreview() {
             <div className="w-6 h-6 rounded-md bg-foreground flex items-center justify-center">
               <Cloud className="w-3.5 h-3.5 text-background" />
             </div>
-            <span className="text-sm font-semibold text-foreground tracking-tight">BYOC</span>
+            <span className="text-sm font-semibold text-foreground tracking-tight">BringBucket</span>
           </div>
           <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-card border border-border rounded-full px-3 py-1">

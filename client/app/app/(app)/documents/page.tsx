@@ -126,7 +126,7 @@ function docToFileItem(doc: DocItem): FileItem {
     lastModified: doc.lastModified,
     status: doc.status,
     owner: doc.owner,
-    bucket: "byoc-user-storage",
+    bucket: "bringbucket-user-storage",
     storagePath: doc.storagePath,
     shareLink: doc.shareLink,
     activities,

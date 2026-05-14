@@ -95,7 +95,7 @@ function useUsageEstimates() {
     return {
       estimates: [
         {
-          label: "BYOC Platform",
+          label: "BringBucket Platform",
           sub: `Your current plan — all platform features`,
           used: 0,
           limit: 0,
@@ -386,7 +386,7 @@ export default function BillingPage() {
         />
         <div>
           <p className="text-xs font-medium text-blue-700 dark:text-blue-400">
-            BYOC does not charge for storage
+            BringBucket does not charge for storage
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
             Storage and bandwidth costs are billed directly by your cloud provider (AWS, GCS, Azure,
@@ -651,7 +651,7 @@ export default function BillingPage() {
             <div>
               <p className="text-sm font-medium">Total estimated this month</p>
               <p className="text-[11px] text-muted-foreground">
-                BYOC ($0.00) + Provider estimate
+                BringBucket ($0.00) + Provider estimate
               </p>
             </div>
             <p className="text-lg font-bold tracking-tight">${usage.totalCost.toFixed(2)}</p>

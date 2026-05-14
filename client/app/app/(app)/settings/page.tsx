@@ -115,7 +115,7 @@ function AccountSection() {
     <div className="space-y-6">
       <SectionHeader
         title="Account"
-        description="Primary account identity for your BYOC login across all workspaces."
+        description="Primary account identity for your BringBucket login across all workspaces."
       />
       <Separator />
 
@@ -611,7 +611,7 @@ function DangerSection() {
             <div>
               <p className="text-sm font-medium text-destructive">Delete account</p>
               <p className="text-xs text-muted-foreground">
-                Account deletion is not wired in the API yet. When implemented, it should remove your BYOC account while leaving your external storage provider untouched.
+                Account deletion is not wired in the API yet. When implemented, it should remove your BringBucket account while leaving your external storage provider untouched.
               </p>
             </div>
             <Button variant="outline" disabled className="w-fit border-destructive/30 text-destructive/60">
@@ -650,7 +650,7 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Global Settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Account-scoped settings for your primary BYOC identity. Workspace-specific controls live inside each workspace settings page.
+          Account-scoped settings for your primary BringBucket identity. Workspace-specific controls live inside each workspace settings page.
         </p>
       </div>
 

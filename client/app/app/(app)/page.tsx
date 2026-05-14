@@ -208,10 +208,10 @@ export default function DashboardPage() {
           />
           <div>
             <p className="text-xs font-medium text-blue-700 dark:text-blue-400">
-              No storage charges from BYOC
+              No storage charges from BringBucket
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              BYOC does not charge for your storage usage. Storage and bandwidth costs are billed
+              BringBucket does not charge for your storage usage. Storage and bandwidth costs are billed
               directly by your connected cloud provider (AWS S3).
             </p>
           </div>

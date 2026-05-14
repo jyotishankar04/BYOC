@@ -32,7 +32,7 @@ const envSchema = z.object({
   MAIL_HOST: z.string().default("localhost"),
   MAIL_PORT: z.string().default("1025"),
   MAIL_SECURE: z.string().default("false").transform(val => val === "true"),
-  MAIL_FROM: z.string().default("no-reply@byoc.local"),
+  MAIL_FROM: z.string().default("no-reply@bringbucket.local"),
 
   // Google OAuth
   GOOGLE_CLIENT_ID: z.string().default(""),

@@ -37,7 +37,7 @@ const AWS_S3_GUIDE: ProviderGuide = {
     {
       title: "Create an IAM user",
       description:
-        "Go to IAM → Users → Create user. Give it a name (e.g. byoc-uploader). Do NOT check 'Provide user access to the AWS Management Console' — this user only needs programmatic access.",
+        "Go to IAM → Users → Create user. Give it a name (e.g. bringbucket-uploader). Do NOT check 'Provide user access to the AWS Management Console' — this user only needs programmatic access.",
       link: {
         url: "https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html",
         label: "IAM docs",
@@ -143,7 +143,7 @@ const R2_GUIDE: ProviderGuide = {
     {
       title: "Copy your credentials",
       description:
-        "After the token is created, copy the R2 Access Key ID and Secret Access Key shown in the success screen. Paste those exact values into BYOC. Do not use a general Cloudflare API token value.",
+        "After the token is created, copy the R2 Access Key ID and Secret Access Key shown in the success screen. Paste those exact values into BringBucket. Do not use a general Cloudflare API token value.",
     },
     {
       title: "Endpoint URL",
@@ -208,7 +208,7 @@ const SUPABASE_GUIDE: ProviderGuide = {
     {
       title: "Create a storage bucket",
       description:
-        "Go to Supabase Dashboard → your project → Storage → New bucket. Give it a name and make it public or private as needed. For BYOC, the bucket can be private since our server handles access.",
+        "Go to Supabase Dashboard → your project → Storage → New bucket. Give it a name and make it public or private as needed. For BringBucket, the bucket can be private since our server handles access.",
       link: {
         url: "https://supabase.com/docs/guides/storage/buckets/foundations",
         label: "Supabase Storage docs",

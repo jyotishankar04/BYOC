@@ -58,7 +58,7 @@ export default function AcceptInvitePage({
       <div className="w-full max-w-sm space-y-6">
         {/* Brand */}
         <p className="text-center text-xs font-semibold tracking-widest text-muted-foreground uppercase">
-          BYOC
+          BringBucket
         </p>
 
         {/* Card */}

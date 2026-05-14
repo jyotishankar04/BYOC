@@ -20,7 +20,7 @@ export function buildLinkDisabledHtml(data: LinkDisabledTemplateData): string {
       <p style="margin:0;color:#a1a1aa;font-size:13px;">Hello ${userName}, any files shared via public links are no longer accessible.</p>
     </td></tr>
     <tr><td style="padding:16px 32px;background:#fafafa;border-top:1px solid #e4e4e7;">
-      <p style="margin:0;color:#a1a1aa;font-size:12px;text-align:center;">BYOC – Bring Your Own Cloud</p>
+      <p style="margin:0;color:#a1a1aa;font-size:12px;text-align:center;">BringBucket – Bring Your Own Cloud</p>
     </td></tr>
   </table>
 </body>
@@ -35,5 +35,5 @@ Your public share links in ${workspaceName} have been disabled because an admin 
 
 Any files shared via public links are no longer accessible.
 
-– BYOC`;
+– BringBucket`;
 }

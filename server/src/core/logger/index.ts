@@ -15,7 +15,7 @@ const logger = pino({
   }),
   base: {
     env: env.NODE_ENV,
-    service: 'byoc-server',
+    service: 'bringbucket-server',
   },
 });
 

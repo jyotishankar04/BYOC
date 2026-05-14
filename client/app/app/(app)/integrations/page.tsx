@@ -262,7 +262,7 @@ function ConnectSheet({
             <div className="flex gap-2">
               <HugeiconsIcon icon={InformationCircleIcon} className="mt-0.5 size-3.5 shrink-0 text-blue-500" strokeWidth={1.5} />
               <p className="text-[11px] text-muted-foreground">
-                BYOC stores only the <span className="font-medium text-foreground">bucket name and region</span>. Your access keys are encrypted at rest and never logged.
+                BringBucket stores only the <span className="font-medium text-foreground">bucket name and region</span>. Your access keys are encrypted at rest and never logged.
                 {integration.status !== "coming-soon" && " This will replace any existing provider connection."}
               </p>
             </div>
@@ -690,7 +690,7 @@ export default function IntegrationsPage() {
       <div>
         <h1 className="text-xl font-semibold tracking-tight">Integrations</h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          Connect your cloud storage providers. BYOC works with any S3-compatible bucket.
+          Connect your cloud storage providers. BringBucket works with any S3-compatible bucket.
         </p>
       </div>
 
@@ -700,7 +700,7 @@ export default function IntegrationsPage() {
         <div>
           <p className="text-xs font-medium text-blue-700 dark:text-blue-400">Bring Your Own Cloud</p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            BYOC connects to your existing cloud storage bucket. You control your data — we only
+            BringBucket connects to your existing cloud storage bucket. You control your data — we only
             read and write files on your behalf. Storage costs are billed directly by your provider.
           </p>
           {lockedAvailableCount > 0 && !loading ? (
@@ -709,7 +709,7 @@ export default function IntegrationsPage() {
             </p>
           ) : null}
         </div>
-        <Button variant="ghost" size="sm" className="ml-auto shrink-0 h-7 gap-1 text-xs text-blue-600" onClick={() => window.open("https://docs.byoc.dev/providers", "_blank")}>
+        <Button variant="ghost" size="sm" className="ml-auto shrink-0 h-7 gap-1 text-xs text-blue-600" onClick={() => window.open("https://docs.bringbucket.dev/providers", "_blank")}>
           Docs <HugeiconsIcon icon={ArrowRight01Icon} className="size-3" strokeWidth={2} />
         </Button>
       </div>

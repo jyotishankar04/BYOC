@@ -68,7 +68,7 @@ export class FolderService {
       name: dto.name,
       path,
       parentId: dto.parentId ?? null,
-      source: "byoc",
+      source: "bringbucket",
     });
 
     await this.prisma.activityLog.create({

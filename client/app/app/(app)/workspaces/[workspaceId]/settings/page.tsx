@@ -199,7 +199,7 @@ function OverviewSection({ workspace }: { workspace: Workspace }) {
         <div>
           <p className="font-semibold">{workspace.name}</p>
           <p className="text-sm text-muted-foreground">
-            byoc.app/{workspace.slug}
+            bringbucket.app/{workspace.slug}
           </p>
         </div>
         <Badge className={cn("ml-auto", PLAN_STYLE[workspace.plan])}>
@@ -316,7 +316,7 @@ function GeneralSection({ workspace }: { workspace: Workspace }) {
           </Label>
           <div className="flex items-center">
             <span className="flex h-8 items-center rounded-l-md border border-r-0 bg-muted px-2.5 text-xs text-muted-foreground shrink-0">
-              byoc.app/
+              bringbucket.app/
             </span>
             <Input
               id="g-slug"
@@ -1743,11 +1743,11 @@ function BillingSection({ workspace }: { workspace: Workspace }) {
           />
           <div>
             <p className="text-xs font-medium text-blue-700 dark:text-blue-400">
-              No storage charges from BYOC
+              No storage charges from BringBucket
             </p>
             <p className="mt-0.5 text-[11px] text-muted-foreground">
               Storage and bandwidth costs are billed directly by your connected
-              cloud provider ({workspace.storage?.name ?? "your provider"}). BYOC only charges for platform access.
+              cloud provider ({workspace.storage?.name ?? "your provider"}). BringBucket only charges for platform access.
             </p>
           </div>
         </CardContent>

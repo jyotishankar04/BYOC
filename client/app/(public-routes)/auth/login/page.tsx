@@ -28,7 +28,7 @@ export default function Login() {
           <div className="border border-border/70 bg-muted/60 px-10 py-14 rounded-lg sm:shadow-sm/2">
             <Logo className="mx-auto size-9" />
             <h1 className="mt-3 text-center font-medium text-2xl tracking-[-0.015em]">
-              Login to BYOC
+              Login to BringBucket
             </h1>
 
             <div className="mt-10">
@@ -62,7 +62,7 @@ export default function Login() {
             />
 
             <p className="relative isolate text-center text-sm">
-              New to BYOC?{" "}
+              New to BringBucket?{" "}
               <Link
                 className="text-muted-foreground underline"
                 href="/auth/signup"

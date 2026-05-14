@@ -11,7 +11,7 @@ export default function FeaturesSection() {
             Everything you need to manage your own cloud
           </h2>
           <p className="mt-4 text-muted-foreground">
-            BYOC gives users the control of personal cloud storage with the simplicity of a modern file management dashboard.
+            BringBucket gives users the control of personal cloud storage with the simplicity of a modern file management dashboard.
           </p>
         </div>
 

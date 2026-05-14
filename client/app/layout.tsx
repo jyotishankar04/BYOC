@@ -23,7 +23,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BYOC — Bring Your Own Cloud",
+  title: "BringBucket — Bring Your Own Cloud",
   description: "Connect your own S3-compatible cloud storage and manage your files from one place.",
 };
 

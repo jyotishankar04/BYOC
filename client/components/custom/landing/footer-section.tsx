@@ -48,7 +48,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="col-span-full xl:col-span-3">
             <Link href="/" className="text-xl font-semibold tracking-tight">
-              BYOC
+              BringBucket
             </Link>
             <p className="mt-4 max-w-xs text-muted-foreground">
               The management layer for your own cloud storage. Your bucket, your
@@ -81,7 +81,7 @@ const Footer = () => {
           <span className="text-muted-foreground text-sm">
             &copy; {new Date().getFullYear()}{' '}
             <Link href="/" className="hover:text-foreground transition-colors">
-              BYOC
+              BringBucket
             </Link>
             . All rights reserved.
           </span>

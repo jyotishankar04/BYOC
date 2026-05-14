@@ -1,41 +1,40 @@
-import Link from 'next/link'
-import { cn } from '@/lib/utils'
+import Image from "next/image"
+import Link from "next/link"
+import { cn } from "@/lib/utils"
+
+import fullLogo from "@/public/bringbucket.png"
+import iconLogo from "@/public/bringbutket-logo.png"
 
 type LogoProps = {
-  variant?: 'icon' | 'full'
+  variant?: "icon" | "full"
   href?: string
   className?: string
 }
 
 export function Logo({
-  variant = 'full',
-  href = '/',
+  variant = "full",
+  href = "/",
   className,
 }: LogoProps) {
-  const content = (
-    <div className={cn('flex items-center gap-2', className)}>
-      <div className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-        <span className="text-sm font-bold">B</span>
-      </div>
+  const src = variant === "icon" ? iconLogo : fullLogo
+  const alt = variant === "icon" ? "BringBucket" : "BringBucket"
 
-      {variant === 'full' && (
-        <div className="flex flex-col leading-none">
-          <span className="text-base font-semibold tracking-tight">
-            BYOC
-          </span>
-          <span className="text-xs text-muted-foreground">
-            Cloud Manager
-          </span>
-        </div>
-      )}
-    </div>
+  const img = (
+    <Image
+      src={src}
+      alt={alt}
+      width={variant === "icon" ? 36 : 140}
+      height={variant === "icon" ? 36 : 36}
+      className={cn("h-auto", variant === "icon" ? "w-9" : "w-[140px]", className)}
+      priority
+    />
   )
 
-  if (!href) return content
+  if (!href) return img
 
   return (
-    <Link href={href} aria-label="BYOC Home">
-      {content}
+    <Link href={href} aria-label="BringBucket Home">
+      {img}
     </Link>
   )
 }

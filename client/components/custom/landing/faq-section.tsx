@@ -11,7 +11,7 @@ export const faqs = [
   {
     question: 'Do you store files?',
     answer:
-      'No. Your files stay inside your own connected cloud storage bucket. BYOC only provides the dashboard and management layer.',
+      'No. Your files stay inside your own connected cloud storage bucket. BringBucket only provides the dashboard and management layer.',
   },
   {
     question: 'Are credentials safe?',
@@ -38,7 +38,7 @@ const FAQSection = () => {
           Frequently Asked Questions
         </h2>
         <p className="mt-2 text-muted-foreground ">
-          Quick answers about how BYOC works with your storage.
+          Quick answers about how BringBucket works with your storage.
         </p>
         <div className="mt-8 w-full rounded-xl border border-border/65 bg-muted p-1 sm:mt-10">
           <Accordion

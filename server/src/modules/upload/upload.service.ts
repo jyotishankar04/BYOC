@@ -126,7 +126,7 @@ export class UploadService {
       mimeType: dto.mimeType,
       kind: inferKind(dto.mimeType),
       status: FileStatus.uploading,
-      source: "byoc",
+      source: "bringbucket",
       uploadedById: userId,
     });
 
@@ -373,7 +373,7 @@ export class UploadService {
       mimeType: session.mimeType,
       kind: inferKind(session.mimeType),
       status: FileStatus.uploaded,
-      source: "byoc",
+      source: "bringbucket",
       uploadedById: userId,
     });
 

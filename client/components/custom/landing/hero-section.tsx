@@ -86,7 +86,7 @@ export default function HeroSection() {
               variants={itemVariants}
               className="mx-auto mt-6 hidden max-w-2xl text-pretty text-lg text-muted-foreground sm:block"
             >
-              BYOC lets users connect their own S3-compatible storage and manage
+              BringBucket lets users connect their own S3-compatible storage and manage
               files, folders, billing insights, and access from one clean
               platform.
             </motion.p>

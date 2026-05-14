@@ -22,9 +22,9 @@ export const requireAuth = async (
   next: NextFunction,
 ) => {
   try {
-    // Path 1: API key via Authorization: Bearer byoc_xxx
+    // Path 1: API key via Authorization: Bearer bringbucket_xxx
     const authHeader = req.headers["authorization"];
-    if (authHeader?.startsWith("Bearer byoc_")) {
+    if (authHeader?.startsWith("Bearer bringbucket_")) {
       const rawKey = authHeader.slice(7);
       const keyHash = authService.hashApiKey(rawKey);
 

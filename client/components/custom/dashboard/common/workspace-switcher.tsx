@@ -117,7 +117,7 @@ function CreateWorkspaceDialog({
             <Label htmlFor="ws-slug" className="text-xs font-medium">Slug</Label>
             <div className="flex items-center gap-0">
               <span className="flex h-8 items-center rounded-l-md border border-r-0 bg-muted px-2.5 text-xs text-muted-foreground">
-                byoc.app/
+                bringbucket.app/
               </span>
               <Input
                 id="ws-slug"

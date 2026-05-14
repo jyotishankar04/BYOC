@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { fileKeys } from "@/lib/files";
 import { memberKeys } from "@/lib/members";
 
-const STORAGE_KEY = "byoc:currentWorkspaceId";
+const STORAGE_KEY = "bringbucket:currentWorkspaceId";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 

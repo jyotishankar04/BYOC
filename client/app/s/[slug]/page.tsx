@@ -105,7 +105,7 @@ export default function PublicSharePage() {
       {/* Top bar */}
       <div className="flex items-center justify-between border-b px-6 py-3">
         <Logo className="size-7" />
-        <span className="text-[11px] text-muted-foreground">Powered by BYOC</span>
+        <span className="text-[11px] text-muted-foreground">Powered by BringBucket</span>
       </div>
 
       <div className="flex flex-1 items-center justify-center p-4">

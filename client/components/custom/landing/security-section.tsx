@@ -23,7 +23,7 @@ export const securityFeatures = [
   {
     title: 'User-owned storage',
     description:
-      'BYOC manages the interface; the storage stays fully owned by you.',
+      'BringBucket manages the interface; the storage stays fully owned by you.',
     icon: UserCheck,
   },
 ]
@@ -35,7 +35,7 @@ const SecurityFeatures = () => {
         Your storage, your keys, your rules
       </h2>
       <p className="-tracking[0.01em] mt-3 text-pretty text-center text-muted-foreground text-md">
-        BYOC is the management layer — you own the bucket and the data inside it.
+        BringBucket is the management layer — you own the bucket and the data inside it.
       </p>
       <div className="mt-16 grid grid-cols-1 gap-1 rounded-xl border bg-muted/40 p-1 sm:mt-20 sm:grid-cols-2 lg:grid-cols-4">
         {securityFeatures.map((feature, index) => (

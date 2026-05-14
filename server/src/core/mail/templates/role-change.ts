@@ -22,7 +22,7 @@ export function buildRoleChangeHtml(data: RoleChangeTemplateData): string {
       <p style="margin:0;color:#a1a1aa;font-size:13px;">Hello ${memberName}, you now have ${newRole} permissions in ${workspaceName}.</p>
     </td></tr>
     <tr><td style="padding:16px 32px;background:#fafafa;border-top:1px solid #e4e4e7;">
-      <p style="margin:0;color:#a1a1aa;font-size:12px;text-align:center;">BYOC – Bring Your Own Cloud</p>
+      <p style="margin:0;color:#a1a1aa;font-size:12px;text-align:center;">BringBucket – Bring Your Own Cloud</p>
     </td></tr>
   </table>
 </body>
@@ -35,5 +35,5 @@ export function buildRoleChangeText(data: RoleChangeTemplateData): string {
 
 ${changedByName} has changed your role in ${workspaceName} to ${newRole}.
 
-– BYOC`;
+– BringBucket`;
 }
