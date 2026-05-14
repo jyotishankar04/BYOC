@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   LegalDocument01Icon,
@@ -44,6 +44,9 @@ import {
 } from "@/components/custom/dashboard/common/file-details-sidebar"
 import { UploadDialog } from "@/components/custom/dashboard/common/upload-dialog"
 import { CreateShareLinkDialog } from "@/components/custom/dashboard/common/create-share-link-dialog"
+import { useWorkspace } from "@/lib/workspace-context"
+import { useFiles, useDeleteFile, useDownloadFile, type ApiFile } from "@/lib/files"
+import { formatFileSize, formatDate, getDocType, getStorageFolderLabel } from "@/lib/file-utils"
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -79,6 +82,7 @@ const TYPE_VISUAL: Record<
   Slides: { iconColor: "text-orange-500",  gradFrom: "from-orange-500/15",  gradTo: "to-orange-600/5",  badgeClass: "bg-orange-500/10 text-orange-600",   dot: "bg-orange-500"  },
   Text:   { iconColor: "text-slate-500",   gradFrom: "from-slate-500/15",   gradTo: "to-slate-600/5",   badgeClass: "bg-slate-500/10 text-slate-600",     dot: "bg-slate-500"   },
 }
+const PAGE_SIZE = 20
 
 // ─── Dummy data ────────────────────────────────────────────────────────────────
 
@@ -193,12 +197,16 @@ function DocMenuItems({
   doc,
   onPreview,
   onShare,
+  onDownload,
+  onDelete,
 }: {
   as: typeof ContextMenuItem | typeof DropdownMenuItem
   Sep: typeof ContextMenuSeparator | typeof DropdownMenuSeparator
   doc: DocItem
   onPreview: () => void
   onShare: () => void
+  onDownload: () => void
+  onDelete: () => void
 }) {
   return (
     <>
@@ -206,7 +214,7 @@ function DocMenuItems({
         <HugeiconsIcon icon={EyeIcon} className="size-3.5" strokeWidth={1.5} />
         Preview
       </As>
-      <As className="gap-2">
+      <As onClick={onDownload} className="gap-2">
         <HugeiconsIcon icon={Download01Icon} className="size-3.5" strokeWidth={1.5} />
         Download
       </As>
@@ -222,7 +230,7 @@ function DocMenuItems({
         </As>
       )}
       {doc.status === "Private" && (
-        <As className="gap-2">
+        <As onClick={onDownload} className="gap-2">
           <HugeiconsIcon icon={LinkSquare01Icon} className="size-3.5" strokeWidth={1.5} />
           Get Link
         </As>
@@ -237,7 +245,7 @@ function DocMenuItems({
         Move to
       </As>
       <Sep />
-      <As variant="destructive" className="gap-2">
+      <As onClick={onDelete} variant="destructive" className="gap-2">
         <HugeiconsIcon icon={Delete01Icon} className="size-3.5" strokeWidth={1.5} />
         Delete
       </As>
@@ -252,11 +260,15 @@ function DocCard({
   isSelected,
   onClick,
   onShare,
+  onDownload,
+  onDelete,
 }: {
   doc: DocItem
   isSelected: boolean
   onClick: () => void
   onShare: () => void
+  onDownload: () => void
+  onDelete: () => void
 }) {
   const v = TYPE_VISUAL[doc.docType]
   return (
@@ -291,7 +303,7 @@ function DocCard({
               <DropdownMenu>
                 <KebabTrigger className="bg-background/80 backdrop-blur-sm" />
                 <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                  <DocMenuItems as={DropdownMenuItem} Sep={DropdownMenuSeparator} doc={doc} onPreview={onClick} onShare={onShare} />
+                  <DocMenuItems as={DropdownMenuItem} Sep={DropdownMenuSeparator} doc={doc} onPreview={onClick} onShare={onShare} onDownload={onDownload} onDelete={onDelete} />
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -316,7 +328,7 @@ function DocCard({
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <DocMenuItems as={ContextMenuItem} Sep={ContextMenuSeparator} doc={doc} onPreview={onClick} onShare={onShare} />
+        <DocMenuItems as={ContextMenuItem} Sep={ContextMenuSeparator} doc={doc} onPreview={onClick} onShare={onShare} onDownload={onDownload} onDelete={onDelete} />
       </ContextMenuContent>
     </ContextMenu>
   )
@@ -330,12 +342,16 @@ function DocListRow({
   onClick,
   showBorder,
   onShare,
+  onDownload,
+  onDelete,
 }: {
   doc: DocItem
   isSelected: boolean
   onClick: () => void
   showBorder: boolean
   onShare: () => void
+  onDownload: () => void
+  onDelete: () => void
 }) {
   const v = TYPE_VISUAL[doc.docType]
   return (
@@ -389,13 +405,13 @@ function DocListRow({
           <DropdownMenu>
             <KebabTrigger />
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-              <DocMenuItems as={DropdownMenuItem} Sep={DropdownMenuSeparator} doc={doc} onPreview={onClick} onShare={onShare} />
+              <DocMenuItems as={DropdownMenuItem} Sep={DropdownMenuSeparator} doc={doc} onPreview={onClick} onShare={onShare} onDownload={onDownload} onDelete={onDelete} />
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <DocMenuItems as={ContextMenuItem} Sep={ContextMenuSeparator} doc={doc} onPreview={onClick} onShare={onShare} />
+        <DocMenuItems as={ContextMenuItem} Sep={ContextMenuSeparator} doc={doc} onPreview={onClick} onShare={onShare} onDownload={onDownload} onDelete={onDelete} />
       </ContextMenuContent>
     </ContextMenu>
   )
@@ -404,22 +420,81 @@ function DocListRow({
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function DocumentsPage() {
+  const { currentWorkspace } = useWorkspace()
+  const workspaceId = currentWorkspace?.id
+
+  const deleteFileMutation = useDeleteFile(workspaceId)
+  const downloadFileMutation = useDownloadFile(workspaceId)
+
   const [filter, setFilter]           = useState<DocFilter>("All")
   const [sort, setSort]               = useState<SortKey>("recent")
   const [viewMode, setViewMode]       = useState<"grid" | "list">("list")
   const [searchQuery, setSearchQuery] = useState("")
+  const [page, setPage]               = useState(1)
   const [selectedDoc, setSelectedDoc] = useState<DocItem | null>(null)
   const [uploadOpen, setUploadOpen]   = useState(false)
   const [shareFileName, setShareFileName] = useState<string | null>(null)
+  const [shareFileId, setShareFileId]     = useState<string | null>(null)
 
-  const visible      = applyFilterSort(DOCUMENTS, filter, sort, searchQuery)
+  const sortQuery =
+    sort === "oldest"
+      ? { sortBy: "createdAt" as const, sortDir: "asc" as const }
+      : sort === "name-az"
+        ? { sortBy: "name" as const, sortDir: "asc" as const }
+        : sort === "name-za"
+          ? { sortBy: "name" as const, sortDir: "desc" as const }
+          : sort === "size-desc"
+            ? { sortBy: "size" as const, sortDir: "desc" as const }
+            : sort === "size-asc"
+              ? { sortBy: "size" as const, sortDir: "asc" as const }
+              : { sortBy: "updatedAt" as const, sortDir: "desc" as const }
+
+  const { data: filesData, isLoading } = useFiles(workspaceId, {
+    kind: "document",
+    includeNested: true,
+    search: searchQuery || undefined,
+    page,
+    limit: PAGE_SIZE,
+    ...sortQuery,
+  })
+
+  const allDocs = useMemo(() => {
+    if (!filesData?.files) return [] as DocItem[]
+    return filesData.files.map((f): DocItem => ({
+      id: f.id,
+      name: f.name,
+      extension: f.extension?.replace(".", "") || "pdf",
+      docType: getDocType(f.mimeType, f.extension),
+      size: formatFileSize(f.size),
+      sizeBytes: f.size,
+      folder: getStorageFolderLabel(f.storagePath),
+      uploadedAt: formatDate(f.createdAt),
+      lastModified: formatDate(f.updatedAt),
+      uploadedMs: new Date(f.createdAt).getTime(),
+      status: "Private" as const,
+      owner: f.uploadedBy?.name ?? "Unknown",
+      storagePath: f.storagePath,
+    }))
+  }, [filesData])
+
+  const visible      = applyFilterSort(allDocs, filter, sort, searchQuery)
   const isDetailOpen = selectedDoc !== null
+  const total = filesData?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+
+  useEffect(() => {
+    setPage(1)
+  }, [currentWorkspace?.id, filter, sort, searchQuery])
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages)
+  }, [page, totalPages])
 
   const handleDocClick = (doc: DocItem) =>
     setSelectedDoc((prev) => (prev?.id === doc.id ? null : doc))
 
   const typeCounts = (DOC_FILTERS.slice(1) as DocType[]).reduce<Record<string, number>>(
-    (acc, t) => ({ ...acc, [t]: DOCUMENTS.filter((d) => d.docType === t).length }),
+    (acc, t) => ({ ...acc, [t]: allDocs.filter((d) => d.docType === t).length }),
     {},
   )
 
@@ -434,7 +509,7 @@ export default function DocumentsPage() {
           <div>
             <h1 className="text-xl font-semibold tracking-tight">Documents</h1>
             <p className="mt-1 text-xs text-muted-foreground">
-              {DOCUMENTS.length} documents &middot; {DOCUMENTS.filter((d) => d.status === "Shared").length} shared
+              {isLoading ? "Loading..." : `${total} documents · Page ${page} of ${totalPages}`}
             </p>
           </div>
           <Button size="sm" onClick={() => setUploadOpen(true)}>
@@ -516,8 +591,15 @@ export default function DocumentsPage() {
           </div>
         </div>
 
+        {/* ── Loading state ── */}
+        {isLoading && allDocs.length === 0 && (
+          <div className="flex h-52 items-center justify-center">
+            <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        )}
+
         {/* ── Empty state ── */}
-        {visible.length === 0 && (
+        {!isLoading && visible.length === 0 && (
           <div className="flex h-52 flex-col items-center justify-center gap-2 rounded-xl border border-dashed">
             <HugeiconsIcon icon={LegalDocument01Icon} className="size-9 text-muted-foreground/30" strokeWidth={1} />
             <p className="text-sm font-medium text-muted-foreground">No documents found</p>
@@ -536,7 +618,9 @@ export default function DocumentsPage() {
                 doc={doc}
                 isSelected={selectedDoc?.id === doc.id}
                 onClick={() => handleDocClick(doc)}
-                onShare={() => setShareFileName(doc.name)}
+                onShare={() => { setShareFileName(doc.name); setShareFileId(doc.id) }}
+                onDownload={() => downloadFileMutation.mutate(doc.id)}
+                onDelete={() => { if (confirm(`Delete "${doc.name}"?`)) { deleteFileMutation.mutate(doc.id); if (selectedDoc?.id === doc.id) setSelectedDoc(null) } }}
               />
             ))}
           </div>
@@ -566,9 +650,27 @@ export default function DocumentsPage() {
                 isSelected={selectedDoc?.id === doc.id}
                 onClick={() => handleDocClick(doc)}
                 showBorder={i > 0}
-                onShare={() => setShareFileName(doc.name)}
+                onShare={() => { setShareFileName(doc.name); setShareFileId(doc.id) }}
+                onDownload={() => downloadFileMutation.mutate(doc.id)}
+                onDelete={() => { if (confirm(`Delete "${doc.name}"?`)) { deleteFileMutation.mutate(doc.id); if (selectedDoc?.id === doc.id) setSelectedDoc(null) } }}
               />
             ))}
+          </div>
+        )}
+
+        {total > 0 && (
+          <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-muted-foreground">
+              Showing {visible.length} document{visible.length !== 1 ? "s" : ""} on page {page} of {totalPages}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>
+                Previous
+              </Button>
+              <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => setPage((current) => current + 1)}>
+                Next
+              </Button>
+            </div>
           </div>
         )}
       </div>
@@ -584,8 +686,9 @@ export default function DocumentsPage() {
       <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} />
       <CreateShareLinkDialog
         open={shareFileName !== null}
-        onOpenChange={(open) => { if (!open) setShareFileName(null) }}
-        defaultFileName={shareFileName ?? undefined}
+        onOpenChange={(open) => { if (!open) { setShareFileName(null); setShareFileId(null) } }}
+        defaultName={shareFileName ?? undefined}
+        fileId={shareFileId ?? undefined}
       />
     </>
   )

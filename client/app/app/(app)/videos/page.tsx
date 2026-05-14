@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useMemo, useEffect } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Video01Icon,
@@ -47,6 +47,10 @@ import { SearchInput } from "@/components/shared/search-input"
 import { ViewToggle } from "@/components/shared/view-toggle"
 import { KebabTrigger } from "@/components/shared/kebab-trigger"
 import { UploadDialog } from "@/components/custom/dashboard/common/upload-dialog"
+import { CreateShareLinkDialog } from "@/components/custom/dashboard/common/create-share-link-dialog"
+import { useWorkspace } from "@/lib/workspace-context"
+import { useFiles, useDeleteFile, useDownloadFile, type ApiFile } from "@/lib/files"
+import { formatFileSize, formatDate, getStorageFolderLabel } from "@/lib/file-utils"
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -78,6 +82,7 @@ const RES_STYLE: Record<Resolution, { badge: string }> = {
   "720p":  { badge: "bg-slate-500/10 text-slate-500"   },
   "480p":  { badge: "bg-muted text-muted-foreground"   },
 }
+const PAGE_SIZE = 24
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 
@@ -146,11 +151,17 @@ function VideoMenuItems({
   Sep,
   video,
   onPreview,
+  onDownload,
+  onDelete,
+  onGetLink,
 }: {
   as: typeof ContextMenuItem | typeof DropdownMenuItem
   Sep: typeof ContextMenuSeparator | typeof DropdownMenuSeparator
   video: VideoItem
   onPreview: () => void
+  onDownload: () => void
+  onDelete: () => void
+  onGetLink?: () => void
 }) {
   return (
     <>
@@ -158,7 +169,7 @@ function VideoMenuItems({
         <HugeiconsIcon icon={EyeIcon} className="size-3.5" strokeWidth={1.5} />
         Preview
       </As>
-      <As className="gap-2">
+      <As onClick={onDownload} className="gap-2">
         <HugeiconsIcon icon={Download01Icon} className="size-3.5" strokeWidth={1.5} />
         Download
       </As>
@@ -173,8 +184,8 @@ function VideoMenuItems({
           Copy Link
         </As>
       )}
-      {video.status === "Private" && (
-        <As className="gap-2">
+      {video.status === "Private" && onGetLink && (
+        <As onClick={onGetLink} className="gap-2">
           <HugeiconsIcon icon={LinkSquare01Icon} className="size-3.5" strokeWidth={1.5} />
           Get Link
         </As>
@@ -189,7 +200,7 @@ function VideoMenuItems({
         Move to
       </As>
       <Sep />
-      <As variant="destructive" className="gap-2">
+      <As onClick={onDelete} variant="destructive" className="gap-2">
         <HugeiconsIcon icon={Delete01Icon} className="size-3.5" strokeWidth={1.5} />
         Delete
       </As>
@@ -202,9 +213,15 @@ function VideoMenuItems({
 function VideoCard({
   video,
   onClick,
+  onDownload,
+  onDelete,
+  onGetLink,
 }: {
   video: VideoItem
   onClick: () => void
+  onDownload: () => void
+  onDelete: () => void
+  onGetLink?: () => void
 }) {
   const resStyle = RES_STYLE[video.resolution]
 
@@ -255,7 +272,7 @@ function VideoCard({
             <DropdownMenu>
               <KebabTrigger className="bg-background/80 backdrop-blur-sm" />
               <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
-                <VideoMenuItems as={DropdownMenuItem} Sep={DropdownMenuSeparator} video={video} onPreview={onClick} />
+                <VideoMenuItems as={DropdownMenuItem} Sep={DropdownMenuSeparator} video={video} onPreview={onClick} onDownload={onDownload} onDelete={onDelete} onGetLink={onGetLink} />
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -274,7 +291,7 @@ function VideoCard({
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <VideoMenuItems as={ContextMenuItem} Sep={ContextMenuSeparator} video={video} onPreview={onClick} />
+        <VideoMenuItems as={ContextMenuItem} Sep={ContextMenuSeparator} video={video} onPreview={onClick} onDownload={onDownload} onDelete={onDelete} onGetLink={onGetLink} />
       </ContextMenuContent>
     </ContextMenu>
   )
@@ -286,10 +303,16 @@ function VideoListRow({
   video,
   showBorder,
   onClick,
+  onDownload,
+  onDelete,
+  onGetLink,
 }: {
   video: VideoItem
   showBorder: boolean
   onClick: () => void
+  onDownload: () => void
+  onDelete: () => void
+  onGetLink?: () => void
 }) {
   const resStyle = RES_STYLE[video.resolution]
 
@@ -339,17 +362,17 @@ function VideoListRow({
             </Badge>
           </div>
 
-          {/* Kebab */}
+{/* Kebab */}
           <DropdownMenu>
             <KebabTrigger />
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-              <VideoMenuItems as={DropdownMenuItem} Sep={DropdownMenuSeparator} video={video} onPreview={onClick} />
+              <VideoMenuItems as={DropdownMenuItem} Sep={DropdownMenuSeparator} video={video} onPreview={onClick} onDownload={onDownload} onDelete={onDelete} onGetLink={onGetLink} />
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <VideoMenuItems as={ContextMenuItem} Sep={ContextMenuSeparator} video={video} onPreview={onClick} />
+        <VideoMenuItems as={ContextMenuItem} Sep={ContextMenuSeparator} video={video} onPreview={onClick} onDownload={onDownload} onDelete={onDelete} onGetLink={onGetLink} />
       </ContextMenuContent>
     </ContextMenu>
   )
@@ -362,11 +385,15 @@ function VideoLightbox({
   allVideos,
   onClose,
   onNavigate,
+  onDownload,
+  onDelete,
 }: {
   video: VideoItem
   allVideos: VideoItem[]
   onClose: () => void
   onNavigate: (v: VideoItem | null) => void
+  onDownload: () => void
+  onDelete: () => void
 }) {
   const idx = allVideos.findIndex((v) => v.id === video.id)
   const hasPrev = idx > 0
@@ -434,22 +461,77 @@ function VideoLightbox({
 const RES_FILTERS: ResFilter[] = ["All", "4K", "1080p", "720p"]
 
 export default function VideosPage() {
+  const { currentWorkspace } = useWorkspace()
+  const workspaceId = currentWorkspace?.id
+
+  const deleteFileMutation = useDeleteFile(workspaceId)
+  const downloadFileMutation = useDownloadFile(workspaceId)
+
   const [filter, setFilter]           = useState<ResFilter>("All")
   const [sort, setSort]               = useState<SortKey>("newest")
   const [viewMode, setViewMode]       = useState<"grid" | "list">("grid")
   const [searchQuery, setSearchQuery] = useState("")
+  const [page, setPage]               = useState(1)
   const [lightbox, setLightbox]       = useState<VideoItem | null>(null)
   const [uploadOpen, setUploadOpen]   = useState(false)
+  const [shareItemId, setShareItemId]   = useState<string | null>(null)
+  const [shareItemName, setShareItemName] = useState<string | null>(null)
 
-  const visible     = applyFilterSort(VIDEOS, filter, sort, searchQuery)
+  const sortQuery =
+    sort === "oldest"
+      ? { sortBy: "createdAt" as const, sortDir: "asc" as const }
+      : sort === "name-az"
+        ? { sortBy: "name" as const, sortDir: "asc" as const }
+        : sort === "name-za"
+          ? { sortBy: "name" as const, sortDir: "desc" as const }
+          : sort === "size-asc"
+            ? { sortBy: "size" as const, sortDir: "asc" as const }
+            : sort === "size-desc"
+              ? { sortBy: "size" as const, sortDir: "desc" as const }
+              : { sortBy: "createdAt" as const, sortDir: "desc" as const }
+
+  const { data: filesData, isLoading } = useFiles(workspaceId, {
+    kind: "video",
+    includeNested: true,
+    search: searchQuery || undefined,
+    page,
+    limit: PAGE_SIZE,
+    ...sortQuery,
+  })
+
+  const allVideos = useMemo(() => {
+    if (!filesData?.files) return [] as VideoItem[]
+    return filesData.files.map((f): VideoItem => ({
+      id: f.id,
+      name: f.name,
+      extension: f.extension?.replace(".", "") || "mp4",
+      resolution: "1080p" as Resolution,
+      duration: "--:--",
+      durationSecs: 0,
+      size: formatFileSize(f.size),
+      sizeBytes: f.size,
+      folder: getStorageFolderLabel(f.storagePath),
+      uploadedAt: formatDate(f.createdAt),
+      uploadedMs: new Date(f.createdAt).getTime(),
+      status: "Private" as const,
+    }))
+  }, [filesData])
+
+  const visible     = applyFilterSort(allVideos, filter, sort, searchQuery)
   const activeSort  = SORT_OPTIONS.find((s) => s.key === sort)!
+  const total = filesData?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
-  const totalDuration = VIDEOS.reduce((acc, v) => acc + v.durationSecs, 0)
-  const totalHours    = Math.floor(totalDuration / 3600)
-  const totalMins     = Math.floor((totalDuration % 3600) / 60)
+  useEffect(() => {
+    setPage(1)
+  }, [currentWorkspace?.id, filter, sort, searchQuery])
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages)
+  }, [page, totalPages])
 
   const resCounts = (["4K", "1080p", "720p"] as Resolution[]).reduce<Record<string, number>>(
-    (acc, r) => ({ ...acc, [r]: VIDEOS.filter((v) => v.resolution === r).length }),
+    (acc, r) => ({ ...acc, [r]: allVideos.filter((v) => v.resolution === r).length }),
     {},
   )
 
@@ -465,7 +547,7 @@ export default function VideosPage() {
           <div>
             <h1 className="text-xl font-semibold tracking-tight">Videos</h1>
             <p className="mt-1 text-xs text-muted-foreground">
-              {VIDEOS.length} videos &middot; {totalHours}h {totalMins}m total &middot; {VIDEOS.filter((v) => v.status === "Shared").length} shared
+              {isLoading ? "Loading..." : `${total} videos · Page ${page} of ${totalPages}`}
             </p>
           </div>
           <Button size="sm" onClick={() => setUploadOpen(true)}>
@@ -548,8 +630,15 @@ export default function VideosPage() {
           </div>
         </div>
 
+        {/* ── Loading state ── */}
+        {isLoading && allVideos.length === 0 && (
+          <div className="flex h-52 items-center justify-center">
+            <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        )}
+
         {/* ── Empty state ── */}
-        {visible.length === 0 && (
+        {!isLoading && visible.length === 0 && (
           <div className="flex h-52 flex-col items-center justify-center gap-2 rounded-xl border border-dashed">
             <HugeiconsIcon icon={Video01Icon} className="size-9 text-muted-foreground/30" strokeWidth={1} />
             <p className="text-sm font-medium text-muted-foreground">No videos found</p>
@@ -561,7 +650,14 @@ export default function VideosPage() {
         {visible.length > 0 && viewMode === "grid" && (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
             {visible.map((video) => (
-              <VideoCard key={video.id} video={video} onClick={() => openLightbox(video)} />
+              <VideoCard
+                key={video.id}
+                video={video}
+                onClick={() => openLightbox(video)}
+                onDownload={() => downloadFileMutation.mutate(video.id)}
+                onDelete={() => { if (confirm(`Delete "${video.name}"?`)) deleteFileMutation.mutate(video.id) }}
+                onGetLink={() => { setShareItemId(video.id); setShareItemName(video.name) }}
+              />
             ))}
           </div>
         )}
@@ -588,8 +684,27 @@ export default function VideosPage() {
                 video={video}
                 showBorder={i > 0}
                 onClick={() => openLightbox(video)}
+                onDownload={() => downloadFileMutation.mutate(video.id)}
+                onDelete={() => { if (confirm(`Delete "${video.name}"?`)) deleteFileMutation.mutate(video.id) }}
+                onGetLink={() => { setShareItemId(video.id); setShareItemName(video.name) }}
               />
             ))}
+          </div>
+        )}
+
+        {total > 0 && (
+          <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-muted-foreground">
+              Showing {visible.length} video{visible.length !== 1 ? "s" : ""} on page {page} of {totalPages}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>
+                Previous
+              </Button>
+              <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => setPage((current) => current + 1)}>
+                Next
+              </Button>
+            </div>
           </div>
         )}
       </div>
@@ -600,10 +715,19 @@ export default function VideosPage() {
           allVideos={visible}
           onClose={closeLightbox}
           onNavigate={setLightbox}
+          onDownload={() => { downloadFileMutation.mutate(lightbox.id); closeLightbox() }}
+          onDelete={() => { if (confirm(`Delete "${lightbox.name}"?`)) { deleteFileMutation.mutate(lightbox.id); closeLightbox() } }}
         />
       )}
 
       <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} />
+
+      <CreateShareLinkDialog
+        open={shareItemId !== null}
+        onOpenChange={(open) => { if (!open) { setShareItemId(null); setShareItemName(null) } }}
+        defaultName={shareItemName ?? undefined}
+        fileId={shareItemId ?? undefined}
+      />
     </>
   )
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useMemo, useEffect } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   CloudUploadIcon,
@@ -41,11 +41,13 @@ import { SearchInput } from "@/components/shared/search-input"
 import { ViewToggle } from "@/components/shared/view-toggle"
 import { UploadDialog } from "@/components/custom/dashboard/common/upload-dialog"
 import { CreateShareLinkDialog } from "@/components/custom/dashboard/common/create-share-link-dialog"
+import { useWorkspace } from "@/lib/workspace-context"
+import { useFiles, useDeleteFile, useDownloadFile, type ApiFile } from "@/lib/files"
+import { formatFileSize, formatDate, getAspectRatio, getMediaType, getStorageFolderLabel } from "@/lib/file-utils"
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 type MediaType   = "Image" | "Video"
-type StatusType  = "Private" | "Shared"
 type AspectRatio = "square" | "landscape" | "portrait" | "wide"
 type MediaFilter = "All" | "Images" | "Videos"
 type SortBy      = "newest" | "oldest" | "name" | "size"
@@ -58,31 +60,12 @@ interface GalleryItem {
   sizeBytes: number
   uploadedAt: string
   uploadedMs: number
-  status: StatusType
+  status: "Private" | "Shared"
   folder: string
   shareLink?: string
   aspect: AspectRatio
+  previewUrl?: string
 }
-
-// ─── Data ──────────────────────────────────────────────────────────────────────
-
-const ITEMS: GalleryItem[] = [
-  { id: "g1",  name: "hero-banner.png",      type: "Image", size: "1.1 MB",  sizeBytes: 1_100_000, uploadedAt: "May 8, 2026",  uploadedMs: 1746662400000, status: "Private", folder: "Projects / Assets",                aspect: "wide"      },
-  { id: "g2",  name: "project-demo.mp4",     type: "Video", size: "42 MB",   sizeBytes: 42_000_000, uploadedAt: "May 10, 2026", uploadedMs: 1746835200000, status: "Private", folder: "Projects / Videos",               aspect: "landscape" },
-  { id: "g3",  name: "profile-photo.jpg",    type: "Image", size: "840 KB",  sizeBytes: 860_000,   uploadedAt: "May 7, 2026",  uploadedMs: 1746576000000, status: "Shared",  folder: "Personal / Photos",               aspect: "portrait",  shareLink: "https://byoc.app/share/photo-xyz789" },
-  { id: "g4",  name: "logo-design.png",      type: "Image", size: "280 KB",  sizeBytes: 287_000,   uploadedAt: "Apr 20, 2026", uploadedMs: 1745107200000, status: "Private", folder: "Projects / Assets",               aspect: "square"    },
-  { id: "g5",  name: "intro-clip.mp4",       type: "Video", size: "61 MB",   sizeBytes: 61_000_000, uploadedAt: "Apr 28, 2026", uploadedMs: 1745798400000, status: "Shared",  folder: "Projects / Videos",               aspect: "landscape", shareLink: "https://byoc.app/share/intro-def456" },
-  { id: "g6",  name: "thumbnail.jpg",        type: "Image", size: "420 KB",  sizeBytes: 430_000,   uploadedAt: "Apr 15, 2026", uploadedMs: 1744675200000, status: "Private", folder: "Projects / Assets",               aspect: "landscape" },
-  { id: "g7",  name: "team-photo.png",       type: "Image", size: "2.4 MB",  sizeBytes: 2_400_000, uploadedAt: "Apr 10, 2026", uploadedMs: 1744243200000, status: "Shared",  folder: "Personal / Photos",               aspect: "landscape", shareLink: "https://byoc.app/share/team-abc" },
-  { id: "g8",  name: "raw-recording.mp4",    type: "Video", size: "210 MB",  sizeBytes: 210_000_000, uploadedAt: "May 8, 2026", uploadedMs: 1746662400001, status: "Private", folder: "Projects / Videos / Raw Footage", aspect: "landscape" },
-  { id: "g9",  name: "product-shot.jpg",     type: "Image", size: "1.8 MB",  sizeBytes: 1_800_000, uploadedAt: "Mar 22, 2026", uploadedMs: 1742601600000, status: "Private", folder: "Projects / Assets",               aspect: "square"    },
-  { id: "g10", name: "presentation.mp4",     type: "Video", size: "95 MB",   sizeBytes: 95_000_000, uploadedAt: "Mar 15, 2026", uploadedMs: 1741996800000, status: "Shared",  folder: "Projects / Videos",               aspect: "landscape", shareLink: "https://byoc.app/share/pres-ghi" },
-  { id: "g11", name: "icon-set.png",         type: "Image", size: "340 KB",  sizeBytes: 348_000,   uploadedAt: "Feb 28, 2026", uploadedMs: 1740700800000, status: "Private", folder: "Projects / Assets",               aspect: "square"    },
-  { id: "g12", name: "background.jpg",       type: "Image", size: "3.2 MB",  sizeBytes: 3_200_000, uploadedAt: "Feb 10, 2026", uploadedMs: 1739145600000, status: "Private", folder: "Projects / Assets",               aspect: "wide"      },
-  { id: "g13", name: "event-highlight.mp4",  type: "Video", size: "78 MB",   sizeBytes: 78_000_000, uploadedAt: "Jan 30, 2026", uploadedMs: 1738195200000, status: "Private", folder: "Projects / Videos",               aspect: "landscape" },
-  { id: "g14", name: "avatar.jpg",           type: "Image", size: "190 KB",  sizeBytes: 195_000,   uploadedAt: "Jan 22, 2026", uploadedMs: 1737504000000, status: "Shared",  folder: "Personal / Photos",               aspect: "square",   shareLink: "https://byoc.app/share/avatar-jkl" },
-  { id: "g15", name: "cover-art.png",        type: "Image", size: "920 KB",  sizeBytes: 942_000,   uploadedAt: "Jan 10, 2026", uploadedMs: 1736467200000, status: "Private", folder: "Projects / Assets",               aspect: "portrait"  },
-]
 
 // ─── Visuals ───────────────────────────────────────────────────────────────────
 
@@ -104,18 +87,24 @@ const ASPECT_CLASSES: Record<AspectRatio, string> = {
 }
 
 const MEDIA_FILTERS: MediaFilter[] = ["All", "Images", "Videos"]
+const PAGE_SIZE = 24
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
-function filterItems(items: GalleryItem[], filter: MediaFilter, query: string): GalleryItem[] {
-  return items.filter((item) => {
-    const matchesType =
-      filter === "All" ||
-      (filter === "Images" && item.type === "Image") ||
-      (filter === "Videos" && item.type === "Video")
-    const matchesQuery = item.name.toLowerCase().includes(query.toLowerCase())
-    return matchesType && matchesQuery
-  })
+function apiFileToGalleryItem(file: ApiFile): GalleryItem {
+  const type = getMediaType(file.kind, file.mimeType)
+  return {
+    id: file.id,
+    name: file.name,
+    type,
+    size: formatFileSize(file.size),
+    sizeBytes: file.size,
+    uploadedAt: formatDate(file.createdAt),
+    uploadedMs: new Date(file.createdAt).getTime(),
+    status: "Private",
+    folder: getStorageFolderLabel(file.storagePath),
+    aspect: getAspectRatio(file.mimeType),
+  }
 }
 
 function sortItems(items: GalleryItem[], sort: SortBy): GalleryItem[] {
@@ -136,12 +125,18 @@ function Lightbox({
   onClose,
   onNavigate,
   onShare,
+  onDownload,
+  onDelete,
+  onGetLink,
 }: {
   item: GalleryItem
   allItems: GalleryItem[]
   onClose: () => void
   onNavigate: (item: GalleryItem) => void
   onShare: () => void
+  onDownload: () => void
+  onDelete: () => void
+  onGetLink?: () => void
 }) {
   const visual  = TYPE_VISUAL[item.type]
   const idx     = allItems.findIndex((i) => i.id === item.id)
@@ -266,7 +261,7 @@ function Lightbox({
 
           {/* Actions */}
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" onClick={onDownload}>
               <HugeiconsIcon icon={Download01Icon} className="size-3.5" strokeWidth={1.5} />
               Download
             </Button>
@@ -274,13 +269,13 @@ function Lightbox({
               <HugeiconsIcon icon={Share01Icon} className="size-3.5" strokeWidth={1.5} />
               {item.status === "Shared" ? "Manage Link" : "Share"}
             </Button>
-            {item.status === "Private" && (
-              <Button size="sm" variant="outline">
+            {item.status === "Private" && onGetLink && (
+              <Button size="sm" variant="outline" onClick={onGetLink}>
                 <HugeiconsIcon icon={LinkSquare01Icon} className="size-3.5" strokeWidth={1.5} />
                 Get Link
               </Button>
             )}
-            <Button size="sm" variant="destructive" className="ml-auto">
+            <Button size="sm" variant="destructive" className="ml-auto" onClick={onDelete}>
               <HugeiconsIcon icon={Delete01Icon} className="size-3.5" strokeWidth={1.5} />
               Delete
             </Button>
@@ -397,18 +392,55 @@ function GalleryCard({
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function GalleryPage() {
+  const { currentWorkspace } = useWorkspace()
+  const workspaceId = currentWorkspace?.id
+
+  const deleteFileMutation = useDeleteFile(workspaceId)
+  const downloadFileMutation = useDownloadFile(workspaceId)
+
   const [filter, setFilter]       = useState<MediaFilter>("All")
   const [sort, setSort]           = useState<SortBy>("newest")
   const [search, setSearch]       = useState("")
+  const [page, setPage]           = useState(1)
   const [viewMode, setViewMode]   = useState<"grid" | "list">("grid")
   const [lightbox,   setLightbox]   = useState<GalleryItem | null>(null)
   const [shareItem,  setShareItem]  = useState<GalleryItem | null>(null)
   const [uploadOpen, setUploadOpen] = useState(false)
 
-  const processed = sortItems(filterItems(ITEMS, filter, search), sort)
+  const requestedKind =
+    filter === "All" ? "media" : filter === "Images" ? "image" : "video"
+  const sortQuery =
+    sort === "oldest"
+      ? { sortBy: "createdAt" as const, sortDir: "asc" as const }
+      : sort === "name"
+        ? { sortBy: "name" as const, sortDir: "asc" as const }
+        : sort === "size"
+          ? { sortBy: "size" as const, sortDir: "desc" as const }
+          : { sortBy: "createdAt" as const, sortDir: "desc" as const }
 
-  const imageCount = ITEMS.filter((i) => i.type === "Image").length
-  const videoCount = ITEMS.filter((i) => i.type === "Video").length
+  const { data: mediaData, isLoading } = useFiles(currentWorkspace?.id, {
+    kind: requestedKind,
+    includeNested: true,
+    search: search || undefined,
+    page,
+    limit: PAGE_SIZE,
+    ...sortQuery,
+  })
+
+  useEffect(() => {
+    setPage(1)
+  }, [currentWorkspace?.id, filter, sort, search])
+
+  const processed = useMemo(
+    () => sortItems((mediaData?.files ?? []).map(apiFileToGalleryItem), sort),
+    [mediaData, sort],
+  )
+  const total = mediaData?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages)
+  }, [page, totalPages])
 
   const openLightbox = useCallback((item: GalleryItem) => setLightbox(item), [])
   const closeLightbox = useCallback(() => setLightbox(null), [])
@@ -422,7 +454,7 @@ export default function GalleryPage() {
           <div>
             <h1 className="text-xl font-semibold tracking-tight">Gallery</h1>
             <p className="mt-1 text-xs text-muted-foreground">
-              {imageCount} image{imageCount !== 1 ? "s" : ""} · {videoCount} video{videoCount !== 1 ? "s" : ""}
+              {isLoading ? "Loading..." : `${total} ${filter === "All" ? "media files" : filter.toLowerCase()} · Page ${page} of ${totalPages}`}
             </p>
           </div>
           <Button size="sm" onClick={() => setUploadOpen(true)}>
@@ -469,8 +501,15 @@ export default function GalleryPage() {
           <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
         </div>
 
+        {/* ── Loading state ── */}
+        {isLoading && processed.length === 0 && (
+          <div className="flex h-52 items-center justify-center">
+            <div className="size-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          </div>
+        )}
+
         {/* ── Empty state ── */}
-        {processed.length === 0 && (
+        {!isLoading && processed.length === 0 && (
           <div className="flex h-52 flex-col items-center justify-center gap-2 rounded-xl border border-dashed">
             <HugeiconsIcon icon={Image01Icon} className="size-9 text-muted-foreground/30" strokeWidth={1} />
             <p className="text-sm font-medium text-muted-foreground">No media found</p>
@@ -499,23 +538,43 @@ export default function GalleryPage() {
           </div>
         )}
 
+        {total > 0 && (
+          <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-muted-foreground">
+              Showing {processed.length} item{processed.length !== 1 ? "s" : ""} on page {page} of {totalPages}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>
+                Previous
+              </Button>
+              <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => setPage((current) => current + 1)}>
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* ── Lightbox ── */}
-      {lightbox && (
+{lightbox && (
         <Lightbox
           item={lightbox}
           allItems={processed}
           onClose={closeLightbox}
           onNavigate={setLightbox}
           onShare={() => { setShareItem(lightbox); closeLightbox() }}
+          onDownload={() => { downloadFileMutation.mutate(lightbox.id); closeLightbox() }}
+          onDelete={() => { if (confirm(`Delete "${lightbox.name}"?`)) { deleteFileMutation.mutate(lightbox.id); closeLightbox() } }}
+          onGetLink={() => { setShareItem(lightbox); closeLightbox() }}
         />
       )}
 
       <CreateShareLinkDialog
         open={shareItem !== null}
         onOpenChange={(open) => { if (!open) setShareItem(null) }}
-        defaultFileName={shareItem?.name}
+        defaultName={shareItem?.name}
+        fileId={shareItem?.id}
       />
 
       <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} />
