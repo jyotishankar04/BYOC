@@ -39,6 +39,7 @@ export function Logo({
       height={variant === "icon" ? 36 : 36}
       className={cn("h-auto", variant === "icon" ? "w-9" : "w-[140px]", className)}
       priority
+      suppressHydrationWarning
     />
   )
 
