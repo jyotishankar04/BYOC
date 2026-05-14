@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useQuery, useMutation } from "@tanstack/react-query"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -27,6 +27,9 @@ import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 import api from "@/lib/axios"
 import { useSubscriptionSnapshot } from "@/lib/subscription"
+import { useWorkspace } from "@/lib/workspace-context"
+import { useDashboard } from "@/lib/analytics"
+import { formatFileSize } from "@/lib/file-utils"
 import { toast } from "sonner"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -75,47 +78,68 @@ const PLAN_FEATURES: Record<string, string[]> = {
   ],
 }
 
-const USAGE_ESTIMATES = [
-  {
-    label: "BYOC Platform",
-    sub: "Your current plan — all platform features",
-    used: 0,
-    limit: 0,
-    unit: "",
-    cost: "$0.00",
-    costLabel: "Free forever",
-    iconColor: "text-primary",
-    iconBg: "bg-primary/10",
-    icon: CreditCardIcon,
-    showBar: false,
-  },
-  {
-    label: "AWS S3 Storage",
-    sub: "byoc-user-storage · ap-south-1",
-    used: 128.4,
-    limit: 500,
-    unit: "GB",
-    cost: "$2.95",
-    costLabel: "~$0.023/GB - S3 Standard",
-    iconColor: "text-amber-600",
-    iconBg: "bg-amber-500/10",
-    icon: CloudServerIcon,
-    showBar: true,
-  },
-  {
-    label: "AWS Data Transfer",
-    sub: "Egress charges from S3 (downloads/shares)",
-    used: 18.2,
-    limit: 100,
-    unit: "GB",
-    cost: "$1.87",
-    costLabel: "~$0.09/GB - first 10 TB",
-    iconColor: "text-amber-600",
-    iconBg: "bg-amber-500/10",
-    icon: HardDriveIcon,
-    showBar: true,
-  },
-]
+function useUsageEstimates() {
+  const { currentWorkspace } = useWorkspace()
+  const { data: dashboard } = useDashboard(currentWorkspace?.id)
+
+  return useMemo(() => {
+    const totalSizeGB = dashboard ? dashboard.totalSize / (1024 * 1024 * 1024) : 0
+    const storageCost = totalSizeGB * 0.023
+    const transferEstimateGB = totalSizeGB * 0.15
+    const transferCost = transferEstimateGB * 0.09
+    const totalCost = storageCost + transferCost
+
+    const providerName = currentWorkspace?.storage?.name ?? "Cloud Storage"
+    const bucketName = currentWorkspace?.storage?.bucket ?? "unknown"
+
+    return {
+      estimates: [
+        {
+          label: "BYOC Platform",
+          sub: `Your current plan — all platform features`,
+          used: 0,
+          limit: 0,
+          unit: "",
+          cost: "$0.00",
+          costLabel: "Free forever",
+          iconColor: "text-primary",
+          iconBg: "bg-primary/10",
+          icon: CreditCardIcon,
+          showBar: false,
+        },
+        {
+          label: `${providerName} Storage`,
+          sub: `${bucketName} · ${currentWorkspace?.storage?.region ?? "unknown"}`,
+          used: Math.round(totalSizeGB * 10) / 10,
+          limit: 500,
+          unit: "GB",
+          cost: `$${storageCost.toFixed(2)}`,
+          costLabel: "~$0.023/GB - Standard",
+          iconColor: "text-amber-600",
+          iconBg: "bg-amber-500/10",
+          icon: CloudServerIcon,
+          showBar: true,
+        },
+        {
+          label: `${providerName} Data Transfer`,
+          sub: "Egress charges from downloads/shares",
+          used: Math.round(transferEstimateGB * 10) / 10,
+          limit: 100,
+          unit: "GB",
+          cost: `$${transferCost.toFixed(2)}`,
+          costLabel: "~$0.09/GB - first 10 TB",
+          iconColor: "text-amber-600",
+          iconBg: "bg-amber-500/10",
+          icon: HardDriveIcon,
+          showBar: true,
+        },
+      ] as const,
+      totalCost,
+      isLoading: false,
+      hasProvider: !!currentWorkspace?.storage?.bucket,
+    }
+  }, [dashboard, currentWorkspace])
+}
 
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
@@ -310,6 +334,7 @@ export default function BillingPage() {
 
   const { subscription, loading: subLoading } = useSubscriptionSnapshot()
   const { data: paidPlans = [], isLoading: plansLoading } = useBillingPlans()
+  const usage = useUsageEstimates()
   const checkout = useCheckout()
   const portal = usePortal()
   const cancel = useCancel()
@@ -575,7 +600,7 @@ export default function BillingPage() {
       <section className="space-y-3">
         <h2 className="text-sm font-semibold">Estimated Monthly Costs</h2>
         <div className="space-y-3">
-          {USAGE_ESTIMATES.map((u) => (
+          {usage.estimates.map((u) => (
             <Card key={u.label}>
               <CardContent className="p-5">
                 <div className="flex items-start gap-3">
@@ -625,9 +650,11 @@ export default function BillingPage() {
           <CardContent className="flex items-center justify-between p-4">
             <div>
               <p className="text-sm font-medium">Total estimated this month</p>
-              <p className="text-[11px] text-muted-foreground">BYOC ($0.00) + AWS ($4.82)</p>
+              <p className="text-[11px] text-muted-foreground">
+                BYOC ($0.00) + Provider estimate
+              </p>
             </div>
-            <p className="text-lg font-bold tracking-tight">$4.82</p>
+            <p className="text-lg font-bold tracking-tight">${usage.totalCost.toFixed(2)}</p>
           </CardContent>
         </Card>
       </section>

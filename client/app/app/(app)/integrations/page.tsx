@@ -709,11 +709,9 @@ export default function IntegrationsPage() {
             </p>
           ) : null}
         </div>
-        <a href="#" className="ml-auto shrink-0">
-          <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs text-blue-600">
-            Docs <HugeiconsIcon icon={ArrowRight01Icon} className="size-3" strokeWidth={2} />
-          </Button>
-        </a>
+        <Button variant="ghost" size="sm" className="ml-auto shrink-0 h-7 gap-1 text-xs text-blue-600" onClick={() => window.open("https://docs.byoc.dev/providers", "_blank")}>
+          Docs <HugeiconsIcon icon={ArrowRight01Icon} className="size-3" strokeWidth={2} />
+        </Button>
       </div>
 
       {/* Connected — real data from workspace */}

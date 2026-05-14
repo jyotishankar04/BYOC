@@ -49,7 +49,7 @@ export function UpgradeTooltip({
               <p>{message}</p>
               <Link
                 href={ctaHref}
-                className="inline-flex items-center gap-1 text-[11px] font-medium text-background/90 underline underline-offset-2"
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-400 underline underline-offset-2"
               >
                 {ctaLabel}
                 <HugeiconsIcon icon={ArrowRight01Icon} className="size-3" strokeWidth={1.8} />

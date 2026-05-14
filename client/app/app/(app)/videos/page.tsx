@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useMemo, useEffect } from "react"
+import { toast } from "sonner"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Video01Icon,
@@ -54,7 +55,7 @@ import { formatFileSize, formatDate, getStorageFolderLabel } from "@/lib/file-ut
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-type Resolution = "4K" | "1080p" | "720p" | "480p"
+type Resolution = "4K" | "1080p" | "720p" | "480p" | "Unknown"
 type ResFilter  = "All" | "4K" | "1080p" | "720p"
 type SortKey    = "newest" | "oldest" | "name-az" | "name-za" | "duration-desc" | "duration-asc" | "size-desc" | "size-asc"
 
@@ -72,6 +73,8 @@ interface VideoItem {
   uploadedMs: number
   status: "Private" | "Shared"
   shareLink?: string
+  downloadUrl?: string
+  previewUrl?: string
 }
 
 // ─── Resolution config ─────────────────────────────────────────────────────────
@@ -81,29 +84,9 @@ const RES_STYLE: Record<Resolution, { badge: string }> = {
   "1080p": { badge: "bg-blue-500/10 text-blue-600"     },
   "720p":  { badge: "bg-slate-500/10 text-slate-500"   },
   "480p":  { badge: "bg-muted text-muted-foreground"   },
+  "Unknown": { badge: "bg-muted text-muted-foreground" },
 }
 const PAGE_SIZE = 24
-
-// ─── Data ──────────────────────────────────────────────────────────────────────
-
-const VIDEOS: VideoItem[] = [
-  { id: "v1",  name: "project-demo.mp4",      extension: "mp4", resolution: "1080p", duration: "4:22",  durationSecs: 262,   size: "42 MB",   sizeBytes: 44_040_192,    folder: "Projects / Videos",               uploadedAt: "May 10, 2026", uploadedMs: 1746835200000, status: "Private" },
-  { id: "v2",  name: "intro-clip.mp4",        extension: "mp4", resolution: "1080p", duration: "1:45",  durationSecs: 105,   size: "61 MB",   sizeBytes: 63_963_136,    folder: "Projects / Videos",               uploadedAt: "Apr 28, 2026", uploadedMs: 1745798400000, status: "Shared",  shareLink: "https://byoc.app/share/intro-def456" },
-  { id: "v3",  name: "raw-recording.mp4",     extension: "mp4", resolution: "4K",    duration: "22:14", durationSecs: 1334,  size: "210 MB",  sizeBytes: 220_200_960,   folder: "Projects / Videos / Raw Footage", uploadedAt: "May 8, 2026",  uploadedMs: 1746662400000, status: "Private" },
-  { id: "v4",  name: "presentation.mp4",      extension: "mp4", resolution: "1080p", duration: "8:33",  durationSecs: 513,   size: "95 MB",   sizeBytes: 99_614_720,    folder: "Projects / Videos",               uploadedAt: "Mar 15, 2026", uploadedMs: 1741996800000, status: "Shared",  shareLink: "https://byoc.app/share/pres-ghi" },
-  { id: "v5",  name: "event-highlight.mp4",   extension: "mp4", resolution: "1080p", duration: "6:12",  durationSecs: 372,   size: "78 MB",   sizeBytes: 81_788_928,    folder: "Projects / Videos",               uploadedAt: "Jan 30, 2026", uploadedMs: 1738195200000, status: "Private" },
-  { id: "v6",  name: "tutorial-part1.mp4",    extension: "mp4", resolution: "720p",  duration: "12:48", durationSecs: 768,   size: "156 MB",  sizeBytes: 163_577_856,   folder: "Tutorials",                       uploadedAt: "Apr 12, 2026", uploadedMs: 1744416000000, status: "Private" },
-  { id: "v7",  name: "tutorial-part2.mp4",    extension: "mp4", resolution: "720p",  duration: "15:22", durationSecs: 922,   size: "198 MB",  sizeBytes: 207_618_048,   folder: "Tutorials",                       uploadedAt: "Apr 12, 2026", uploadedMs: 1744416001000, status: "Private" },
-  { id: "v8",  name: "product-launch.mp4",    extension: "mp4", resolution: "4K",    duration: "3:40",  durationSecs: 220,   size: "380 MB",  sizeBytes: 398_458_880,   folder: "Marketing",                       uploadedAt: "Apr 20, 2026", uploadedMs: 1745107200000, status: "Shared",  shareLink: "https://byoc.app/share/launch-abc" },
-  { id: "v9",  name: "team-meeting.mp4",      extension: "mp4", resolution: "1080p", duration: "45:18", durationSecs: 2718,  size: "1.2 GB",  sizeBytes: 1_288_490_188, folder: "Meetings",                        uploadedAt: "May 5, 2026",  uploadedMs: 1746403200000, status: "Private" },
-  { id: "v10", name: "brand-story.mp4",       extension: "mp4", resolution: "4K",    duration: "2:15",  durationSecs: 135,   size: "520 MB",  sizeBytes: 545_259_520,   folder: "Marketing",                       uploadedAt: "Mar 28, 2026", uploadedMs: 1743120000000, status: "Shared",  shareLink: "https://byoc.app/share/brand-jkl" },
-  { id: "v11", name: "client-demo.mp4",       extension: "mp4", resolution: "1080p", duration: "28:44", durationSecs: 1724,  size: "342 MB",  sizeBytes: 358_612_992,   folder: "Sales",                           uploadedAt: "Apr 5, 2026",  uploadedMs: 1743811200000, status: "Private" },
-  { id: "v12", name: "webinar-q1.mp4",        extension: "mp4", resolution: "720p",  duration: "58:22", durationSecs: 3502,  size: "890 MB",  sizeBytes: 933_232_640,   folder: "Webinars",                        uploadedAt: "Feb 15, 2026", uploadedMs: 1739577600000, status: "Shared",  shareLink: "https://byoc.app/share/webinar-mno" },
-  { id: "v13", name: "short-clip.mp4",        extension: "mp4", resolution: "1080p", duration: "0:45",  durationSecs: 45,    size: "18 MB",   sizeBytes: 18_874_368,    folder: "Social Media",                    uploadedAt: "May 9, 2026",  uploadedMs: 1746748800000, status: "Shared",  shareLink: "https://byoc.app/share/clip-pqr" },
-  { id: "v14", name: "bts-footage.mp4",       extension: "mp4", resolution: "4K",    duration: "11:30", durationSecs: 690,   size: "2.1 GB",  sizeBytes: 2_254_857_830, folder: "Projects / Raw",                  uploadedAt: "Mar 10, 2026", uploadedMs: 1741564800000, status: "Private" },
-  { id: "v15", name: "podcast-episode-1.mp4", extension: "mp4", resolution: "720p",  duration: "32:15", durationSecs: 1935,  size: "445 MB",  sizeBytes: 466_714_624,   folder: "Podcast",                         uploadedAt: "Feb 28, 2026", uploadedMs: 1740700800000, status: "Shared",  shareLink: "https://byoc.app/share/pod-stu" },
-  { id: "v16", name: "onboarding-video.mp4",  extension: "mp4", resolution: "1080p", duration: "7:48",  durationSecs: 468,   size: "112 MB",  sizeBytes: 117_440_512,   folder: "HR",                              uploadedAt: "Mar 20, 2026", uploadedMs: 1742428800000, status: "Shared",  shareLink: "https://byoc.app/share/onboard-vwx" },
-]
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -154,6 +137,9 @@ function VideoMenuItems({
   onDownload,
   onDelete,
   onGetLink,
+  onShare,
+  onRename,
+  onMove,
 }: {
   as: typeof ContextMenuItem | typeof DropdownMenuItem
   Sep: typeof ContextMenuSeparator | typeof DropdownMenuSeparator
@@ -162,6 +148,9 @@ function VideoMenuItems({
   onDownload: () => void
   onDelete: () => void
   onGetLink?: () => void
+  onShare?: () => void
+  onRename?: () => void
+  onMove?: () => void
 }) {
   return (
     <>
@@ -174,12 +163,22 @@ function VideoMenuItems({
         Download
       </As>
       <Sep />
-      <As className="gap-2">
+      <As onClick={onShare} className="gap-2">
         <HugeiconsIcon icon={Share01Icon} className="size-3.5" strokeWidth={1.5} />
         {video.status === "Shared" ? "Manage Link" : "Share"}
       </As>
       {video.status === "Shared" && (
-        <As className="gap-2">
+        <As
+          onClick={() => {
+            if (video.shareLink) {
+              void navigator.clipboard.writeText(video.shareLink)
+              toast.success("Link copied to clipboard")
+            } else {
+              toast.error("Not shared")
+            }
+          }}
+          className="gap-2"
+        >
           <HugeiconsIcon icon={Copy01Icon} className="size-3.5" strokeWidth={1.5} />
           Copy Link
         </As>
@@ -191,11 +190,11 @@ function VideoMenuItems({
         </As>
       )}
       <Sep />
-      <As className="gap-2">
+      <As onClick={onRename} className="gap-2">
         <HugeiconsIcon icon={PencilEdit01Icon} className="size-3.5" strokeWidth={1.5} />
         Rename
       </As>
-      <As className="gap-2">
+      <As onClick={onMove} className="gap-2">
         <HugeiconsIcon icon={MoveIcon} className="size-3.5" strokeWidth={1.5} />
         Move to
       </As>
@@ -216,12 +215,18 @@ function VideoCard({
   onDownload,
   onDelete,
   onGetLink,
+  onShare,
+  onRename,
+  onMove,
 }: {
   video: VideoItem
   onClick: () => void
   onDownload: () => void
   onDelete: () => void
   onGetLink?: () => void
+  onShare?: () => void
+  onRename?: () => void
+  onMove?: () => void
 }) {
   const resStyle = RES_STYLE[video.resolution]
 
@@ -272,7 +277,7 @@ function VideoCard({
             <DropdownMenu>
               <KebabTrigger className="bg-background/80 backdrop-blur-sm" />
               <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
-                <VideoMenuItems as={DropdownMenuItem} Sep={DropdownMenuSeparator} video={video} onPreview={onClick} onDownload={onDownload} onDelete={onDelete} onGetLink={onGetLink} />
+              <VideoMenuItems as={DropdownMenuItem} Sep={DropdownMenuSeparator} video={video} onPreview={onClick} onDownload={onDownload} onDelete={onDelete} onGetLink={onGetLink} onShare={onShare} onRename={onRename} onMove={onMove} />
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -291,7 +296,7 @@ function VideoCard({
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <VideoMenuItems as={ContextMenuItem} Sep={ContextMenuSeparator} video={video} onPreview={onClick} onDownload={onDownload} onDelete={onDelete} onGetLink={onGetLink} />
+        <VideoMenuItems as={ContextMenuItem} Sep={ContextMenuSeparator} video={video} onPreview={onClick} onDownload={onDownload} onDelete={onDelete} onGetLink={onGetLink} onShare={onShare} onRename={onRename} onMove={onMove} />
       </ContextMenuContent>
     </ContextMenu>
   )
@@ -306,6 +311,9 @@ function VideoListRow({
   onDownload,
   onDelete,
   onGetLink,
+  onShare,
+  onRename,
+  onMove,
 }: {
   video: VideoItem
   showBorder: boolean
@@ -313,6 +321,9 @@ function VideoListRow({
   onDownload: () => void
   onDelete: () => void
   onGetLink?: () => void
+  onShare?: () => void
+  onRename?: () => void
+  onMove?: () => void
 }) {
   const resStyle = RES_STYLE[video.resolution]
 
@@ -366,13 +377,13 @@ function VideoListRow({
           <DropdownMenu>
             <KebabTrigger />
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-              <VideoMenuItems as={DropdownMenuItem} Sep={DropdownMenuSeparator} video={video} onPreview={onClick} onDownload={onDownload} onDelete={onDelete} onGetLink={onGetLink} />
+              <VideoMenuItems as={DropdownMenuItem} Sep={DropdownMenuSeparator} video={video} onPreview={onClick} onDownload={onDownload} onDelete={onDelete} onGetLink={onGetLink} onShare={onShare} onRename={onRename} onMove={onMove} />
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <VideoMenuItems as={ContextMenuItem} Sep={ContextMenuSeparator} video={video} onPreview={onClick} onDownload={onDownload} onDelete={onDelete} onGetLink={onGetLink} />
+        <VideoMenuItems as={ContextMenuItem} Sep={ContextMenuSeparator} video={video} onPreview={onClick} onDownload={onDownload} onDelete={onDelete} onGetLink={onGetLink} onShare={onShare} onRename={onRename} onMove={onMove} />
       </ContextMenuContent>
     </ContextMenu>
   )
@@ -406,11 +417,20 @@ function VideoLightbox({
           <HugeiconsIcon icon={Video01Icon} className="size-4 text-blue-500" strokeWidth={1.5} />
           {video.name}
         </DialogTitle>
-        {/* Player placeholder */}
-        <div className="flex aspect-video items-center justify-center rounded-lg bg-gradient-to-br from-blue-500/15 to-blue-600/5">
-          <div className="flex size-16 items-center justify-center rounded-full bg-background/80 shadow-lg">
-            <div className="ml-1.5 size-0 border-y-[12px] border-l-[20px] border-y-transparent border-l-foreground" />
-          </div>
+        {/* Player */}
+        <div className="flex aspect-video items-center justify-center rounded-lg bg-black overflow-hidden">
+          {video.previewUrl || video.downloadUrl ? (
+            <video
+              controls
+              autoPlay
+              className="w-full h-full object-contain"
+              src={video.previewUrl || video.downloadUrl}
+            />
+          ) : (
+            <div className="flex size-16 items-center justify-center rounded-full bg-background/80 shadow-lg">
+              <div className="ml-1.5 size-0 border-y-[12px] border-l-[20px] border-y-transparent border-l-foreground" />
+            </div>
+          )}
         </div>
         {/* Video info */}
         <div className="grid grid-cols-3 gap-3 text-xs">
@@ -505,8 +525,8 @@ export default function VideosPage() {
       id: f.id,
       name: f.name,
       extension: f.extension?.replace(".", "") || "mp4",
-      resolution: "1080p" as Resolution,
-      duration: "--:--",
+      resolution: "Unknown" as Resolution,
+      duration: "Unknown",
       durationSecs: 0,
       size: formatFileSize(f.size),
       sizeBytes: f.size,
@@ -514,6 +534,8 @@ export default function VideosPage() {
       uploadedAt: formatDate(f.createdAt),
       uploadedMs: new Date(f.createdAt).getTime(),
       status: "Private" as const,
+      downloadUrl: (f as unknown as Record<string, unknown>).downloadUrl as string | undefined,
+      previewUrl: (f as unknown as Record<string, unknown>).previewUrl as string | undefined,
     }))
   }, [filesData])
 
@@ -657,6 +679,7 @@ export default function VideosPage() {
                 onDownload={() => downloadFileMutation.mutate(video.id)}
                 onDelete={() => { if (confirm(`Delete "${video.name}"?`)) deleteFileMutation.mutate(video.id) }}
                 onGetLink={() => { setShareItemId(video.id); setShareItemName(video.name) }}
+                onShare={() => { setShareItemId(video.id); setShareItemName(video.name) }}
               />
             ))}
           </div>
@@ -687,6 +710,7 @@ export default function VideosPage() {
                 onDownload={() => downloadFileMutation.mutate(video.id)}
                 onDelete={() => { if (confirm(`Delete "${video.name}"?`)) deleteFileMutation.mutate(video.id) }}
                 onGetLink={() => { setShareItemId(video.id); setShareItemName(video.name) }}
+                onShare={() => { setShareItemId(video.id); setShareItemName(video.name) }}
               />
             ))}
           </div>

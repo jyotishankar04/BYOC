@@ -21,6 +21,7 @@ import {
   FolderOpenIcon,
 } from "@hugeicons/core-free-icons"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 import { ButtonGroup } from "@/components/ui/button-group"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -251,7 +252,7 @@ function Lightbox({
               <div className="flex-1 truncate rounded-md border bg-muted/30 px-2.5 py-1.5">
                 <span className="text-[11px] text-muted-foreground">{item.shareLink}</span>
               </div>
-              <Button size="icon-sm" variant="outline">
+              <Button size="icon-sm" variant="outline" onClick={() => { navigator.clipboard.writeText(item.shareLink ?? ""); toast.success("Copied to clipboard") }}>
                 <HugeiconsIcon icon={Copy01Icon} className="size-3.5" strokeWidth={1.5} />
               </Button>
             </div>

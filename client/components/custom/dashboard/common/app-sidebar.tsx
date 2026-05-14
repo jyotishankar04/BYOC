@@ -41,7 +41,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Logo } from "@/components/logo"
+import { Logo } from "@/components/common/logo"
 import { WorkspaceSwitcher } from "@/components/custom/dashboard/common/workspace-switcher"
 import { useSession, signOut } from "@/lib/auth-client"
 import { featureUpgradeMessage, useSubscriptionSnapshot } from "@/lib/subscription"

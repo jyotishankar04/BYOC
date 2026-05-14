@@ -68,7 +68,7 @@ function CreateWorkspaceDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const { createWorkspace } = useWorkspace()
+  const { createWorkspace, switchWorkspace } = useWorkspace()
   const { subscription, checks, loading } = useSubscriptionSnapshot()
   const router = useRouter()
 
@@ -90,8 +90,8 @@ function CreateWorkspaceDialog({
     const id = await createWorkspace(data)
     onOpenChange(false)
     setName(""); setSlug(""); setType("Personal"); setSlugTouched(false)
+    if (id) switchWorkspace(id)
     router.push(`/app`)
-    void id
   }
 
   return (

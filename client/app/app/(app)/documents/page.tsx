@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
+import { toast } from "sonner"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   LegalDocument01Icon,
@@ -83,28 +84,6 @@ const TYPE_VISUAL: Record<
   Text:   { iconColor: "text-slate-500",   gradFrom: "from-slate-500/15",   gradTo: "to-slate-600/5",   badgeClass: "bg-slate-500/10 text-slate-600",     dot: "bg-slate-500"   },
 }
 const PAGE_SIZE = 20
-
-// ─── Dummy data ────────────────────────────────────────────────────────────────
-
-const DOCUMENTS: DocItem[] = [
-  { id: "1",  name: "invoice-may-2026.pdf",   extension: "pdf",  docType: "PDF",    size: "2.1 MB",  sizeBytes: 2202009,  pages: 3,   folder: "Finance",          uploadedAt: "May 9, 2026",  lastModified: "May 9, 2026",  uploadedMs: 1746748800000, status: "Shared",  owner: "John Doe", storagePath: "finance/invoices/invoice-may-2026.pdf",    shareLink: "https://byoc.app/share/inv-abc123" },
-  { id: "2",  name: "q2-report.docx",         extension: "docx", docType: "Word",   size: "540 KB",  sizeBytes: 552960,   pages: 24,  folder: "Reports",          uploadedAt: "May 5, 2026",  lastModified: "May 6, 2026",  uploadedMs: 1746403200000, status: "Private", owner: "John Doe", storagePath: "reports/2026/q2-report.docx" },
-  { id: "3",  name: "project-proposal.pdf",   extension: "pdf",  docType: "PDF",    size: "1.8 MB",  sizeBytes: 1887437,  pages: 12,  folder: "Projects",         uploadedAt: "May 3, 2026",  lastModified: "May 3, 2026",  uploadedMs: 1746230400000, status: "Private", owner: "John Doe", storagePath: "projects/project-proposal.pdf" },
-  { id: "4",  name: "budget-2026.xlsx",       extension: "xlsx", docType: "Excel",  size: "380 KB",  sizeBytes: 389120,   folder: "Finance",          uploadedAt: "Apr 28, 2026", lastModified: "May 1, 2026",  uploadedMs: 1745798400000, status: "Private", owner: "John Doe", storagePath: "finance/budget-2026.xlsx" },
-  { id: "5",  name: "product-roadmap.pptx",   extension: "pptx", docType: "Slides", size: "5.2 MB",  sizeBytes: 5452595,  pages: 32,  folder: "Projects",         uploadedAt: "Apr 25, 2026", lastModified: "Apr 26, 2026", uploadedMs: 1745539200000, status: "Shared",  owner: "John Doe", storagePath: "projects/product-roadmap.pptx",          shareLink: "https://byoc.app/share/rm-def456" },
-  { id: "6",  name: "meeting-notes.txt",      extension: "txt",  docType: "Text",   size: "12 KB",   sizeBytes: 12288,    folder: "Personal",         uploadedAt: "Apr 22, 2026", lastModified: "Apr 22, 2026", uploadedMs: 1745280000000, status: "Private", owner: "John Doe", storagePath: "personal/meeting-notes.txt" },
-  { id: "7",  name: "tax-return-2025.pdf",    extension: "pdf",  docType: "PDF",    size: "3.7 MB",  sizeBytes: 3881165,  pages: 8,   folder: "Finance",          uploadedAt: "Apr 15, 2026", lastModified: "Apr 15, 2026", uploadedMs: 1744675200000, status: "Private", owner: "John Doe", storagePath: "finance/tax-return-2025.pdf" },
-  { id: "8",  name: "employee-handbook.pdf",  extension: "pdf",  docType: "PDF",    size: "4.1 MB",  sizeBytes: 4299366,  pages: 45,  folder: "HR",               uploadedAt: "Apr 10, 2026", lastModified: "Apr 10, 2026", uploadedMs: 1744243200000, status: "Shared",  owner: "John Doe", storagePath: "hr/employee-handbook.pdf",              shareLink: "https://byoc.app/share/eh-ghi789" },
-  { id: "9",  name: "analytics-report.xlsx",  extension: "xlsx", docType: "Excel",  size: "720 KB",  sizeBytes: 737280,   folder: "Reports",          uploadedAt: "Apr 5, 2026",  lastModified: "Apr 7, 2026",  uploadedMs: 1743811200000, status: "Private", owner: "John Doe", storagePath: "reports/analytics-report.xlsx" },
-  { id: "10", name: "onboarding-slides.pptx", extension: "pptx", docType: "Slides", size: "8.9 MB",  sizeBytes: 9334374,  pages: 48,  folder: "HR",               uploadedAt: "Mar 28, 2026", lastModified: "Mar 30, 2026", uploadedMs: 1743120000000, status: "Shared",  owner: "John Doe", storagePath: "hr/onboarding-slides.pptx",             shareLink: "https://byoc.app/share/os-jkl012" },
-  { id: "11", name: "terms-of-service.pdf",   extension: "pdf",  docType: "PDF",    size: "890 KB",  sizeBytes: 911360,   pages: 18,  folder: "Legal",            uploadedAt: "Mar 20, 2026", lastModified: "Mar 20, 2026", uploadedMs: 1742428800000, status: "Shared",  owner: "John Doe", storagePath: "legal/terms-of-service.pdf",            shareLink: "https://byoc.app/share/tos-mno345" },
-  { id: "12", name: "dev-notes.txt",          extension: "txt",  docType: "Text",   size: "8 KB",    sizeBytes: 8192,     folder: "Projects",         uploadedAt: "Mar 15, 2026", lastModified: "Mar 17, 2026", uploadedMs: 1741996800000, status: "Private", owner: "John Doe", storagePath: "projects/dev-notes.txt" },
-  { id: "13", name: "client-contacts.xlsx",   extension: "xlsx", docType: "Excel",  size: "156 KB",  sizeBytes: 159744,   folder: "Sales",            uploadedAt: "Mar 10, 2026", lastModified: "Mar 12, 2026", uploadedMs: 1741564800000, status: "Private", owner: "John Doe", storagePath: "sales/client-contacts.xlsx" },
-  { id: "14", name: "annual-review.docx",     extension: "docx", docType: "Word",   size: "1.2 MB",  sizeBytes: 1258291,  pages: 36,  folder: "HR",               uploadedAt: "Mar 5, 2026",  lastModified: "Mar 8, 2026",  uploadedMs: 1741132800000, status: "Private", owner: "John Doe", storagePath: "hr/annual-review.docx" },
-  { id: "15", name: "pitch-deck.pptx",        extension: "pptx", docType: "Slides", size: "12 MB",   sizeBytes: 12582912, pages: 22,  folder: "Sales",            uploadedAt: "Feb 28, 2026", lastModified: "Mar 1, 2026",  uploadedMs: 1740700800000, status: "Shared",  owner: "John Doe", storagePath: "sales/pitch-deck.pptx",                shareLink: "https://byoc.app/share/pd-pqr678" },
-  { id: "16", name: "research-notes.docx",    extension: "docx", docType: "Word",   size: "340 KB",  sizeBytes: 348160,   pages: 15,  folder: "Personal / Study", uploadedAt: "Feb 20, 2026", lastModified: "Feb 20, 2026", uploadedMs: 1739836800000, status: "Private", owner: "John Doe", storagePath: "personal/study/research-notes.docx" },
-  { id: "17", name: "invoice-apr-2026.pdf",   extension: "pdf",  docType: "PDF",    size: "1.9 MB",  sizeBytes: 1992294,  pages: 3,   folder: "Finance",          uploadedAt: "Apr 30, 2026", lastModified: "Apr 30, 2026", uploadedMs: 1746057600000, status: "Shared",  owner: "John Doe", storagePath: "finance/invoices/invoice-apr-2026.pdf",   shareLink: "https://byoc.app/share/inv-stu901" },
-]
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -199,6 +178,8 @@ function DocMenuItems({
   onShare,
   onDownload,
   onDelete,
+  onRename,
+  onMove,
 }: {
   as: typeof ContextMenuItem | typeof DropdownMenuItem
   Sep: typeof ContextMenuSeparator | typeof DropdownMenuSeparator
@@ -207,6 +188,8 @@ function DocMenuItems({
   onShare: () => void
   onDownload: () => void
   onDelete: () => void
+  onRename?: () => void
+  onMove?: () => void
 }) {
   return (
     <>
@@ -224,23 +207,33 @@ function DocMenuItems({
         {doc.status === "Shared" ? "Manage Link" : "Share"}
       </As>
       {doc.status === "Shared" && (
-        <As className="gap-2">
+        <As
+          onClick={() => {
+            if (doc.shareLink) {
+              void navigator.clipboard.writeText(doc.shareLink)
+              toast.success("Link copied to clipboard")
+            } else {
+              toast.error("Not shared")
+            }
+          }}
+          className="gap-2"
+        >
           <HugeiconsIcon icon={Copy01Icon} className="size-3.5" strokeWidth={1.5} />
           Copy Link
         </As>
       )}
       {doc.status === "Private" && (
-        <As onClick={onDownload} className="gap-2">
+        <As onClick={onShare} className="gap-2">
           <HugeiconsIcon icon={LinkSquare01Icon} className="size-3.5" strokeWidth={1.5} />
           Get Link
         </As>
       )}
       <Sep />
-      <As className="gap-2">
+      <As onClick={onRename} className="gap-2">
         <HugeiconsIcon icon={PencilEdit01Icon} className="size-3.5" strokeWidth={1.5} />
         Rename
       </As>
-      <As className="gap-2">
+      <As onClick={onMove} className="gap-2">
         <HugeiconsIcon icon={MoveIcon} className="size-3.5" strokeWidth={1.5} />
         Move to
       </As>
@@ -262,6 +255,8 @@ function DocCard({
   onShare,
   onDownload,
   onDelete,
+  onRename,
+  onMove,
 }: {
   doc: DocItem
   isSelected: boolean
@@ -269,6 +264,8 @@ function DocCard({
   onShare: () => void
   onDownload: () => void
   onDelete: () => void
+  onRename?: () => void
+  onMove?: () => void
 }) {
   const v = TYPE_VISUAL[doc.docType]
   return (
@@ -303,7 +300,7 @@ function DocCard({
               <DropdownMenu>
                 <KebabTrigger className="bg-background/80 backdrop-blur-sm" />
                 <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                  <DocMenuItems as={DropdownMenuItem} Sep={DropdownMenuSeparator} doc={doc} onPreview={onClick} onShare={onShare} onDownload={onDownload} onDelete={onDelete} />
+                  <DocMenuItems as={DropdownMenuItem} Sep={DropdownMenuSeparator} doc={doc} onPreview={onClick} onShare={onShare} onDownload={onDownload} onDelete={onDelete} onRename={onRename} onMove={onMove} />
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -328,7 +325,7 @@ function DocCard({
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <DocMenuItems as={ContextMenuItem} Sep={ContextMenuSeparator} doc={doc} onPreview={onClick} onShare={onShare} onDownload={onDownload} onDelete={onDelete} />
+        <DocMenuItems as={ContextMenuItem} Sep={ContextMenuSeparator} doc={doc} onPreview={onClick} onShare={onShare} onDownload={onDownload} onDelete={onDelete} onRename={onRename} onMove={onMove} />
       </ContextMenuContent>
     </ContextMenu>
   )
@@ -344,6 +341,8 @@ function DocListRow({
   onShare,
   onDownload,
   onDelete,
+  onRename,
+  onMove,
 }: {
   doc: DocItem
   isSelected: boolean
@@ -352,6 +351,8 @@ function DocListRow({
   onShare: () => void
   onDownload: () => void
   onDelete: () => void
+  onRename?: () => void
+  onMove?: () => void
 }) {
   const v = TYPE_VISUAL[doc.docType]
   return (
@@ -405,13 +406,13 @@ function DocListRow({
           <DropdownMenu>
             <KebabTrigger />
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-              <DocMenuItems as={DropdownMenuItem} Sep={DropdownMenuSeparator} doc={doc} onPreview={onClick} onShare={onShare} onDownload={onDownload} onDelete={onDelete} />
+              <DocMenuItems as={DropdownMenuItem} Sep={DropdownMenuSeparator} doc={doc} onPreview={onClick} onShare={onShare} onDownload={onDownload} onDelete={onDelete} onRename={onRename} onMove={onMove} />
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <DocMenuItems as={ContextMenuItem} Sep={ContextMenuSeparator} doc={doc} onPreview={onClick} onShare={onShare} onDownload={onDownload} onDelete={onDelete} />
+        <DocMenuItems as={ContextMenuItem} Sep={ContextMenuSeparator} doc={doc} onPreview={onClick} onShare={onShare} onDownload={onDownload} onDelete={onDelete} onRename={onRename} onMove={onMove} />
       </ContextMenuContent>
     </ContextMenu>
   )

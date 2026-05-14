@@ -50,7 +50,7 @@ export default function IntegrationsSection() {
               your bucket — we just make it easier to manage.
             </p>
             <Button variant="outline" size={"lg"} asChild>
-              <Link href="#">Get Started</Link>
+              <Link href="/auth/signup">Get Started</Link>
             </Button>
           </div>
         </div>
@@ -83,9 +83,11 @@ const Integration = ({
           {description}
         </p>
       </div>
-      <Button variant="outline" size="icon" aria-label={`Add ${name} integration`}>
-        <Plus className="size-4" />
-      </Button>
+      <Link href="/auth/signup">
+        <Button variant="outline" size="icon" aria-label={`Add ${name} integration`}>
+          <Plus className="size-4" />
+        </Button>
+      </Link>
     </div>
   )
 }

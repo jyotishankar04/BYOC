@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { GoogleLogo } from "@/components/icons";
-import { Logo } from "@/components/logo";
+import { Logo } from "@/components/common/logo";
 import { signIn } from "@/lib/auth-client";
 import { toast } from "sonner";
 

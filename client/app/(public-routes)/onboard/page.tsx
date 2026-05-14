@@ -15,7 +15,7 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Logo } from "@/components/logo";
+import { Logo } from "@/components/common/logo";
 import { ProviderGuideDialog } from "@/components/custom/provider-guide-dialog";
 import { LockedState } from "@/components/custom/subscription/locked-state";
 import { UpgradeTooltip } from "@/components/custom/subscription/upgrade-tooltip";

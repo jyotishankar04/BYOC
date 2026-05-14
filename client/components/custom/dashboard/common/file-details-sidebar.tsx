@@ -35,6 +35,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -50,9 +51,15 @@ export interface FileItem {
   id: string
   name: string
   type: "Video" | "Image" | "Document" | "Archive"
-  extension: string
+  kind?: "image" | "video" | "document" | "audio" | "archive" | "other"
+  extension: string | null
   size: string
+  sizeBytes?: number
   folder: string
+  folderId?: string | null
+  mimeType?: string | null
+  provider?: string
+  source?: string
   uploadedAt: string
   lastModified: string
   status: "Private" | "Shared"
@@ -90,15 +97,61 @@ const DETAIL_ROWS = (file: FileItem) => [
   { label: "Uploaded",  value: file.uploadedAt,    icon: Calendar01Icon    },
   { label: "Modified",  value: file.lastModified,  icon: Clock01Icon       },
   { label: "Owner",     value: file.owner,         icon: UserCircle02Icon  },
-  { label: "Provider",  value: "AWS S3",           icon: CloudServerIcon   },
+  { label: "Provider",  value: file.provider || file.source || "—", icon: CloudServerIcon },
   { label: "Bucket",    value: file.bucket,        icon: Folder01Icon      },
   { label: "Path",      value: file.storagePath,   icon: Folder01Icon      },
 ]
 
 // ─── Panel Content ─────────────────────────────────────────────────────────────
 
-function PanelContent({ file, onClose }: { file: FileItem; onClose: () => void }) {
+function PanelContent({
+  file,
+  onClose,
+  onPreview,
+  onDownload,
+  onShare,
+  onRename,
+  onDelete,
+}: {
+  file: FileItem
+  onClose: () => void
+  onPreview?: (file: FileItem) => void
+  onDownload?: (file: FileItem) => void
+  onShare?: (file: FileItem) => void
+  onRename?: (file: FileItem) => void
+  onDelete?: (file: FileItem) => void
+}) {
   const meta = TYPE_META[file.type]
+
+  const handleAction = (label: string) => {
+    switch (label) {
+      case "Preview":
+        if (onPreview) { onPreview(file) } else { toast.info("Preview not available") }
+        break
+      case "Download":
+        if (onDownload) { onDownload(file) } else { toast.info("Action coming soon") }
+        break
+      case "Share":
+        if (onShare) { onShare(file) } else { toast.info("Action coming soon") }
+        break
+      case "Rename":
+        if (onRename) { onRename(file) } else { toast.info("Action coming soon") }
+        break
+      case "Delete":
+        if (onDelete) { onDelete(file) } else { toast.info("Action coming soon") }
+        break
+    }
+  }
+
+  const handleCopyLink = () => {
+    if (!file.shareLink) {
+      toast.error("No share link available")
+      return
+    }
+    navigator.clipboard.writeText(file.shareLink)
+      .then(() => toast.success("Link copied"))
+      .catch(() => toast.error("Failed to copy"))
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -146,6 +199,7 @@ function PanelContent({ file, onClose }: { file: FileItem; onClose: () => void }
             {QUICK_ACTIONS.map((action) => (
               <button
                 key={action.label}
+                onClick={() => handleAction(action.label)}
                 className="flex flex-col items-center gap-1.5 rounded-lg px-1 py-2.5 transition-colors hover:bg-accent"
               >
                 <div className="flex size-8 items-center justify-center rounded-md bg-muted">
@@ -213,7 +267,14 @@ function PanelContent({ file, onClose }: { file: FileItem; onClose: () => void }
                   <p className="mt-0.5 text-[11px] text-muted-foreground">Only you can access this file.</p>
                 </div>
               </div>
-              <Button size="sm" variant="outline" className="mt-3 w-full gap-1.5">
+              <Button
+                size="sm"
+                variant="outline"
+                className="mt-3 w-full gap-1.5"
+                onClick={() => {
+                  if (onShare) { onShare(file) } else { toast.info("Action coming soon") }
+                }}
+              >
                 <HugeiconsIcon icon={LinkSquare01Icon} className="size-3.5" strokeWidth={1.5} />
                 Generate Share Link
               </Button>
@@ -231,7 +292,7 @@ function PanelContent({ file, onClose }: { file: FileItem; onClose: () => void }
                 <div className="flex-1 truncate rounded-md border bg-background px-2.5 py-1.5">
                   <span className="text-[11px] text-muted-foreground">{file.shareLink}</span>
                 </div>
-                <Button size="icon-sm" variant="outline">
+                <Button size="icon-sm" variant="outline" onClick={handleCopyLink}>
                   <HugeiconsIcon icon={Copy01Icon} className="size-3.5" strokeWidth={1.5} />
                 </Button>
               </div>
@@ -276,9 +337,23 @@ interface FileDetailsSidebarProps {
   file: FileItem | null
   isOpen: boolean
   onClose: () => void
+  onPreview?: (file: FileItem) => void
+  onDownload?: (file: FileItem) => void
+  onShare?: (file: FileItem) => void
+  onRename?: (file: FileItem) => void
+  onDelete?: (file: FileItem) => void
 }
 
-export function FileDetailsSidebar({ file, isOpen, onClose }: FileDetailsSidebarProps) {
+export function FileDetailsSidebar({
+  file,
+  isOpen,
+  onClose,
+  onPreview,
+  onDownload,
+  onShare,
+  onRename,
+  onDelete,
+}: FileDetailsSidebarProps) {
   const isMobile = useIsMobile()
 
   if (isMobile) {
@@ -288,7 +363,17 @@ export function FileDetailsSidebar({ file, isOpen, onClose }: FileDetailsSidebar
           <SheetHeader className="sr-only">
             <SheetTitle>File Details</SheetTitle>
           </SheetHeader>
-          {file && <PanelContent file={file} onClose={onClose} />}
+          {file && (
+            <PanelContent
+              file={file}
+              onClose={onClose}
+              onPreview={onPreview}
+              onDownload={onDownload}
+              onShare={onShare}
+              onRename={onRename}
+              onDelete={onDelete}
+            />
+          )}
         </SheetContent>
       </Sheet>
     )
@@ -305,7 +390,17 @@ export function FileDetailsSidebar({ file, isOpen, onClose }: FileDetailsSidebar
         isOpen && file ? "translate-x-0" : "translate-x-full",
       )}
     >
-      {file && <PanelContent file={file} onClose={onClose} />}
+      {file && (
+        <PanelContent
+          file={file}
+          onClose={onClose}
+          onPreview={onPreview}
+          onDownload={onDownload}
+          onShare={onShare}
+          onRename={onRename}
+          onDelete={onDelete}
+        />
+      )}
     </div>
   )
 }

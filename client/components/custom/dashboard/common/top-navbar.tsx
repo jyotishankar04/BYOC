@@ -73,9 +73,16 @@ function formatTimeAgo(dateString: string): string {
 export function TopNavbar() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const { notifications, unreadCount, isLoading, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, isLoading, markAllAsRead, markAsRead } = useNotifications();
   const { data: session } = useSession();
   const router = useRouter();
+  const [searchValue, setSearchValue] = useState("");
+
+  const handleSearchNavigate = () => {
+    const params = new URLSearchParams();
+    if (searchValue.trim()) params.set("search", searchValue.trim());
+    router.push(`/app/files${params.toString() ? `?${params.toString()}` : ""}`);
+  };
 
   const user = session?.user;
   const userInitials = user?.name
@@ -104,12 +111,17 @@ export function TopNavbar() {
           <Input
             placeholder="Search files and folders..."
             className="pl-8 h-8 bg-muted/50 border-transparent focus:border-border focus:bg-background transition-colors"
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSearchNavigate();
+            }}
           />
         </div>
 
         <div className="ml-auto flex items-center gap-1">
           {/* Mobile search */}
-          <Button size="icon" variant="ghost" className="sm:hidden">
+          <Button size="icon" variant="ghost" className="sm:hidden" onClick={() => router.push("/app/files")}>
             <HugeiconsIcon icon={Search01Icon} className="size-4" strokeWidth={1.5} />
           </Button>
 
@@ -181,6 +193,15 @@ export function TopNavbar() {
                           "flex items-start gap-3 border-b px-4 py-3 last:border-0 transition-colors cursor-pointer",
                           !n.read ? "bg-primary/[0.04] hover:bg-primary/[0.07]" : "hover:bg-muted/40",
                         )}
+                        onClick={() => {
+                          markAsRead(n.id);
+                          if (n.link) {
+                            router.push(n.link);
+                          } else {
+                            router.push("/app/notifications");
+                          }
+                          setNotifOpen(false);
+                        }}
                       >
                         <div className={cn("flex size-7 shrink-0 items-center justify-center rounded-lg mt-0.5", iconConfig.bg)}>
                           <HugeiconsIcon icon={iconConfig.icon} className={cn("size-3.5", iconConfig.color)} strokeWidth={1.5} />

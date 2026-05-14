@@ -15,10 +15,10 @@ const CTASection = () => {
         </p>
         <div className="mt-8 flex items-center gap-3">
           <Button size={"lg"} asChild>
-            <Link href="#">Get Started Free</Link>
+            <Link href="/auth/signup">Get Started Free</Link>
           </Button>
           <Button size={"lg"} variant="outline" asChild>
-            <Link href="#">View Pricing</Link>
+            <Link href="/#pricing">View Pricing</Link>
           </Button>
         </div>
       </div>

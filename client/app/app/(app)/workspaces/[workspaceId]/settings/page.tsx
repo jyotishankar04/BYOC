@@ -281,11 +281,16 @@ function GeneralSection({ workspace }: { workspace: Workspace }) {
             >
               {workspace.name.charAt(0)}
             </div>
-            <Button size="sm" variant="outline">
+            <input
+              type="file"
+              accept="image/png,image/jpeg"
+              className="hidden"
+              id="ws-logo-upload"
+              onChange={() => {}}
+              disabled
+            />
+            <Button size="sm" variant="outline" disabled title="Logo upload coming soon">
               Upload logo
-            </Button>
-            <Button size="sm" variant="ghost" className="text-muted-foreground">
-              Remove
             </Button>
           </div>
           <p className="text-[11px] text-muted-foreground">

@@ -33,6 +33,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { formatFileSize, formatDate } from "@/lib/file-utils"
+import { toast } from "sonner"
 import type { FileKind } from "@/lib/analytics"
 
 interface RecentFile {
@@ -47,6 +48,10 @@ interface RecentFile {
 
 interface RecentFilesTableProps {
   files: RecentFile[];
+  onDownload?: (file: RecentFile) => void;
+  onShare?: (file: RecentFile) => void;
+  onRename?: (file: RecentFile) => void;
+  onDelete?: (file: RecentFile) => void;
 }
 
 const KIND_ICON: Record<FileKind, typeof File01Icon> = {
@@ -67,7 +72,7 @@ const KIND_LABEL: Record<FileKind, string> = {
   other: "Other",
 }
 
-export function RecentFilesTable({ files }: RecentFilesTableProps) {
+export function RecentFilesTable({ files, onDownload, onShare, onRename, onDelete }: RecentFilesTableProps) {
   if (files.length === 0) {
     return (
       <Card>
@@ -81,6 +86,15 @@ export function RecentFilesTable({ files }: RecentFilesTableProps) {
         </CardContent>
       </Card>
     )
+  }
+
+  const handleCopyLink = async (file: RecentFile) => {
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/app/files/${file.id}`)
+      toast.success("Link copied to clipboard")
+    } catch {
+      toast.error("Failed to copy link")
+    }
   }
 
   return (
@@ -105,6 +119,7 @@ export function RecentFilesTable({ files }: RecentFilesTableProps) {
           <TableBody>
             {files.map((file) => {
               const Icon = KIND_ICON[file.kind] ?? File01Icon
+              const hasAnyAction = onDownload || onShare || onRename || onDelete
               return (
                 <TableRow key={file.id}>
                   <TableCell>
@@ -121,32 +136,44 @@ export function RecentFilesTable({ files }: RecentFilesTableProps) {
                   <TableCell className="hidden text-xs text-muted-foreground sm:table-cell">{formatFileSize(file.size)}</TableCell>
                   <TableCell className="hidden text-xs text-muted-foreground md:table-cell">{formatDate(file.createdAt)}</TableCell>
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button size="icon-sm" variant="ghost">
-                          <HugeiconsIcon icon={MoreHorizontalIcon} className="size-3.5" strokeWidth={1.5} />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-44">
-                        <DropdownMenuItem>
-                          <HugeiconsIcon icon={Download01Icon} className="size-3.5" strokeWidth={1.5} />
-                          Download
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <HugeiconsIcon icon={Copy01Icon} className="size-3.5" strokeWidth={1.5} />
-                          Copy Link
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <HugeiconsIcon icon={PencilEdit01Icon} className="size-3.5" strokeWidth={1.5} />
-                          Rename
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem variant="destructive">
-                          <HugeiconsIcon icon={Delete01Icon} className="size-3.5" strokeWidth={1.5} />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    {hasAnyAction ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="icon-sm" variant="ghost">
+                            <HugeiconsIcon icon={MoreHorizontalIcon} className="size-3.5" strokeWidth={1.5} />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                          {onDownload && (
+                            <DropdownMenuItem onClick={() => onDownload(file)}>
+                              <HugeiconsIcon icon={Download01Icon} className="size-3.5" strokeWidth={1.5} />
+                              Download
+                            </DropdownMenuItem>
+                          )}
+                          {onDownload && (onShare || onRename || onDelete) && <DropdownMenuSeparator />}
+                          {onShare && (
+                            <DropdownMenuItem onClick={() => onShare(file)}>
+                              <HugeiconsIcon icon={Copy01Icon} className="size-3.5" strokeWidth={1.5} />
+                              Copy Link
+                            </DropdownMenuItem>
+                          )}
+                          {onShare && (onRename || onDelete) && <DropdownMenuSeparator />}
+                          {onRename && (
+                            <DropdownMenuItem onClick={() => onRename(file)}>
+                              <HugeiconsIcon icon={PencilEdit01Icon} className="size-3.5" strokeWidth={1.5} />
+                              Rename
+                            </DropdownMenuItem>
+                          )}
+                          {onRename && onDelete && <DropdownMenuSeparator />}
+                          {onDelete && (
+                            <DropdownMenuItem variant="destructive" onClick={() => onDelete(file)}>
+                              <HugeiconsIcon icon={Delete01Icon} className="size-3.5" strokeWidth={1.5} />
+                              Delete
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : null}
                   </TableCell>
                 </TableRow>
               )

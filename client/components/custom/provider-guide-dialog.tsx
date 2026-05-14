@@ -114,8 +114,8 @@ export function ProviderGuideDialog({
         ...step,
         code: step.code?.replace(/YOUR-BUCKET-NAME/g, bucketName),
         description: step.description.replace(
-          /replace YOUR-BUCKET-NAME with your actual bucket name/g,
-          "replace YOUR-BUCKET-NAME with your actual bucket name",
+          /YOUR-BUCKET-NAME/g,
+          bucketName,
         ),
       }))
     : guide?.steps;

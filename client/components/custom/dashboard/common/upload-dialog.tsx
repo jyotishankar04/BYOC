@@ -221,9 +221,12 @@ export function UploadDialog({
     [],
   );
 
+  const [submitting, setSubmitting] = useState(false);
+
   const startUpload = useCallback(() => {
     if (!workspaceId || files.length === 0) return;
 
+    setSubmitting(true);
     addUploads(
       files.map((f) => ({
         file: f.rawFile,
@@ -239,6 +242,7 @@ export function UploadDialog({
       inputRef.current.value = "";
     }
     onOpenChange(false);
+    setTimeout(() => setSubmitting(false), 300);
   }, [files, workspaceId, folderId, addUploads, onOpenChange, onUploadComplete]);
 
   const handleOpenChange = useCallback(
@@ -372,16 +376,17 @@ export function UploadDialog({
         >
           Cancel
         </Button>
-        <Button size="sm" disabled={files.length === 0} onClick={startUpload}>
-          <HugeiconsIcon
-            icon={CloudUploadIcon}
-            className="size-3.5"
-            strokeWidth={1.5}
-          />
-          Upload{" "}
-          {files.length > 0
-            ? `${files.length} file${files.length > 1 ? "s" : ""}`
-            : "Files"}
+        <Button size="sm" disabled={files.length === 0 || submitting} onClick={startUpload}>
+          {submitting ? (
+            <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          ) : (
+            <HugeiconsIcon
+              icon={CloudUploadIcon}
+              className="size-3.5"
+              strokeWidth={1.5}
+            />
+          )}
+          {submitting ? "Starting..." : `Upload ${files.length > 0 ? `${files.length} file${files.length > 1 ? "s" : ""}` : "Files"}`}
         </Button>
       </div>
     </>
