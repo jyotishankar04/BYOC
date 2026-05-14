@@ -10,6 +10,7 @@ Thumbs.db
 
 # env
 .env
+.env.dev
 .env.local
 .env.*.local
 
