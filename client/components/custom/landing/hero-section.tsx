@@ -60,11 +60,11 @@ export default function HeroSection() {
                 href="#how-it-works"
                 className="group rounded-(--radius) mx-auto flex w-fit items-center gap-2 border p-1 pr-3 transition-colors hover:bg-accent/50"
               >
-                <span className="bg-muted rounded-[calc(var(--radius)-0.25rem)] px-2 py-1 text-xs font-medium">
-                  New
+                <span className="bg-primary/10 text-primary rounded-[calc(var(--radius)-0.25rem)] px-2 py-1 text-xs font-medium">
+                  Now available
                 </span>
                 <span className="text-sm text-muted-foreground">
-                  Bring your own cloud storage
+                  Connect AWS S3, Cloudflare R2, and more
                 </span>
                 <span className="bg-(--color-border) block h-4 w-px" />
                 <ArrowRight className="size-4 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5" />
@@ -103,7 +103,7 @@ export default function HeroSection() {
               className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
             >
               <Button size="lg" asChild>
-                <Link href="/signup">
+                <Link href="/auth/signup">
                   <Rocket className="size-4" />
                   Connect Your Cloud
                 </Link>
@@ -116,6 +116,13 @@ export default function HeroSection() {
                 </Link>
               </Button>
             </motion.div>
+
+            <motion.p
+              variants={itemVariants}
+              className="mt-4 text-xs text-muted-foreground/70"
+            >
+              Free to start · No credit card required · Your data stays in your bucket
+            </motion.p>
           </motion.div>
 
           <motion.div
