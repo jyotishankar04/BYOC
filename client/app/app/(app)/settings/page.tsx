@@ -1,828 +1,690 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { useEffect, useState } from "react";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   UserCircle02Icon,
   Settings01Icon,
-  Notification01Icon,
   LockedIcon,
-  EyeIcon,
   Delete01Icon,
-  Cancel01Icon,
-  CheckmarkCircle01Icon,
-  Copy01Icon,
-  CloudServerIcon,
-  Key01Icon,
-  ArrowRight01Icon,
-  Globe02Icon,
+  EyeIcon,
+  Login03Icon,
+  Mail01Icon,
   ComputerIcon,
-  Moon02Icon,
-  Sun03Icon,
-} from "@hugeicons/core-free-icons"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { Switch } from "@/components/ui/switch"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+  Logout01Icon,
+} from "@hugeicons/core-free-icons";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
-
-// ─── Section types ─────────────────────────────────────────────────────────────
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { signOut, useSession } from "@/lib/auth-client";
+import {
+  useConnectedAccounts,
+  useRevokeOtherSessions,
+  useRevokeSession,
+  useUpdateUserPreferences,
+  useUpdateUserProfile,
+  useUserPreferences,
+  useUserSessions,
+  type ConnectedAccount,
+  type UserSession,
+} from "@/lib/user-settings";
 
 type Section =
-  | "profile"
   | "account"
-  | "appearance"
-  | "notifications"
+  | "profile"
   | "security"
-  | "privacy"
   | "danger"
+  | "appearance"
+  | "privacy"
+  | "sessions";
 
-const SECTIONS: { id: Section; label: string }[] = [
-  { id: "profile",       label: "Profile"       },
-  { id: "account",       label: "Account"       },
-  { id: "appearance",    label: "Appearance"    },
-  { id: "notifications", label: "Notifications" },
-  { id: "security",      label: "Security"      },
-  { id: "privacy",       label: "Privacy"       },
-  { id: "danger",        label: "Danger Zone"   },
-]
+  
+const SECTIONS: Array<{
+  id: Section;
+  label: string;
+  icon: typeof Settings01Icon;
+}> = [
+  { id: "account", label: "Account", icon: Settings01Icon },
+  { id: "profile", label: "Profile", icon: UserCircle02Icon },
+  { id: "security", label: "Security", icon: LockedIcon },
+  { id: "appearance", label: "Appearance", icon: EyeIcon },
+  { id: "privacy", label: "Privacy", icon: EyeIcon },
+  { id: "sessions", label: "Sessions", icon: Login03Icon },
+  { id: "danger", label: "Danger Zone", icon: Delete01Icon },
+];
 
-// ─── Shared ────────────────────────────────────────────────────────────────────
-
-function SectionHeader({ title, description }: { title: string; description: string }) {
+function SectionHeader({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
   return (
     <div>
       <h2 className="text-base font-semibold">{title}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{description}</p>
     </div>
-  )
+  );
 }
 
-function SaveButton({ onSave }: { onSave: () => void }) {
-  const [saved, setSaved] = useState(false)
-  const handle = () => { onSave(); setSaved(true); setTimeout(() => setSaved(false), 2000) }
-  return (
-    <Button size="sm" onClick={handle}>
-      {saved
-        ? <><HugeiconsIcon icon={CheckmarkCircle01Icon} className="size-3.5" strokeWidth={2} />Saved</>
-        : "Save changes"}
-    </Button>
-  )
+function formatDate(iso?: string | null) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
-// ─── Profile ───────────────────────────────────────────────────────────────────
-
-function ProfileSection() {
-  const [name,     setName]     = useState("John Doe")
-  const [username, setUsername] = useState("johndoe")
-  const [bio,      setBio]      = useState("Building BYOC — your cloud, your rules.")
-  const [location, setLocation] = useState("Mumbai, India")
-  const [website,  setWebsite]  = useState("https://johndoe.dev")
-
-  return (
-    <div className="space-y-6">
-      <SectionHeader title="Profile" description="Your public profile information." />
-      <Separator />
-
-      <div className="max-w-lg space-y-5">
-        {/* Avatar */}
-        <div className="space-y-2">
-          <Label className="text-xs font-medium">Profile picture</Label>
-          <div className="flex items-center gap-4">
-            <Avatar className="size-16">
-              <AvatarFallback className="text-lg font-semibold">JD</AvatarFallback>
-            </Avatar>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline">Upload photo</Button>
-              <Button size="sm" variant="ghost" className="text-muted-foreground">Remove</Button>
-            </div>
-          </div>
-          <p className="text-[11px] text-muted-foreground">JPG or PNG. Max 2 MB.</p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="p-name" className="text-xs font-medium">Display name</Label>
-            <Input id="p-name" value={name} onChange={(e) => setName(e.target.value)} className="h-8 text-sm" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="p-user" className="text-xs font-medium">Username</Label>
-            <div className="flex items-center">
-              <span className="flex h-8 items-center rounded-l-md border border-r-0 bg-muted px-2.5 text-xs text-muted-foreground shrink-0">@</span>
-              <Input id="p-user" value={username} onChange={(e) => setUsername(e.target.value)} className="h-8 rounded-l-none text-sm" />
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="p-bio" className="text-xs font-medium">Bio</Label>
-          <Textarea
-            id="p-bio"
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            rows={3}
-            className="resize-none text-sm"
-            placeholder="Tell the world about yourself"
-          />
-          <p className="text-right text-[11px] text-muted-foreground">{bio.length}/160</p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="p-loc" className="text-xs font-medium">Location</Label>
-            <Input id="p-loc" value={location} onChange={(e) => setLocation(e.target.value)} className="h-8 text-sm" placeholder="City, Country" />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="p-web" className="text-xs font-medium">Website</Label>
-            <Input id="p-web" value={website} onChange={(e) => setWebsite(e.target.value)} className="h-8 text-sm" placeholder="https://" />
-          </div>
-        </div>
-
-        <SaveButton onSave={() => {}} />
-      </div>
-    </div>
-  )
+function sessionLabel(session: UserSession) {
+  const agent = session.userAgent ?? "";
+  if (!agent) return "Unknown device";
+  if (agent.includes("Chrome")) return "Chrome session";
+  if (agent.includes("Safari") && !agent.includes("Chrome")) return "Safari session";
+  if (agent.includes("Firefox")) return "Firefox session";
+  if (agent.includes("Edg")) return "Edge session";
+  return "Browser session";
 }
 
-// ─── Account ───────────────────────────────────────────────────────────────────
+function providerLabel(account: ConnectedAccount) {
+  return account.providerId.charAt(0).toUpperCase() + account.providerId.slice(1);
+}
 
 function AccountSection() {
-  const [email,        setEmail]        = useState("john@example.com")
-  const [editingEmail, setEditingEmail] = useState(false)
-  const [newEmail,     setNewEmail]     = useState("")
-  const [showPwForm,   setShowPwForm]   = useState(false)
-  const [showCurrent,  setShowCurrent]  = useState(false)
-  const [showNew,      setShowNew]      = useState(false)
-  const [currentPw,    setCurrentPw]    = useState("")
-  const [newPw,        setNewPw]        = useState("")
-  const [confirmPw,    setConfirmPw]    = useState("")
+  const { data: session } = useSession();
+  const user = session?.user;
 
-  const PROVIDERS = [
-    { name: "Google",  connected: true,  account: "john@example.com" },
-    { name: "GitHub",  connected: false, account: null               },
-  ]
+  if (!user) return null;
 
   return (
     <div className="space-y-6">
-      <SectionHeader title="Account" description="Manage your email, password, and connected accounts." />
+      <SectionHeader
+        title="Account"
+        description="Primary account identity for your BYOC login across all workspaces."
+      />
       <Separator />
 
-      {/* Email */}
-      <div className="max-w-lg space-y-3">
-        <Label className="text-xs font-medium">Email address</Label>
-        {editingEmail ? (
-          <div className="flex gap-2">
-            <Input
-              autoFocus
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              placeholder={email}
-              className="h-8 text-sm"
-            />
-            <Button size="sm" onClick={() => { if (newEmail.trim()) setEmail(newEmail.trim()); setEditingEmail(false); setNewEmail("") }}>
-              Update
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => { setEditingEmail(false); setNewEmail("") }}>Cancel</Button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 flex-1 items-center rounded-md border bg-muted/30 px-3 text-sm">
-              {email}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Primary email</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex items-center gap-2 text-sm">
+              <HugeiconsIcon icon={Mail01Icon} className="size-4 text-muted-foreground" strokeWidth={1.5} />
+              <span>{user.email}</span>
             </div>
-            <Button size="sm" variant="outline" onClick={() => setEditingEmail(true)}>Change</Button>
-          </div>
-        )}
-      </div>
+            <Badge className={user.emailVerified ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"}>
+              {user.emailVerified ? "Verified" : "Unverified"}
+            </Badge>
+          </CardContent>
+        </Card>
 
-      <Separator />
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Account created</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm font-medium">{formatDate(user.createdAt)}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              This identity is shared across all your workspaces.
+            </p>
+          </CardContent>
+        </Card>
 
-      {/* Password */}
-      <div className="max-w-lg space-y-3">
-        <div className="flex items-center justify-between">
-          <Label className="text-xs font-medium">Password</Label>
-          <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={() => setShowPwForm((v) => !v)}>
-            {showPwForm ? "Cancel" : "Change password"}
-          </Button>
-        </div>
-
-        {!showPwForm && (
-          <div className="flex h-8 flex-1 items-center rounded-md border bg-muted/30 px-3 text-sm tracking-widest text-muted-foreground">
-            ••••••••••••
-          </div>
-        )}
-
-        {showPwForm && (
-          <div className="space-y-3">
-            {[
-              { label: "Current password", value: currentPw, set: setCurrentPw, show: showCurrent, toggleShow: () => setShowCurrent(v => !v) },
-              { label: "New password",     value: newPw,     set: setNewPw,     show: showNew,    toggleShow: () => setShowNew(v => !v) },
-            ].map((field) => (
-              <div key={field.label} className="space-y-1.5">
-                <Label className="text-xs font-medium">{field.label}</Label>
-                <div className="relative">
-                  <Input
-                    type={field.show ? "text" : "password"}
-                    value={field.value}
-                    onChange={(e) => field.set(e.target.value)}
-                    className="h-8 pr-8 text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={field.toggleShow}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    <HugeiconsIcon icon={EyeIcon} className="size-3.5" strokeWidth={1.5} />
-                  </button>
-                </div>
-              </div>
-            ))}
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Confirm new password</Label>
-              <Input
-                type="password"
-                value={confirmPw}
-                onChange={(e) => setConfirmPw(e.target.value)}
-                className={cn("h-8 text-sm", confirmPw && confirmPw !== newPw && "border-destructive")}
-              />
-              {confirmPw && confirmPw !== newPw && (
-                <p className="text-[11px] text-destructive">Passwords do not match</p>
-              )}
-            </div>
-            <Button
-              size="sm"
-              disabled={!currentPw || !newPw || newPw !== confirmPw}
-              onClick={() => { setShowPwForm(false); setCurrentPw(""); setNewPw(""); setConfirmPw("") }}
-            >
-              Update password
-            </Button>
-          </div>
-        )}
-      </div>
-
-      <Separator />
-
-      {/* Connected providers */}
-      <div className="max-w-lg space-y-3">
-        <Label className="text-xs font-medium">Connected accounts</Label>
-        <div className="space-y-2">
-          {PROVIDERS.map((p) => (
-            <div key={p.name} className="flex items-center gap-3 rounded-lg border px-4 py-3">
-              <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted">
-                <span className="text-xs font-bold">{p.name.charAt(0)}</span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">{p.name}</p>
-                {p.connected && <p className="text-[11px] text-muted-foreground">{p.account}</p>}
-              </div>
-              {p.connected ? (
-                <Button size="sm" variant="outline" className="text-destructive hover:bg-destructive/5 hover:text-destructive">
-                  Disconnect
-                </Button>
-              ) : (
-                <Button size="sm" variant="outline">Connect</Button>
-              )}
-            </div>
-          ))}
-        </div>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Onboarding status</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Badge className={user.onboarded ? "bg-blue-500/10 text-blue-600" : "bg-muted text-muted-foreground"}>
+              {user.onboarded ? "Completed" : "Pending"}
+            </Badge>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Workspace-specific configuration belongs in each workspace settings screen.
+            </p>
+          </CardContent>
+        </Card>
       </div>
     </div>
-  )
+  );
 }
 
-// ─── Appearance ────────────────────────────────────────────────────────────────
+function ProfileSection() {
+  const { data: session, refresh } = useSession();
+  const updateProfile = useUpdateUserProfile();
+  const user = session?.user;
 
-function AppearanceSection() {
-  const [theme,       setTheme]       = useState("system")
-  const [compact,     setCompact]     = useState(false)
-  const [dateFormat,  setDateFormat]  = useState("MMM D, YYYY")
-  const [language,    setLanguage]    = useState("en")
+  const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
+  const [bio, setBio] = useState("");
+  const [location, setLocation] = useState("");
+  const [website, setWebsite] = useState("");
 
-  const THEMES = [
-    { value: "light",  label: "Light",  icon: Sun03Icon   },
-    { value: "dark",   label: "Dark",   icon: Moon02Icon  },
-    { value: "system", label: "System", icon: ComputerIcon },
-  ]
+  useEffect(() => {
+    if (!user) return;
+    setName(user.name ?? "");
+    setUsername(user.username ?? "");
+    setBio(user.bio ?? "");
+    setLocation(user.location ?? "");
+    setWebsite(user.website ?? "");
+  }, [user]);
 
-  return (
-    <div className="space-y-6">
-      <SectionHeader title="Appearance" description="Customize how BYOC looks and feels." />
-      <Separator />
+  if (!user) return null;
 
-      <div className="max-w-lg space-y-6">
-        {/* Theme */}
-        <div className="space-y-3">
-          <Label className="text-xs font-medium">Theme</Label>
-          <RadioGroup
-            value={theme}
-            onValueChange={setTheme}
-            className="grid grid-cols-3 gap-3"
-          >
-            {THEMES.map((t) => (
-              <div key={t.value}>
-                <RadioGroupItem value={t.value} id={`theme-${t.value}`} className="sr-only" />
-                <Label
-                  htmlFor={`theme-${t.value}`}
-                  className={cn(
-                    "flex cursor-pointer flex-col items-center gap-2.5 rounded-xl border p-4 transition-all",
-                    theme === t.value
-                      ? "border-primary bg-primary/5 shadow-sm"
-                      : "hover:bg-accent",
-                  )}
-                >
-                  {/* Mini UI preview */}
-                  <div className={cn(
-                    "w-full rounded-md border overflow-hidden",
-                    t.value === "dark" ? "bg-zinc-900 border-zinc-700" : t.value === "light" ? "bg-white border-zinc-200" : "bg-gradient-to-b from-white to-zinc-900 border-zinc-300",
-                  )}>
-                    <div className={cn("h-2 w-full", t.value === "dark" ? "bg-zinc-800" : "bg-zinc-100")} />
-                    <div className="flex gap-1 p-1.5">
-                      <div className={cn("h-6 w-6 rounded", t.value === "dark" ? "bg-zinc-700" : "bg-zinc-200")} />
-                      <div className="flex-1 space-y-1">
-                        <div className={cn("h-1.5 w-full rounded-full", t.value === "dark" ? "bg-zinc-700" : "bg-zinc-200")} />
-                        <div className={cn("h-1.5 w-2/3 rounded-full", t.value === "dark" ? "bg-zinc-700" : "bg-zinc-200")} />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <HugeiconsIcon icon={t.icon} className="size-3.5 text-muted-foreground" strokeWidth={1.5} />
-                    <span className="text-xs font-medium">{t.label}</span>
-                  </div>
-                </Label>
-              </div>
-            ))}
-          </RadioGroup>
-        </div>
+  const initials = (name || user.name || "U")
+    .split(" ")
+    .map((part) => part[0] ?? "")
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
-        <Separator />
+  const dirty =
+    name !== (user.name ?? "") ||
+    username !== (user.username ?? "") ||
+    bio !== (user.bio ?? "") ||
+    location !== (user.location ?? "") ||
+    website !== (user.website ?? "");
 
-        {/* Compact mode */}
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium">Compact mode</p>
-            <p className="text-[11px] text-muted-foreground">Reduce spacing and padding across the UI</p>
-          </div>
-          <Switch checked={compact} onCheckedChange={setCompact} />
-        </div>
-
-        <Separator />
-
-        {/* Date format */}
-        <div className="space-y-2">
-          <Label className="text-xs font-medium">Date format</Label>
-          <Select value={dateFormat} onValueChange={setDateFormat}>
-            <SelectTrigger className="h-8 text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="MMM D, YYYY">May 10, 2026</SelectItem>
-              <SelectItem value="DD/MM/YYYY">10/05/2026</SelectItem>
-              <SelectItem value="MM/DD/YYYY">05/10/2026</SelectItem>
-              <SelectItem value="YYYY-MM-DD">2026-05-10</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Language */}
-        <div className="space-y-2">
-          <Label className="text-xs font-medium">Language</Label>
-          <Select value={language} onValueChange={setLanguage}>
-            <SelectTrigger className="h-8 text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="en">English</SelectItem>
-              <SelectItem value="hi">Hindi</SelectItem>
-              <SelectItem value="de">German</SelectItem>
-              <SelectItem value="fr">French</SelectItem>
-              <SelectItem value="es">Spanish</SelectItem>
-              <SelectItem value="ja">Japanese</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Notifications ─────────────────────────────────────────────────────────────
-
-function NotificationsSection() {
-  const [email, setEmail] = useState({
-    fileShared:    true,
-    memberJoined:  true,
-    storageAlert:  true,
-    weeklyDigest:  false,
-    securityAlert: true,
-    linkExpiry:    false,
-  })
-  const [inApp, setInApp] = useState({
-    badge: true,
-    sound: false,
-  })
-
-  const toggleEmail = (key: keyof typeof email) =>
-    setEmail((prev) => ({ ...prev, [key]: !prev[key] }))
-
-  const toggleInApp = (key: keyof typeof inApp) =>
-    setInApp((prev) => ({ ...prev, [key]: !prev[key] }))
-
-  const EMAIL_ROWS = [
-    { key: "fileShared"    as const, label: "File shared with you",          description: "When someone shares a file or folder with you"            },
-    { key: "memberJoined"  as const, label: "New member joined",             description: "When someone accepts an invite to your workspace"         },
-    { key: "storageAlert"  as const, label: "Storage limit warning",         description: "When your workspace storage reaches 80% or 100%"         },
-    { key: "weeklyDigest"  as const, label: "Weekly activity digest",        description: "A summary of your workspace activity every Monday"       },
-    { key: "securityAlert" as const, label: "Security alerts",               description: "Sign-ins from new devices or unusual activity"            },
-    { key: "linkExpiry"    as const, label: "Share link expiry",             description: "When a share link you created is about to expire"         },
-  ]
-
-  const INAPP_ROWS = [
-    { key: "badge" as const, label: "Show notification badge",  description: "Display unread count on the bell icon" },
-    { key: "sound" as const, label: "Notification sound",       description: "Play a sound when a notification arrives" },
-  ]
-
-  return (
-    <div className="space-y-6">
-      <SectionHeader title="Notifications" description="Choose what updates you want to receive." />
-      <Separator />
-
-      <div className="space-y-6">
-        {/* Email */}
-        <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email notifications</p>
-          <div className="space-y-2">
-            {EMAIL_ROWS.map((row) => (
-              <div key={row.key} className="flex items-center gap-4 rounded-lg border px-4 py-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">{row.label}</p>
-                  <p className="text-[11px] text-muted-foreground">{row.description}</p>
-                </div>
-                <Switch checked={email[row.key]} onCheckedChange={() => toggleEmail(row.key)} />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* In-app */}
-        <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">In-app notifications</p>
-          <div className="space-y-2">
-            {INAPP_ROWS.map((row) => (
-              <div key={row.key} className="flex items-center gap-4 rounded-lg border px-4 py-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium">{row.label}</p>
-                  <p className="text-[11px] text-muted-foreground">{row.description}</p>
-                </div>
-                <Switch checked={inApp[row.key]} onCheckedChange={() => toggleInApp(row.key)} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Security ──────────────────────────────────────────────────────────────────
-
-function SecuritySection() {
-  const [twoFAEnabled, setTwoFAEnabled] = useState(false)
-  const [copiedKey,    setCopiedKey]    = useState<string | null>(null)
-
-  const SESSIONS = [
-    { id: "s1", device: "MacBook Pro",  browser: "Chrome 124",  location: "Mumbai, India",    lastActive: "Now",         current: true  },
-    { id: "s2", device: "iPhone 15",    browser: "Safari 17",   location: "Delhi, India",     lastActive: "2 hours ago", current: false },
-    { id: "s3", device: "Windows PC",   browser: "Edge 123",    location: "Hyderabad, India", lastActive: "3 days ago",  current: false },
-  ]
-
-  const API_KEYS = [
-    { id: "k1", name: "Personal Key",  prefix: "byoc_sk_live_3Hm9pL", created: "May 5, 2026",  lastUsed: "Today"       },
-    { id: "k2", name: "CI/CD Key",     prefix: "byoc_sk_live_7Xq2nW", created: "Apr 20, 2026", lastUsed: "Yesterday"   },
-  ]
-
-  const [sessions, setSessions] = useState(SESSIONS)
-  const [apiKeys,  setApiKeys]  = useState(API_KEYS)
-
-  const copyKey = (id: string, prefix: string) => {
-    navigator.clipboard.writeText(`${prefix}•••••••••••`).catch(() => {})
-    setCopiedKey(id)
-    setTimeout(() => setCopiedKey(null), 2000)
+  async function handleSave() {
+    await updateProfile.mutateAsync({
+      name: name || undefined,
+      username: username || undefined,
+      bio: bio || undefined,
+      location: location || undefined,
+      website: website || undefined,
+    });
+    await refresh();
   }
 
   return (
     <div className="space-y-6">
-      <SectionHeader title="Security" description="Keep your account safe and manage access." />
+      <SectionHeader
+        title="Profile"
+        description="Public profile details for your primary account."
+      />
       <Separator />
 
-      {/* 2FA */}
-      <div className="space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Two-factor authentication</p>
-        <div className="flex items-center gap-4 rounded-lg border px-4 py-4">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
-            <HugeiconsIcon icon={LockedIcon} className="size-4 text-muted-foreground" strokeWidth={1.5} />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium">Two-factor authentication</p>
-            <p className="text-[11px] text-muted-foreground">
-              {twoFAEnabled ? "2FA is enabled. Your account has an extra layer of security." : "Add an extra layer of security to your account."}
-            </p>
-          </div>
-          <Badge className={cn("text-[10px]", twoFAEnabled ? "bg-emerald-500/10 text-emerald-600" : "bg-muted text-muted-foreground")}>
-            {twoFAEnabled ? "Enabled" : "Disabled"}
-          </Badge>
-          <Button size="sm" variant="outline" onClick={() => setTwoFAEnabled((v) => !v)}>
-            {twoFAEnabled ? "Disable" : "Enable"}
-          </Button>
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Sessions */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active sessions</p>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-6 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
-            onClick={() => setSessions((prev) => prev.filter((s) => s.current))}
-          >
-            Revoke all others
-          </Button>
-        </div>
-        <div className="overflow-hidden rounded-xl border">
-          {sessions.map((s, i) => (
-            <div key={s.id} className={cn("flex items-center gap-3 px-4 py-3", i > 0 && "border-t")}>
-              <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted">
-                <HugeiconsIcon icon={ComputerIcon} className="size-4 text-muted-foreground" strokeWidth={1.5} />
+      <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <Avatar className="size-20">
+                <AvatarFallback className="text-xl font-semibold">{initials}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-semibold">{name || "Unnamed user"}</p>
+                <p className="text-sm text-muted-foreground">{user.email}</p>
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="truncate text-xs font-medium">{s.device} · {s.browser}</p>
-                  {s.current && <Badge className="bg-emerald-500/10 text-emerald-600 text-[10px]">Current</Badge>}
-                </div>
-                <p className="text-[11px] text-muted-foreground">{s.location} · {s.lastActive}</p>
-              </div>
-              {!s.current && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 text-xs text-destructive hover:bg-destructive/10"
-                  onClick={() => setSessions((prev) => prev.filter((x) => x.id !== s.id))}
-                >
-                  Revoke
-                </Button>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* API Keys */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">API keys</p>
-          <Button size="sm" variant="outline" onClick={() => {
-            setApiKeys((prev) => [
-              ...prev,
-              { id: `k${Date.now()}`, name: "New Key", prefix: "byoc_sk_live_" + Math.random().toString(36).slice(2, 8), created: "Just now", lastUsed: "Never" },
-            ])
-          }}>
-            Generate key
-          </Button>
-        </div>
-        {apiKeys.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No API keys yet.</p>
-        ) : (
-          <div className="overflow-hidden rounded-xl border">
-            {apiKeys.map((k, i) => (
-              <div key={k.id} className={cn("flex items-center gap-3 px-4 py-3", i > 0 && "border-t")}>
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted">
-                  <HugeiconsIcon icon={Key01Icon} className="size-4 text-muted-foreground" strokeWidth={1.5} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-medium">{k.name}</p>
-                  <p className="font-mono text-[11px] text-muted-foreground">{k.prefix}••••••••</p>
-                </div>
-                <div className="hidden text-right sm:block">
-                  <p className="text-[11px] text-muted-foreground">Created {k.created}</p>
-                  <p className="text-[11px] text-muted-foreground">Last used {k.lastUsed}</p>
-                </div>
-                <button
-                  onClick={() => copyKey(k.id, k.prefix)}
-                  className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                >
-                  <HugeiconsIcon
-                    icon={copiedKey === k.id ? CheckmarkCircle01Icon : Copy01Icon}
-                    className={cn("size-3.5", copiedKey === k.id && "text-emerald-500")}
-                    strokeWidth={1.5}
-                  />
-                </button>
-                <button
-                  onClick={() => setApiKeys((prev) => prev.filter((x) => x.id !== k.id))}
-                  className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                >
-                  <HugeiconsIcon icon={Delete01Icon} className="size-3.5" strokeWidth={1.5} />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ─── Privacy ───────────────────────────────────────────────────────────────────
-
-function PrivacySection() {
-  const [analytics,    setAnalytics]    = useState(true)
-  const [crashReports, setCrashReports] = useState(true)
-  const [publicProfile, setPublicProfile] = useState(false)
-  const [exported,     setExported]     = useState(false)
-
-  const ROWS = [
-    { label: "Usage analytics",     description: "Help improve BYOC by sending anonymous usage data",       value: analytics,     set: setAnalytics     },
-    { label: "Crash reports",       description: "Automatically send crash logs to help fix bugs",          value: crashReports,  set: setCrashReports  },
-    { label: "Public profile",      description: "Allow others to view your profile and shared activity",   value: publicProfile, set: setPublicProfile  },
-  ]
-
-  return (
-    <div className="space-y-6">
-      <SectionHeader title="Privacy" description="Control your data and how it's used." />
-      <Separator />
-
-      <div className="space-y-2">
-        {ROWS.map((row) => (
-          <div key={row.label} className="flex items-center gap-4 rounded-lg border px-4 py-3">
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium">{row.label}</p>
-              <p className="text-[11px] text-muted-foreground">{row.description}</p>
-            </div>
-            <Switch checked={row.value} onCheckedChange={row.set} />
-          </div>
-        ))}
-      </div>
-
-      <Separator />
-
-      {/* Data export */}
-      <div className="space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your data</p>
-        <div className="flex items-center gap-4 rounded-lg border px-4 py-4">
-          <div className="flex-1">
-            <p className="text-sm font-medium">Export your data</p>
-            <p className="text-[11px] text-muted-foreground">
-              Download a copy of your account data including profile, activity logs, and settings.
-            </p>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => { setExported(true); setTimeout(() => setExported(false), 3000) }}
-          >
-            {exported
-              ? <><HugeiconsIcon icon={CheckmarkCircle01Icon} className="size-3.5 text-emerald-500" strokeWidth={2} />Requested</>
-              : "Request export"}
-          </Button>
-        </div>
-        {exported && (
-          <p className="text-[11px] text-muted-foreground">
-            We&apos;ll email you a download link at <strong>john@example.com</strong> within 24 hours.
-          </p>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ─── Danger Zone ───────────────────────────────────────────────────────────────
-
-function DangerSection() {
-  const [confirmDelete, setConfirmDelete] = useState(false)
-  const [deleteInput,   setDeleteInput]   = useState("")
-
-  return (
-    <div className="space-y-6">
-      <SectionHeader title="Danger Zone" description="Permanent and irreversible account actions." />
-      <Separator />
-
-      <div className="space-y-3">
-        {/* Deactivate */}
-        <div className="flex flex-col gap-3 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-4 sm:flex-row sm:items-center">
-          <div className="flex-1">
-            <p className="text-sm font-medium">Deactivate account</p>
-            <p className="text-[11px] text-muted-foreground">Temporarily disable your account. You can reactivate at any time.</p>
-          </div>
-          <Button size="sm" variant="outline" className="border-destructive/30 text-destructive hover:bg-destructive/10">
-            Deactivate
-          </Button>
-        </div>
-
-        {/* Delete */}
-        <div className="rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="flex-1">
-              <p className="text-sm font-medium text-destructive">Delete account</p>
-              <p className="text-[11px] text-muted-foreground">
-                Permanently delete your account and all associated data. This cannot be undone.
+              <p className="text-xs text-muted-foreground">
+                Avatar upload is not wired yet. Profile text updates are live.
               </p>
             </div>
-            <Button size="sm" variant="destructive" onClick={() => setConfirmDelete(true)}>
-              <HugeiconsIcon icon={Delete01Icon} className="size-3.5" strokeWidth={1.5} />
-              Delete account
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="profile-name">Display name</Label>
+                <Input id="profile-name" value={name} onChange={(e) => setName(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="profile-username">Username</Label>
+                <Input id="profile-username" value={username} onChange={(e) => setUsername(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="profile-location">Location</Label>
+                <Input id="profile-location" value={location} onChange={(e) => setLocation(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="profile-website">Website</Label>
+                <Input id="profile-website" value={website} onChange={(e) => setWebsite(e.target.value)} />
+              </div>
+            </div>
+            <div className="mt-4 space-y-1.5">
+              <Label htmlFor="profile-bio">Bio</Label>
+              <Textarea
+                id="profile-bio"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                rows={4}
+                className="resize-none"
+              />
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Button onClick={handleSave} disabled={!dirty || updateProfile.isPending}>
+                {updateProfile.isPending ? "Saving..." : "Save profile"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function SecuritySection() {
+  const { data: session } = useSession();
+  const { data: accounts = [] } = useConnectedAccounts();
+
+  if (!session?.user) return null;
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader
+        title="Security"
+        description="Authentication and trust settings for your primary account."
+      />
+      <Separator />
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Authentication</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between rounded-lg border px-4 py-3">
+              <div>
+                <p className="text-sm font-medium">Sign-in method</p>
+                <p className="text-xs text-muted-foreground">
+                  {accounts.length > 0
+                    ? accounts.map(providerLabel).join(", ")
+                    : "OAuth account"}
+                </p>
+              </div>
+              <Badge className="bg-emerald-500/10 text-emerald-600">Active</Badge>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border px-4 py-3">
+              <div>
+                <p className="text-sm font-medium">Email verification</p>
+                <p className="text-xs text-muted-foreground">{session.user.email}</p>
+              </div>
+              <Badge className={session.user.emailVerified ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"}>
+                {session.user.emailVerified ? "Verified" : "Pending"}
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Protection status</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="rounded-lg border px-4 py-3">
+              <p className="text-sm font-medium">Two-factor authentication</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                2FA is not wired in this app yet. When added, it should live here because it is account-scoped, not workspace-scoped.
+              </p>
+            </div>
+            <div className="rounded-lg border px-4 py-3">
+              <p className="text-sm font-medium">Password management</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Password changes are currently managed by your connected identity provider.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function AppearanceSection() {
+  const { data: preferences } = useUserPreferences();
+  const updatePreferences = useUpdateUserPreferences();
+
+  const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
+  const [language, setLanguage] = useState("en");
+
+  useEffect(() => {
+    if (!preferences) return;
+    setTheme(preferences.theme);
+    setLanguage(preferences.language);
+  }, [preferences]);
+
+  async function save() {
+    await updatePreferences.mutateAsync({ theme, language });
+  }
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader
+        title="Appearance"
+        description="Visual preferences for your primary account across the app."
+      />
+      <Separator />
+
+      <Card>
+        <CardContent className="pt-6 space-y-4">
+          <div className="space-y-1.5">
+            <Label>Theme</Label>
+            <Select value={theme} onValueChange={(value) => setTheme(value as typeof theme)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="light">Light</SelectItem>
+                <SelectItem value="dark">Dark</SelectItem>
+                <SelectItem value="system">System</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Language</Label>
+            <Select value={language} onValueChange={setLanguage}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="hi">Hindi</SelectItem>
+                <SelectItem value="de">German</SelectItem>
+                <SelectItem value="fr">French</SelectItem>
+                <SelectItem value="es">Spanish</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={save} disabled={updatePreferences.isPending}>
+              {updatePreferences.isPending ? "Saving..." : "Save appearance"}
             </Button>
           </div>
-
-          {confirmDelete && (
-            <div className="mt-4 space-y-3 border-t border-destructive/20 pt-4">
-              <p className="text-xs text-muted-foreground">
-                Type <strong className="text-foreground">john@example.com</strong> to confirm.
-              </p>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="john@example.com"
-                  value={deleteInput}
-                  onChange={(e) => setDeleteInput(e.target.value)}
-                  className="h-8 text-sm"
-                />
-                <Button size="sm" variant="destructive" disabled={deleteInput !== "john@example.com"}>
-                  Confirm
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => { setConfirmDelete(false); setDeleteInput("") }}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
-  )
+  );
 }
 
-// ─── Page ──────────────────────────────────────────────────────────────────────
+function PrivacySection() {
+  const { data: preferences } = useUserPreferences();
+  const updatePreferences = useUpdateUserPreferences();
 
-export default function SettingsPage() {
-  const [section, setSection] = useState<Section>("profile")
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [pushNotifications, setPushNotifications] = useState(true);
+
+  useEffect(() => {
+    if (!preferences) return;
+    setEmailNotifications(preferences.emailNotifications);
+    setPushNotifications(preferences.pushNotifications);
+  }, [preferences]);
+
+  async function save() {
+    await updatePreferences.mutateAsync({
+      emailNotifications,
+      pushNotifications,
+    });
+  }
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
+    <div className="space-y-6">
+      <SectionHeader
+        title="Privacy"
+        description="Communication and data-handling preferences for your account."
+      />
+      <Separator />
+
+      <Card>
+        <CardContent className="pt-6 space-y-4">
+          <div className="flex items-center justify-between rounded-lg border px-4 py-3">
+            <div>
+              <p className="text-sm font-medium">Email notifications</p>
+              <p className="text-xs text-muted-foreground">
+                Receive email alerts tied to your account activity.
+              </p>
+            </div>
+            <Switch checked={emailNotifications} onCheckedChange={setEmailNotifications} />
+          </div>
+          <div className="flex items-center justify-between rounded-lg border px-4 py-3">
+            <div>
+              <p className="text-sm font-medium">In-app notifications</p>
+              <p className="text-xs text-muted-foreground">
+                Allow account-level notifications inside the application.
+              </p>
+            </div>
+            <Switch checked={pushNotifications} onCheckedChange={setPushNotifications} />
+          </div>
+          <div className="rounded-lg border px-4 py-3">
+            <p className="text-sm font-medium">Data export</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Export requests are not automated yet. This belongs in global settings because it applies to your account, not one workspace.
+            </p>
+          </div>
+          <div className="flex justify-end">
+            <Button onClick={save} disabled={updatePreferences.isPending}>
+              {updatePreferences.isPending ? "Saving..." : "Save privacy"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function SessionsSection() {
+  const { data: accounts = [], isLoading: loadingAccounts } = useConnectedAccounts();
+  const { data: sessions = [], isLoading: loadingSessions } = useUserSessions();
+  const revokeSession = useRevokeSession();
+  const revokeOthers = useRevokeOtherSessions();
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader
+        title="Sessions"
+        description="Connected login accounts and every active session for your primary account."
+      />
+      <Separator />
+
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Connected accounts</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {loadingAccounts ? (
+              <p className="text-sm text-muted-foreground">Loading accounts...</p>
+            ) : accounts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No connected accounts found.</p>
+            ) : (
+              accounts.map((account) => (
+                <div key={account.id} className="rounded-lg border px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">{providerLabel(account)}</p>
+                      <p className="truncate text-xs text-muted-foreground">{account.accountId}</p>
+                    </div>
+                    <Badge className="bg-blue-500/10 text-blue-600">Connected</Badge>
+                  </div>
+                  <p className="mt-2 text-[11px] text-muted-foreground">
+                    Linked {formatDate(account.createdAt)}
+                  </p>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle className="text-sm">Active sessions</CardTitle>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => revokeOthers.mutate()}
+                disabled={revokeOthers.isPending}
+              >
+                {revokeOthers.isPending ? "Revoking..." : "Revoke all others"}
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {loadingSessions ? (
+              <p className="text-sm text-muted-foreground">Loading sessions...</p>
+            ) : sessions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No active sessions found.</p>
+            ) : (
+              sessions.map((session) => (
+                <div key={session.id} className="rounded-lg border px-4 py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <HugeiconsIcon icon={ComputerIcon} className="size-4 text-muted-foreground" strokeWidth={1.5} />
+                        <p className="text-sm font-medium">{sessionLabel(session)}</p>
+                        {session.current && (
+                          <Badge className="bg-emerald-500/10 text-emerald-600">Current</Badge>
+                        )}
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {session.ipAddress || "Unknown IP"} · last active {formatDate(session.updatedAt)}
+                      </p>
+                      <p className="mt-1 truncate text-[11px] text-muted-foreground">
+                        {session.userAgent || "No user agent recorded"}
+                      </p>
+                    </div>
+                    {!session.current && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        onClick={() => revokeSession.mutate(session.id)}
+                        disabled={revokeSession.isPending}
+                      >
+                        Revoke
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function DangerSection() {
+  return (
+    <div className="space-y-6">
+      <SectionHeader
+        title="Danger Zone"
+        description="Primary-account actions with permanent or high-impact consequences."
+      />
+      <Separator />
+
+      <div className="space-y-4">
+        <Card className="border-destructive/30">
+          <CardContent className="pt-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-medium">Sign out of this device</p>
+              <p className="text-xs text-muted-foreground">
+                Ends the current session for your primary account.
+              </p>
+            </div>
+            <Button variant="outline" className="border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => signOut()}>
+              <HugeiconsIcon icon={Logout01Icon} className="size-3.5" strokeWidth={1.5} />
+              Sign out
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-destructive/30">
+          <CardContent className="pt-6 flex flex-col gap-3">
+            <div>
+              <p className="text-sm font-medium text-destructive">Delete account</p>
+              <p className="text-xs text-muted-foreground">
+                Account deletion is not wired in the API yet. When implemented, it should remove your BYOC account while leaving your external storage provider untouched.
+              </p>
+            </div>
+            <Button variant="outline" disabled className="w-fit border-destructive/30 text-destructive/60">
+              Delete account unavailable
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+export default function SettingsPage() {
+  const [section, setSection] = useState<Section>("account");
+
+  useEffect(() => {
+    const applyHash = () => {
+      const hash = window.location.hash.replace("#", "") as Section;
+      if (SECTIONS.some((item) => item.id === hash)) {
+        setSection(hash);
+      }
+    };
+
+    applyHash();
+    window.addEventListener("hashchange", applyHash);
+    return () => window.removeEventListener("hashchange", applyHash);
+  }, []);
+
+  function changeSection(next: Section) {
+    setSection(next);
+    window.location.hash = next;
+  }
+
+  return (
+    <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">Settings</h1>
-        <p className="mt-1 text-xs text-muted-foreground">Manage your account, preferences, and security.</p>
+        <h1 className="text-xl font-semibold tracking-tight">Global Settings</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Account-scoped settings for your primary BYOC identity. Workspace-specific controls live inside each workspace settings page.
+        </p>
       </div>
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:gap-10">
-        {/* Left nav */}
-        <nav className="flex shrink-0 flex-row gap-1 overflow-x-auto pb-1 lg:w-44 lg:flex-col lg:pb-0">
-          {SECTIONS.map((s) => (
+      <div className="grid gap-6 xl:grid-cols-[240px_minmax(0,1fr)]">
+        <aside className="space-y-2">
+          {SECTIONS.map((item) => (
             <button
-              key={s.id}
-              onClick={() => setSection(s.id)}
+              key={item.id}
+              onClick={() => changeSection(item.id)}
               className={cn(
-                "whitespace-nowrap rounded-md px-3 py-1.5 text-left text-sm transition-colors",
-                s.id === "danger"
-                  ? "text-destructive hover:bg-destructive/10"
-                  : section === s.id
-                    ? "bg-accent font-medium text-foreground"
+                "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors",
+                section === item.id
+                  ? "bg-accent font-medium text-foreground"
+                  : item.id === "danger"
+                    ? "text-destructive hover:bg-destructive/10"
                     : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
               )}
             >
-              {s.label}
+              <HugeiconsIcon icon={item.icon} className="size-4" strokeWidth={1.5} />
+              <span>{item.label}</span>
             </button>
           ))}
-        </nav>
+        </aside>
 
-        {/* Content */}
-        <div className="min-w-0 flex-1">
-          {section === "profile"       && <ProfileSection />}
-          {section === "account"       && <AccountSection />}
-          {section === "appearance"    && <AppearanceSection />}
-          {section === "notifications" && <NotificationsSection />}
-          {section === "security"      && <SecuritySection />}
-          {section === "privacy"       && <PrivacySection />}
-          {section === "danger"        && <DangerSection />}
-        </div>
+        <main className="min-w-0">
+          {section === "account" && <AccountSection />}
+          {section === "profile" && <ProfileSection />}
+          {section === "security" && <SecuritySection />}
+          {section === "danger" && <DangerSection />}
+          {section === "appearance" && <AppearanceSection />}
+          {section === "privacy" && <PrivacySection />}
+          {section === "sessions" && <SessionsSection />}
+        </main>
       </div>
     </div>
-  )
+  );
 }
