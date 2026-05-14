@@ -7,38 +7,26 @@ import {
   Video01Icon,
   Image01Icon,
   ZipIcon,
+  Folder01Icon,
   LinkSquare01Icon,
   Globe02Icon,
   LockedIcon,
   Copy01Icon,
   Delete01Icon,
-  PencilEdit01Icon,
-  Download01Icon,
   EyeIcon,
   Cancel01Icon,
   CheckmarkCircle01Icon,
   Calendar01Icon,
   Analytics01Icon,
-  FileUploadIcon,
   Settings01Icon,
   Share01Icon,
+  Loading01Icon,
 } from "@hugeicons/core-free-icons"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog"
 import {
   Sheet,
   SheetContent,
@@ -69,40 +57,70 @@ import {
 import { cn } from "@/lib/utils"
 import { SearchInput } from "@/components/shared/search-input"
 import { KebabTrigger } from "@/components/shared/kebab-trigger"
+import { CreateShareLinkDialog } from "@/components/custom/dashboard/common/create-share-link-dialog"
+import { useWorkspace } from "@/lib/workspace-context"
+import {
+  useListShareLinks,
+  useGetShareLink,
+  useUpdateShareLink,
+  useDeleteShareLink,
+  type ShareLinkResponse,
+  type ShareAccessType,
+  type ShareLinkStatus,
+  type ListShareLinksQuery,
+} from "@/lib/share-links"
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 type AccessType  = "Public" | "Password Protected" | "Private"
-type LinkStatus  = "Active" | "Expired" | "Disabled"
-type FileType    = "Document" | "Video" | "Image" | "Spreadsheet" | "Slides" | "Archive"
+type LinkStatus  = "Active" | "Expired" | "Revoked" | "Disabled"
+type FileType    = "Document" | "Video" | "Image" | "Spreadsheet" | "Slides" | "Archive" | "Folder"
 type StatusFilter = "All" | "Active" | "Expired" | "Disabled"
 type AccessFilter = "All" | "Public" | "Password Protected" | "Private"
 type SortKey      = "newest" | "oldest" | "most-visited"
-type ExpiryOption = "never" | "1d" | "7d" | "30d" | "custom"
 
-interface SharedLink {
-  id: string
-  fileName: string
-  fileType: FileType
-  shareUrl: string
-  accessType: AccessType
-  status: LinkStatus
-  createdAt: string
-  createdMs: number
-  expiresAt: string | null
-  visits: number
-  allowDownload: boolean
-  password?: string
-  folder: string
+// ─── Helpers ────────────────────────────────────────────────────────────────────
+
+function detectFileType(fileName: string, mimeType: string | null): FileType {
+  if (mimeType?.startsWith("video/")) return "Video"
+  if (mimeType?.startsWith("image/")) return "Image"
+  const ext = fileName.split(".").pop()?.toLowerCase() ?? ""
+  if (["xlsx", "xls", "csv"].includes(ext)) return "Spreadsheet"
+  if (["pptx", "ppt"].includes(ext))    return "Slides"
+  if (["zip", "rar", "tar", "gz", "7z"].includes(ext)) return "Archive"
+  return "Document"
 }
 
-interface CreateFormData {
-  fileName: string
-  accessType: AccessType
-  password: string
-  expiry: ExpiryOption
-  customExpiry: string
-  allowDownload: boolean
+function formatAccessType(api: ShareAccessType): AccessType {
+  if (api === "PasswordProtected") return "Password Protected"
+  return api
+}
+
+function formatStatus(api: ShareLinkStatus): LinkStatus {
+  if (api === "Revoked") return "Disabled"
+  return api
+}
+
+function apiAccessType(label: AccessType): ShareAccessType {
+  if (label === "Password Protected") return "PasswordProtected"
+  return label as ShareAccessType
+}
+
+function apiStatusFilter(f: StatusFilter): ShareLinkStatus | undefined {
+  if (f === "All") return undefined
+  if (f === "Active") return "Active"
+  if (f === "Expired") return "Expired"
+  return "Disabled"
+}
+
+function apiAccessFilter(f: AccessFilter): ShareAccessType | undefined {
+  if (f === "All") return undefined
+  return apiAccessType(f)
+}
+
+function apiSortKey(k: SortKey): "createdAt" | "visits" | "expiresAt" {
+  if (k === "newest" || k === "oldest") return "createdAt"
+  return "visits"
 }
 
 // ─── Visual configs ────────────────────────────────────────────────────────────
@@ -119,6 +137,7 @@ const FILE_TYPE_VISUAL: Record<FileType, {
   Spreadsheet: { icon: LegalDocument01Icon, iconColor: "text-emerald-500", gradFrom: "from-emerald-500/15", gradTo: "to-emerald-600/5" },
   Slides:      { icon: LegalDocument01Icon, iconColor: "text-orange-500",  gradFrom: "from-orange-500/15",  gradTo: "to-orange-600/5"  },
   Archive:     { icon: ZipIcon,            iconColor: "text-slate-500",   gradFrom: "from-slate-500/15",   gradTo: "to-slate-600/5"   },
+  Folder:      { icon: Folder01Icon,       iconColor: "text-amber-500",   gradFrom: "from-amber-500/15",   gradTo: "to-amber-600/5"   },
 }
 
 const ACCESS_CONFIG: Record<AccessType, {
@@ -126,95 +145,34 @@ const ACCESS_CONFIG: Record<AccessType, {
   label: string
   className: string
 }> = {
-  "Public":             { icon: Globe02Icon, label: "Public",    className: "bg-emerald-500/10 text-emerald-600" },
-  "Password Protected": { icon: LockedIcon,  label: "Protected", className: "bg-amber-500/10 text-amber-600"   },
-  "Private":            { icon: LockedIcon,  label: "Private",   className: "bg-slate-500/10 text-slate-500"   },
+  "Public":              { icon: Globe02Icon, label: "Public",    className: "bg-emerald-500/10 text-emerald-600" },
+  "Password Protected":  { icon: LockedIcon,  label: "Protected", className: "bg-amber-500/10 text-amber-600"   },
+  "Private":             { icon: LockedIcon,  label: "Private",   className: "bg-slate-500/10 text-slate-500"   },
 }
 
 const STATUS_CONFIG: Record<LinkStatus, { className: string }> = {
   Active:   { className: "bg-emerald-500/10 text-emerald-600" },
   Expired:  { className: "bg-rose-500/10 text-rose-600"       },
   Disabled: { className: "bg-slate-500/10 text-slate-500"     },
+  Revoked:  { className: "bg-slate-500/10 text-slate-500"     },
 }
 
 const STATUS_FILTERS: StatusFilter[] = ["All", "Active", "Expired", "Disabled"]
 
-// ─── Dummy data ────────────────────────────────────────────────────────────────
-
-const INITIAL_LINKS: SharedLink[] = [
-  { id: "sl-1",  fileName: "invoice-may-2026.pdf",    fileType: "Document",    shareUrl: "https://byoc.app/share/inv-abc123",  accessType: "Public",             status: "Active",   createdAt: "May 9, 2026",  createdMs: 1746748800000, expiresAt: null,            visits: 124, allowDownload: true,  folder: "Finance"            },
-  { id: "sl-2",  fileName: "project-demo.mp4",        fileType: "Video",       shareUrl: "https://byoc.app/share/demo-def456", accessType: "Password Protected", status: "Active",   createdAt: "May 10, 2026", createdMs: 1746835200000, expiresAt: "Jun 10, 2026",  visits: 340, allowDownload: false, folder: "Projects / Videos", password: "••••••" },
-  { id: "sl-3",  fileName: "profile-photo.jpg",       fileType: "Image",       shareUrl: "https://byoc.app/share/photo-xyz789",accessType: "Public",             status: "Disabled", createdAt: "May 7, 2026",  createdMs: 1746576000000, expiresAt: null,            visits: 58,  allowDownload: true,  folder: "Personal / Photos"  },
-  { id: "sl-4",  fileName: "budget-2026.xlsx",        fileType: "Spreadsheet", shareUrl: "https://byoc.app/share/budget-ghi",  accessType: "Private",            status: "Expired",  createdAt: "Apr 28, 2026", createdMs: 1745798400000, expiresAt: "May 5, 2026",   visits: 89,  allowDownload: false, folder: "Finance"            },
-  { id: "sl-5",  fileName: "marketing-campaign.pdf",  fileType: "Document",    shareUrl: "https://byoc.app/share/mkt-jkl345", accessType: "Password Protected", status: "Active",   createdAt: "Apr 25, 2026", createdMs: 1745539200000, expiresAt: "May 25, 2026",  visits: 210, allowDownload: true,  folder: "Projects",          password: "••••••" },
-  { id: "sl-6",  fileName: "employee-handbook.pdf",   fileType: "Document",    shareUrl: "https://byoc.app/share/eh-mno678",  accessType: "Public",             status: "Active",   createdAt: "Apr 10, 2026", createdMs: 1744243200000, expiresAt: null,            visits: 456, allowDownload: true,  folder: "HR"                 },
-  { id: "sl-7",  fileName: "product-roadmap.pptx",   fileType: "Slides",      shareUrl: "https://byoc.app/share/rm-pqr901",  accessType: "Password Protected", status: "Active",   createdAt: "Apr 25, 2026", createdMs: 1745539200001, expiresAt: "Jun 25, 2026",  visits: 67,  allowDownload: false, folder: "Projects",          password: "••••••" },
-  { id: "sl-8",  fileName: "team-photo.png",          fileType: "Image",       shareUrl: "https://byoc.app/share/team-stu234",accessType: "Public",             status: "Active",   createdAt: "Apr 10, 2026", createdMs: 1744243200001, expiresAt: null,            visits: 89,  allowDownload: true,  folder: "Personal / Photos"  },
-  { id: "sl-9",  fileName: "pitch-deck.pptx",        fileType: "Slides",      shareUrl: "https://byoc.app/share/pd-vwx567",  accessType: "Password Protected", status: "Expired",  createdAt: "Feb 28, 2026", createdMs: 1740700800000, expiresAt: "Mar 15, 2026",  visits: 124, allowDownload: false, folder: "Sales",             password: "••••••" },
-  { id: "sl-10", fileName: "terms-of-service.pdf",   fileType: "Document",    shareUrl: "https://byoc.app/share/tos-yza890", accessType: "Public",             status: "Active",   createdAt: "Mar 20, 2026", createdMs: 1742428800000, expiresAt: null,            visits: 891, allowDownload: true,  folder: "Legal"              },
-]
-
-// ─── Selectable files for create dialog ───────────────────────────────────────
-
-const SELECTABLE_FILES: { name: string; type: FileType; folder: string }[] = [
-  { name: "invoice-may-2026.pdf",   type: "Document",    folder: "Finance"           },
-  { name: "project-demo.mp4",       type: "Video",       folder: "Projects / Videos" },
-  { name: "hero-banner.png",        type: "Image",       folder: "Projects / Assets" },
-  { name: "q2-report.docx",        type: "Document",    folder: "Reports"           },
-  { name: "budget-2026.xlsx",      type: "Spreadsheet", folder: "Finance"           },
-  { name: "product-roadmap.pptx",  type: "Slides",      folder: "Projects"          },
-  { name: "profile-photo.jpg",     type: "Image",       folder: "Personal / Photos" },
-  { name: "employee-handbook.pdf", type: "Document",    folder: "HR"                },
-  { name: "pitch-deck.pptx",      type: "Slides",      folder: "Sales"             },
-  { name: "assets-backup.zip",    type: "Archive",     folder: "Root"              },
-]
-
-// ─── Helpers ───────────────────────────────────────────────────────────────────
-
-function calcExpiryLabel(expiry: ExpiryOption, custom: string): string | null {
-  if (expiry === "never") return null
-  if (expiry === "custom") return custom || "Custom"
-  const days = expiry === "1d" ? 1 : expiry === "7d" ? 7 : 30
-  const d = new Date(Date.now() + days * 86400000)
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-}
-
-function getLinkActivity(link: SharedLink) {
-  const acts = [
-    { icon: Share01Icon,           iconColor: "text-violet-500", iconBg: "bg-violet-500/10", text: "Link created",                             time: link.createdAt },
-    { icon: FileUploadIcon,        iconColor: "text-blue-500",   iconBg: "bg-blue-500/10",   text: `File originally uploaded`,                 time: link.createdAt },
-  ]
-  if (link.visits > 0) {
-    acts.push({ icon: EyeIcon, iconColor: "text-blue-500", iconBg: "bg-blue-500/10", text: `Visited ${link.visits.toLocaleString()} time${link.visits !== 1 ? "s" : ""}`, time: "Various times" })
-  }
-  if (link.status === "Disabled") {
-    acts.push({ icon: Cancel01Icon, iconColor: "text-rose-500", iconBg: "bg-rose-500/10", text: "Link disabled", time: "Recently" })
-  }
-  if (link.status === "Expired") {
-    acts.push({ icon: Calendar01Icon, iconColor: "text-rose-500", iconBg: "bg-rose-500/10", text: `Link expired on ${link.expiresAt}`, time: link.expiresAt ?? "" })
-  }
-  return acts
-}
-
 // ─── Shared menu items (polymorphic) ──────────────────────────────────────────
 
-function LinkMenuItems({
-  as: As,
-  Sep,
-  link,
-  onCopy,
-  onViewDetails,
-  onDisable,
-  onDelete,
-}: {
+interface LinkMenuItemProps {
   as: typeof ContextMenuItem | typeof DropdownMenuItem
   Sep: typeof ContextMenuSeparator | typeof DropdownMenuSeparator
-  link: SharedLink
+  link: DisplayLink
   onCopy: () => void
   onViewDetails: () => void
   onDisable: () => void
   onDelete: () => void
-}) {
+}
+
+function LinkMenuItems({ as: As, Sep, link, onCopy, onViewDetails, onDisable, onDelete }: LinkMenuItemProps) {
+  const accessLabel = formatAccessType(link.accessType)
   return (
     <>
       <As onClick={onCopy} className="gap-2">
@@ -247,7 +205,44 @@ function LinkMenuItems({
   )
 }
 
-// ─── Shared link row ───────────────────────────────────────────────────────────
+// ─── Display type (mapped from API) ──────────────────────────────────────────
+
+interface DisplayLink {
+  id: string
+  targetName: string
+  targetKind: "file" | "folder"
+  fileType: FileType
+  shareUrl: string
+  accessType: ShareAccessType
+  status: ShareLinkStatus
+  createdAt: string
+  expiresAt: string | null
+  visits: number
+  allowDownload: boolean
+  hasPassword: boolean
+  fileMimeType: string | null
+}
+
+function toDisplayLink(raw: ShareLinkResponse): DisplayLink {
+  const targetKind = raw.folder ? "folder" : "file"
+  return {
+    id: raw.id,
+    targetName: raw.folder?.name ?? raw.file?.name ?? "Unknown item",
+    targetKind,
+    fileType: targetKind === "folder" ? "Folder" : detectFileType(raw.file?.name ?? "", raw.file?.mimeType ?? null),
+    shareUrl: raw.shareUrl,
+    accessType: raw.accessType,
+    status: raw.status,
+    createdAt: new Date(raw.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+    expiresAt: raw.expiresAt ? new Date(raw.expiresAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : null,
+    visits: raw.visits ?? 0,
+    allowDownload: raw.allowDownload,
+    hasPassword: raw.accessType === "PasswordProtected",
+    fileMimeType: raw.file?.mimeType ?? null,
+  }
+}
+
+// ─── Shared link row ──────────────────────────────────────────────────────────
 
 function SharedLinkRow({
   link,
@@ -259,18 +254,20 @@ function SharedLinkRow({
   onDisable,
   onDelete,
 }: {
-  link: SharedLink
+  link: DisplayLink
   isSelected: boolean
   copiedId: string | null
   showBorder: boolean
-  onClick: (link: SharedLink) => void
+  onClick: (link: DisplayLink) => void
   onCopy: (id: string, url: string) => void
   onDisable: (id: string) => void
   onDelete: (id: string) => void
 }) {
   const ftv = FILE_TYPE_VISUAL[link.fileType]
-  const acc = ACCESS_CONFIG[link.accessType]
-  const sta = STATUS_CONFIG[link.status]
+  const accessLabel = formatAccessType(link.accessType)
+  const acc = ACCESS_CONFIG[accessLabel]
+  const displayStatus = formatStatus(link.status)
+  const sta = STATUS_CONFIG[displayStatus]
   const isCopied = copiedId === link.id
 
   const menuProps = {
@@ -293,25 +290,22 @@ function SharedLinkRow({
             link.status !== "Active" && "opacity-70",
           )}
         >
-          {/* File icon */}
           <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br", ftv.gradFrom, ftv.gradTo)}>
             <HugeiconsIcon icon={ftv.icon} className={cn("size-4", ftv.iconColor)} strokeWidth={1.5} />
           </div>
 
-          {/* Name + URL */}
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-medium">{link.fileName}</p>
+            <p className="truncate text-xs font-medium">{link.targetName}</p>
             <p className="truncate text-[11px] text-muted-foreground">{link.shareUrl}</p>
           </div>
 
-          {/* Metadata columns */}
           <div className="hidden items-center gap-3 sm:flex">
             <Badge variant="secondary" className={cn("shrink-0 gap-1 text-[10px]", acc.className)}>
               <HugeiconsIcon icon={acc.icon} className="size-2.5" strokeWidth={2} />
               {acc.label}
             </Badge>
             <Badge variant="secondary" className={cn("shrink-0 text-[10px]", sta.className)}>
-              {link.status}
+              {displayStatus}
             </Badge>
             <span className="hidden w-20 text-right text-[11px] tabular-nums text-muted-foreground md:block">
               {link.visits.toLocaleString()} visits
@@ -321,7 +315,6 @@ function SharedLinkRow({
             </span>
           </div>
 
-          {/* Inline copy button */}
           <button
             onClick={(e) => { e.stopPropagation(); onCopy(link.id, link.shareUrl) }}
             className={cn(
@@ -339,7 +332,6 @@ function SharedLinkRow({
             {isCopied ? "Copied!" : "Copy"}
           </button>
 
-          {/* Kebab */}
           <DropdownMenu>
             <KebabTrigger />
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
@@ -355,157 +347,7 @@ function SharedLinkRow({
   )
 }
 
-// ─── Create link dialog ────────────────────────────────────────────────────────
-
-const DEFAULT_FORM: CreateFormData = {
-  fileName: SELECTABLE_FILES[0].name,
-  accessType: "Public",
-  password: "",
-  expiry: "never",
-  customExpiry: "",
-  allowDownload: true,
-}
-
-function CreateLinkDialog({
-  open,
-  onOpenChange,
-  onSubmit,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSubmit: (data: CreateFormData) => void
-}) {
-  const [form, setForm] = useState<CreateFormData>(DEFAULT_FORM)
-  const set = <K extends keyof CreateFormData>(k: K, v: CreateFormData[K]) =>
-    setForm((prev) => ({ ...prev, [k]: v }))
-
-  const handleSubmit = () => {
-    onSubmit(form)
-    setForm(DEFAULT_FORM)
-    onOpenChange(false)
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md gap-0 p-0">
-        <DialogHeader className="border-b px-5 py-4">
-          <DialogTitle className="text-sm font-semibold">Create Share Link</DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
-            Generate a shareable link for a file in your cloud storage.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 px-5 py-4">
-          {/* File */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium">File</Label>
-            <Select value={form.fileName} onValueChange={(v) => set("fileName", v)}>
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SELECTABLE_FILES.map((f) => (
-                  <SelectItem key={f.name} value={f.name} className="text-xs">
-                    <span className="flex items-center gap-2">
-                      <HugeiconsIcon
-                        icon={FILE_TYPE_VISUAL[f.type].icon}
-                        className={cn("size-3.5", FILE_TYPE_VISUAL[f.type].iconColor)}
-                        strokeWidth={1.5}
-                      />
-                      {f.name}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Access type */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium">Access type</Label>
-            <ButtonGroup>
-              {(["Public", "Password Protected", "Private"] as AccessType[]).map((t) => (
-                <Button
-                  key={t}
-                  type="button"
-                  size="sm"
-                  variant={form.accessType === t ? "default" : "outline"}
-                  onClick={() => set("accessType", t)}
-                >
-                  {t}
-                </Button>
-              ))}
-            </ButtonGroup>
-          </div>
-
-          {/* Password field — conditional */}
-          {form.accessType === "Password Protected" && (
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium">Password</Label>
-              <Input
-                type="password"
-                placeholder="Set a password for this link"
-                value={form.password}
-                onChange={(e) => set("password", e.target.value)}
-                className="h-8 text-xs"
-              />
-            </div>
-          )}
-
-          {/* Expiry */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium">Expiry</Label>
-            <Select value={form.expiry} onValueChange={(v) => set("expiry", v as ExpiryOption)}>
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="never" className="text-xs">Never expires</SelectItem>
-                <SelectItem value="1d"    className="text-xs">1 Day</SelectItem>
-                <SelectItem value="7d"    className="text-xs">7 Days</SelectItem>
-                <SelectItem value="30d"   className="text-xs">30 Days</SelectItem>
-                <SelectItem value="custom" className="text-xs">Custom date</SelectItem>
-              </SelectContent>
-            </Select>
-            {form.expiry === "custom" && (
-              <Input
-                type="date"
-                value={form.customExpiry}
-                onChange={(e) => set("customExpiry", e.target.value)}
-                className="h-8 text-xs"
-              />
-            )}
-          </div>
-
-          {/* Allow download toggle */}
-          <div className="flex items-center justify-between rounded-lg border px-3 py-3">
-            <div>
-              <p className="text-xs font-medium">Allow download</p>
-              <p className="text-[11px] text-muted-foreground">Recipients can download the original file</p>
-            </div>
-            <Switch
-              size="sm"
-              checked={form.allowDownload}
-              onCheckedChange={(v) => set("allowDownload", v)}
-            />
-          </div>
-        </div>
-
-        <DialogFooter className="border-t px-5 py-3">
-          <Button size="sm" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button size="sm" onClick={handleSubmit}>
-            <HugeiconsIcon icon={LinkSquare01Icon} className="size-3.5" strokeWidth={1.5} />
-            Create Link
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
-// ─── Link details drawer ───────────────────────────────────────────────────────
+// ─── Link details drawer ─────────────────────────────────────────────────────
 
 function LinkDetailsDrawer({
   link,
@@ -515,7 +357,7 @@ function LinkDetailsDrawer({
   onDisable,
   onDelete,
 }: {
-  link: SharedLink
+  link: DisplayLink
   onClose: () => void
   copiedId: string | null
   onCopy: (id: string, url: string) => void
@@ -523,10 +365,11 @@ function LinkDetailsDrawer({
   onDelete: (id: string) => void
 }) {
   const ftv = FILE_TYPE_VISUAL[link.fileType]
-  const acc = ACCESS_CONFIG[link.accessType]
-  const sta = STATUS_CONFIG[link.status]
+  const accessLabel = formatAccessType(link.accessType)
+  const acc = ACCESS_CONFIG[accessLabel]
+  const displayStatus = formatStatus(link.status)
+  const sta = STATUS_CONFIG[displayStatus]
   const isCopied = copiedId === link.id
-  const activity = getLinkActivity(link)
 
   return (
     <Sheet open onOpenChange={(o) => !o && onClose()}>
@@ -535,23 +378,18 @@ function LinkDetailsDrawer({
         className="flex w-80 flex-col gap-0 p-0 sm:w-96"
         style={{ ["--sheet-width" as string]: "24rem" }}
       >
-        {/* Header */}
         <SheetHeader className="flex flex-row items-center justify-between border-b px-4 py-3 space-y-0">
-          <SheetTitle className="truncate pr-2 text-sm">{link.fileName}</SheetTitle>
+          <SheetTitle className="truncate pr-2 text-sm">{link.targetName}</SheetTitle>
           <Button size="icon-sm" variant="ghost" onClick={onClose} className="shrink-0">
             <HugeiconsIcon icon={Cancel01Icon} className="size-3.5" strokeWidth={2} />
           </Button>
         </SheetHeader>
 
-        {/* Scrollable body */}
         <div className="flex-1 space-y-5 overflow-y-auto p-4">
-
-          {/* File preview tile */}
           <div className={cn("flex h-28 items-center justify-center rounded-xl bg-gradient-to-br", ftv.gradFrom, ftv.gradTo)}>
             <HugeiconsIcon icon={ftv.icon} className={cn("size-12 opacity-60", ftv.iconColor)} strokeWidth={1} />
           </div>
 
-          {/* Share URL */}
           <div className="space-y-1.5">
             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Share URL</p>
             <div className="flex items-center gap-2">
@@ -578,7 +416,6 @@ function LinkDetailsDrawer({
 
           <Separator />
 
-          {/* Metadata grid */}
           <div className="space-y-3">
             {[
               {
@@ -586,7 +423,7 @@ function LinkDetailsDrawer({
                 value: (
                   <Badge variant="secondary" className={cn("gap-1 text-[10px]", acc.className)}>
                     <HugeiconsIcon icon={acc.icon} className="size-2.5" strokeWidth={2} />
-                    {link.accessType}
+                    {accessLabel}
                   </Badge>
                 ),
               },
@@ -594,17 +431,16 @@ function LinkDetailsDrawer({
                 label: "Status",
                 value: (
                   <Badge variant="secondary" className={cn("text-[10px]", sta.className)}>
-                    {link.status}
+                    {displayStatus}
                   </Badge>
                 ),
               },
-              { label: "File type",       value: <span className="text-xs">{link.fileType}</span>                             },
-              { label: "Folder",          value: <span className="truncate text-xs">{link.folder}</span>                      },
-              { label: "Created",         value: <span className="text-xs">{link.createdAt}</span>                            },
-              { label: "Expires",         value: <span className="text-xs">{link.expiresAt ?? "Never"}</span>                 },
-              { label: "Total visits",    value: <span className="text-xs font-medium tabular-nums">{link.visits.toLocaleString()}</span> },
-              { label: "Allow download",  value: <span className="text-xs">{link.allowDownload ? "Yes" : "No"}</span>         },
-              ...(link.password ? [{ label: "Password", value: <span className="font-mono text-xs tracking-widest">{link.password}</span> }] : []),
+              { label: "Target type", value: <span className="text-xs">{link.targetKind === "folder" ? "Folder" : link.fileType}</span> },
+              { label: "Created", value: <span className="text-xs">{link.createdAt}</span> },
+              { label: "Expires", value: <span className="text-xs">{link.expiresAt ?? "Never"}</span> },
+              { label: "Total visits", value: <span className="text-xs font-medium tabular-nums">{link.visits.toLocaleString()}</span> },
+              { label: "Allow download", value: <span className="text-xs">{link.allowDownload ? "Yes" : "No"}</span> },
+              ...(link.hasPassword ? [{ label: "Password", value: <span className="font-mono text-xs tracking-widest">••••••</span> }] : []),
             ].map(({ label, value }) => (
               <div key={label} className="flex items-center justify-between gap-3">
                 <span className="shrink-0 text-[11px] text-muted-foreground">{label}</span>
@@ -612,32 +448,9 @@ function LinkDetailsDrawer({
               </div>
             ))}
           </div>
-
-          <Separator />
-
-          {/* Activity feed */}
-          <div className="space-y-3">
-            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Activity</p>
-            {activity.map((a, i) => (
-              <div key={i} className="flex items-start gap-2.5">
-                <div className={cn("flex size-6 shrink-0 items-center justify-center rounded-full", a.iconBg)}>
-                  <HugeiconsIcon icon={a.icon} className={cn("size-3", a.iconColor)} strokeWidth={1.5} />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs">{a.text}</p>
-                  <p className="text-[11px] text-muted-foreground">{a.time}</p>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
 
-        {/* Footer actions */}
         <div className="space-y-2 border-t p-4">
-          <Button size="sm" variant="outline" className="w-full gap-2">
-            <HugeiconsIcon icon={Download01Icon} className="size-3.5" strokeWidth={1.5} />
-            Download File
-          </Button>
           <div className="grid grid-cols-2 gap-2">
             <Button
               size="sm"
@@ -668,41 +481,52 @@ function LinkDetailsDrawer({
   )
 }
 
-// ─── Page ──────────────────────────────────────────────────────────────────────
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SharedLinksPage() {
-  const [links, setLinks]               = useState<SharedLink[]>(INITIAL_LINKS)
+  const { currentWorkspace } = useWorkspace()
+  const workspaceId = currentWorkspace?.id
+
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("All")
   const [accessFilter, setAccessFilter] = useState<AccessFilter>("All")
   const [sortKey, setSortKey]           = useState<SortKey>("newest")
   const [searchQuery, setSearchQuery]   = useState("")
   const [selectedId, setSelectedId]     = useState<string | null>(null)
   const [createOpen, setCreateOpen]     = useState(false)
+  const [createFileId, setCreateFileId] = useState<string | undefined>(undefined)
   const [copiedId, setCopiedId]         = useState<string | null>(null)
 
-  // Derive selected link from state so it stays in sync with mutations
+  const updateLink = useUpdateShareLink(workspaceId)
+  const deleteLink = useDeleteShareLink(workspaceId)
+
+  const query: ListShareLinksQuery = {
+    status: apiStatusFilter(statusFilter),
+    accessType: apiAccessFilter(accessFilter),
+    search: searchQuery || undefined,
+    sortBy: apiSortKey(sortKey),
+    sortOrder: sortKey === "oldest" ? "asc" : "desc",
+    page: 1,
+    limit: 100,
+  }
+
+  const { data, isLoading } = useListShareLinks(workspaceId, query)
+
+  const links: DisplayLink[] = (data?.links ?? []).map(toDisplayLink)
+
   const selectedLink = links.find((l) => l.id === selectedId) ?? null
   const isDetailOpen = selectedLink !== null
 
-  // ── Derived list ──────────────────────────────────────────────────────────
-  const q = searchQuery.toLowerCase()
-  const visible = links
-    .filter((l) => statusFilter === "All" || l.status === statusFilter)
-    .filter((l) => accessFilter === "All" || l.accessType === accessFilter)
-    .filter((l) => !q || l.fileName.toLowerCase().includes(q))
-    .sort((a, b) => {
-      if (sortKey === "newest")      return b.createdMs - a.createdMs
-      if (sortKey === "oldest")      return a.createdMs - b.createdMs
-      return b.visits - a.visits // most-visited
-    })
+  const sortedLinks = [...links].sort((a, b) => {
+    if (sortKey === "most-visited") return b.visits - a.visits
+    if (sortKey === "oldest") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  })
 
-  // ── Stats ─────────────────────────────────────────────────────────────────
-  const activeCount    = links.filter((l) => l.status === "Active").length
-  const expiredCount   = links.filter((l) => l.status === "Expired").length
-  const totalVisits    = links.reduce((sum, l) => sum + l.visits, 0)
-  const passwordCount  = links.filter((l) => l.accessType === "Password Protected").length
+  const activeCount = (data?.stats ?? []).filter((s) => s.status === "Active").reduce((sum, s) => sum + s._count, 0)
+  const expiredCount = (data?.stats ?? []).filter((s) => s.status === "Expired").reduce((sum, s) => sum + s._count, 0)
+  const totalVisits = links.reduce((sum, l) => sum + l.visits, 0)
+  const passwordCount = (data?.stats ?? []).filter((s) => s.accessType === "PasswordProtected").reduce((sum, s) => sum + s._count, 0)
 
-  // ── Actions ───────────────────────────────────────────────────────────────
   const handleCopy = useCallback((id: string, url: string) => {
     navigator.clipboard.writeText(url).catch(() => {})
     setCopiedId(id)
@@ -710,41 +534,16 @@ export default function SharedLinksPage() {
   }, [])
 
   const handleDisable = useCallback((id: string) => {
-    setLinks((prev) =>
-      prev.map((l) =>
-        l.id === id
-          ? { ...l, status: (l.status === "Disabled" ? "Active" : "Disabled") as LinkStatus }
-          : l,
-      ),
-    )
-  }, [])
+    const link = links.find((l) => l.id === id)
+    if (!link) return
+    const newStatus: ShareLinkStatus = link.status === "Disabled" ? "Active" : "Disabled"
+    updateLink.mutate({ linkId: id, data: { status: newStatus } })
+  }, [links, updateLink])
 
   const handleDelete = useCallback((id: string) => {
-    setLinks((prev) => prev.filter((l) => l.id !== id))
+    deleteLink.mutate(id)
     setSelectedId((prev) => (prev === id ? null : prev))
-  }, [])
-
-  const handleCreate = useCallback((form: CreateFormData) => {
-    const fileEntry = SELECTABLE_FILES.find((f) => f.name === form.fileName)
-    const slug = Math.random().toString(36).slice(2, 10)
-    const newLink: SharedLink = {
-      id: `sl-${Date.now()}`,
-      fileName: form.fileName,
-      fileType: fileEntry?.type ?? "Document",
-      shareUrl: `https://byoc.app/share/${slug}`,
-      accessType: form.accessType,
-      status: "Active",
-      createdAt: "Just now",
-      createdMs: Date.now(),
-      expiresAt: calcExpiryLabel(form.expiry, form.customExpiry),
-      visits: 0,
-      allowDownload: form.allowDownload,
-      password: form.accessType === "Password Protected" ? "••••••" : undefined,
-      folder: fileEntry?.folder ?? "Root",
-    }
-    setLinks((prev) => [newLink, ...prev])
-    setSelectedId(newLink.id)
-  }, [])
+  }, [deleteLink])
 
   return (
     <>
@@ -755,10 +554,10 @@ export default function SharedLinksPage() {
           <div>
             <h1 className="text-xl font-semibold tracking-tight">Shared Links</h1>
             <p className="mt-1 text-xs text-muted-foreground">
-              Manage public and private share links created from your cloud files.
+              Manage public and private share links created from your files and folders.
             </p>
           </div>
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
+          <Button size="sm" onClick={() => { setCreateFileId(undefined); setCreateOpen(true) }}>
             <HugeiconsIcon icon={LinkSquare01Icon} className="size-3.5" strokeWidth={1.5} />
             Create Share Link
           </Button>
@@ -794,7 +593,6 @@ export default function SharedLinksPage() {
             placeholder="Search links..."
           />
 
-          {/* Status filter tabs */}
           <ButtonGroup>
             {STATUS_FILTERS.map((f) => (
               <Button
@@ -809,7 +607,6 @@ export default function SharedLinksPage() {
           </ButtonGroup>
 
           <div className="ml-auto flex items-center gap-2">
-            {/* Access filter */}
             <Select value={accessFilter} onValueChange={(v) => setAccessFilter(v as AccessFilter)}>
               <SelectTrigger className="h-8 w-44 text-xs">
                 <SelectValue />
@@ -822,7 +619,6 @@ export default function SharedLinksPage() {
               </SelectContent>
             </Select>
 
-            {/* Sort */}
             <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
               <SelectTrigger className="h-8 w-36 text-xs">
                 <SelectValue />
@@ -836,14 +632,21 @@ export default function SharedLinksPage() {
           </div>
         </div>
 
+        {/* ── Loading ── */}
+        {isLoading && (
+          <div className="flex h-56 items-center justify-center">
+            <HugeiconsIcon icon={Loading01Icon} className="size-6 animate-spin text-muted-foreground" strokeWidth={2} />
+          </div>
+        )}
+
         {/* ── Empty state ── */}
-        {visible.length === 0 && (
+        {!isLoading && sortedLinks.length === 0 && (
           <div className="flex h-56 flex-col items-center justify-center gap-3 rounded-xl border border-dashed">
             <HugeiconsIcon icon={LinkSquare01Icon} className="size-9 text-muted-foreground/30" strokeWidth={1} />
             <div className="text-center">
               <p className="text-sm font-medium text-muted-foreground">No shared links found</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Create a share link to securely share files from your cloud storage.
+                Create a share link to securely share files or folders from your cloud storage.
               </p>
             </div>
             {!searchQuery && statusFilter === "All" && accessFilter === "All" && (
@@ -856,12 +659,11 @@ export default function SharedLinksPage() {
         )}
 
         {/* ── Links list ── */}
-        {visible.length > 0 && (
+        {!isLoading && sortedLinks.length > 0 && (
           <div className="overflow-hidden rounded-xl border">
-            {/* Column header */}
             <div className="hidden items-center gap-3 border-b bg-muted/30 px-4 py-2 sm:flex">
               <div className="size-9 shrink-0" />
-              <div className="flex-1 text-[11px] font-medium text-muted-foreground">File · Share URL</div>
+              <div className="flex-1 text-[11px] font-medium text-muted-foreground">Item · Share URL</div>
               <div className="flex items-center gap-3 text-[11px] font-medium text-muted-foreground">
                 <span className="w-24">Access</span>
                 <span className="w-16">Status</span>
@@ -872,7 +674,7 @@ export default function SharedLinksPage() {
               <div className="size-6 shrink-0" />
             </div>
 
-            {visible.map((link, i) => (
+            {sortedLinks.map((link, i) => (
               <SharedLinkRow
                 key={link.id}
                 link={link}
@@ -902,10 +704,10 @@ export default function SharedLinksPage() {
       )}
 
       {/* ── Create dialog ── */}
-      <CreateLinkDialog
+      <CreateShareLinkDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onSubmit={handleCreate}
+        fileId={createFileId}
       />
     </>
   )
