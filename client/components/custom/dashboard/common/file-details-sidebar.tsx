@@ -383,7 +383,7 @@ export function FileDetailsSidebar({
   return (
     <div
       className={cn(
-        "fixed bottom-0 right-0 top-14 z-30 flex w-[420px] flex-col",
+        "fixed bottom-0 right-0 top-13 z-30 flex w-[420px] flex-col",
         "border-l bg-background shadow-xl",
         "rounded-l-2xl overflow-hidden",
         "transition-transform duration-300 ease-in-out",

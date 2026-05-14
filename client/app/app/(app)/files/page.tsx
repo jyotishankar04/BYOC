@@ -1352,6 +1352,10 @@ export default function FilesPage() {
         file={selectedFile}
         isOpen={isDetailOpen}
         onClose={() => setSelectedFile(null)}
+        onDownload={(f) => handleDownload(f as FileNode)}
+        onShare={(f) => handleShareFile(f as FileNode)}
+        onRename={(f) => handleRenameFile(f as FileNode)}
+        onDelete={(f) => handleDeleteFile(f as FileNode)}
       />
 
       <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} folderId={currentFolderId} onUploadComplete={handleUploadComplete} />

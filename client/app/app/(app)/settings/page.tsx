@@ -12,6 +12,8 @@ import {
   Mail01Icon,
   ComputerIcon,
   Logout01Icon,
+  Sun01Icon,
+  Moon01Icon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +32,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useTheme } from "next-themes";
 import { signOut, useSession } from "@/lib/auth-client";
 import {
   useConnectedAccounts,
@@ -347,21 +350,92 @@ function SecuritySection() {
   );
 }
 
+const THEME_OPTIONS = [
+  {
+    value: "light",
+    label: "Light",
+    icon: Sun01Icon,
+    preview: (
+      <div className="w-full rounded-md border bg-white p-2 space-y-1.5">
+        <div className="flex items-center gap-1.5">
+          <div className="size-2.5 rounded-full bg-zinc-200" />
+          <div className="h-1.5 w-14 rounded bg-zinc-200" />
+        </div>
+        <div className="h-1.5 w-full rounded bg-zinc-100" />
+        <div className="h-1.5 w-4/5 rounded bg-zinc-100" />
+        <div className="mt-2 flex gap-1">
+          <div className="h-5 w-12 rounded bg-zinc-800" />
+          <div className="h-5 w-10 rounded border border-zinc-200" />
+        </div>
+      </div>
+    ),
+  },
+  {
+    value: "dark",
+    label: "Dark",
+    icon: Moon01Icon,
+    preview: (
+      <div className="w-full rounded-md border border-zinc-700 bg-zinc-900 p-2 space-y-1.5">
+        <div className="flex items-center gap-1.5">
+          <div className="size-2.5 rounded-full bg-zinc-700" />
+          <div className="h-1.5 w-14 rounded bg-zinc-700" />
+        </div>
+        <div className="h-1.5 w-full rounded bg-zinc-800" />
+        <div className="h-1.5 w-4/5 rounded bg-zinc-800" />
+        <div className="mt-2 flex gap-1">
+          <div className="h-5 w-12 rounded bg-zinc-100" />
+          <div className="h-5 w-10 rounded border border-zinc-700" />
+        </div>
+      </div>
+    ),
+  },
+  {
+    value: "system",
+    label: "System",
+    icon: ComputerIcon,
+    preview: (
+      <div className="w-full rounded-md border overflow-hidden">
+        <div className="flex">
+          <div className="w-1/2 bg-white p-2 space-y-1.5">
+            <div className="h-1.5 w-full rounded bg-zinc-200" />
+            <div className="h-1.5 w-3/4 rounded bg-zinc-100" />
+            <div className="h-3 w-8 rounded bg-zinc-800 mt-1" />
+          </div>
+          <div className="w-1/2 bg-zinc-900 p-2 space-y-1.5">
+            <div className="h-1.5 w-full rounded bg-zinc-700" />
+            <div className="h-1.5 w-3/4 rounded bg-zinc-800" />
+            <div className="h-3 w-8 rounded bg-zinc-100 mt-1" />
+          </div>
+        </div>
+      </div>
+    ),
+  },
+] as const;
+
 function AppearanceSection() {
+  const { theme: activeTheme, setTheme } = useTheme();
   const { data: preferences } = useUserPreferences();
   const updatePreferences = useUpdateUserPreferences();
 
-  const [theme, setTheme] = useState<"light" | "dark" | "system">("system");
   const [language, setLanguage] = useState("en");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!preferences) return;
-    setTheme(preferences.theme);
     setLanguage(preferences.language);
   }, [preferences]);
 
-  async function save() {
-    await updatePreferences.mutateAsync({ theme, language });
+  function handleThemeChange(value: "light" | "dark" | "system") {
+    setTheme(value);
+    updatePreferences.mutate({ theme: value, language });
+  }
+
+  async function saveLanguage() {
+    await updatePreferences.mutateAsync({ language, theme: (activeTheme as "light" | "dark" | "system") ?? "system" });
   }
 
   return (
@@ -373,20 +447,47 @@ function AppearanceSection() {
       <Separator />
 
       <Card>
-        <CardContent className="pt-6 space-y-4">
-          <div className="space-y-1.5">
+        <CardContent className="pt-6 space-y-6">
+          {/* Theme picker */}
+          <div className="space-y-3">
             <Label>Theme</Label>
-            <Select value={theme} onValueChange={(value) => setTheme(value as typeof theme)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="light">Light</SelectItem>
-                <SelectItem value="dark">Dark</SelectItem>
-                <SelectItem value="system">System</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="grid grid-cols-3 gap-3">
+              {THEME_OPTIONS.map((option) => {
+                const isSelected = mounted && (activeTheme === option.value);
+                return (
+                  <button
+                    key={option.value}
+                    onClick={() => handleThemeChange(option.value)}
+                    className={cn(
+                      "flex flex-col gap-2 rounded-xl border p-3 text-left transition-all hover:bg-accent/40",
+                      isSelected
+                        ? "border-primary ring-2 ring-primary ring-offset-2 ring-offset-background"
+                        : "border-border",
+                    )}
+                  >
+                    {option.preview}
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <HugeiconsIcon
+                        icon={option.icon}
+                        className={cn("size-3.5", isSelected ? "text-primary" : "text-muted-foreground")}
+                        strokeWidth={1.5}
+                      />
+                      <span className={cn("text-xs font-medium", isSelected ? "text-primary" : "text-muted-foreground")}>
+                        {option.label}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Theme is applied immediately and saved to your account.
+            </p>
           </div>
+
+          <Separator />
+
+          {/* Language */}
           <div className="space-y-1.5">
             <Label>Language</Label>
             <Select value={language} onValueChange={setLanguage}>
@@ -403,8 +504,8 @@ function AppearanceSection() {
             </Select>
           </div>
           <div className="flex justify-end">
-            <Button onClick={save} disabled={updatePreferences.isPending}>
-              {updatePreferences.isPending ? "Saving..." : "Save appearance"}
+            <Button onClick={saveLanguage} disabled={updatePreferences.isPending}>
+              {updatePreferences.isPending ? "Saving..." : "Save language"}
             </Button>
           </div>
         </CardContent>

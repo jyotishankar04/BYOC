@@ -41,6 +41,7 @@ interface Provider {
   available: boolean;
   color: string;
   bgColor: string;
+  badges: string[];
 }
 
 const PROVIDERS: Provider[] = [
@@ -48,64 +49,71 @@ const PROVIDERS: Provider[] = [
     id: "aws",
     apiType: "S3",
     name: "AWS S3",
-    description: "Scalable object storage from Amazon Web Services",
+    description: "Enterprise-grade object storage",
     available: true,
     color: "text-amber-600",
     bgColor: "bg-amber-500/10",
+    badges: ["Enterprise", "Global CDN"],
   },
   {
     id: "r2",
     apiType: "R2",
     name: "Cloudflare R2",
-    description: "S3-compatible storage with zero egress fees",
+    description: "Zero egress fees, S3-compatible",
     available: true,
     color: "text-orange-600",
     bgColor: "bg-orange-500/10",
+    badges: ["Zero egress", "S3 API"],
   },
   {
     id: "minio",
     apiType: "MinIO",
     name: "MinIO",
-    description: "High-performance S3-compatible storage",
+    description: "Self-hosted S3-compatible storage",
     available: true,
     color: "text-red-600",
     bgColor: "bg-red-500/10",
+    badges: ["Self-hosted", "Pro+"],
   },
   {
     id: "supabase",
     apiType: "Supabase",
     name: "Supabase Storage",
-    description: "S3-compatible storage from Supabase",
+    description: "PostgreSQL + Storage",
     available: true,
     color: "text-emerald-600",
     bgColor: "bg-emerald-500/10",
+    badges: ["PostgreSQL", "Pro+"],
   },
   {
     id: "do",
     apiType: "Other",
     name: "DigitalOcean Spaces",
-    description: "Simple S3-compatible object storage",
+    description: "Simple, predictable pricing",
     available: false,
     color: "text-blue-500",
     bgColor: "bg-blue-500/10",
+    badges: [],
   },
   {
     id: "b2",
     apiType: "Other",
     name: "Backblaze B2",
-    description: "Reliable cloud object storage",
+    description: "Affordable cloud storage",
     available: false,
     color: "text-red-500",
     bgColor: "bg-red-500/10",
+    badges: [],
   },
   {
     id: "wasabi",
     apiType: "Other",
     name: "Wasabi",
-    description: "Hot cloud object storage",
+    description: "Hot cloud storage",
     available: false,
     color: "text-green-600",
     bgColor: "bg-green-500/10",
+    badges: [],
   },
 ];
 
@@ -262,7 +270,7 @@ export default function OnboardPage() {
               {/* Step 1: Provider selection */}
               {step === 1 && (
                 <div className="mt-8">
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3">
                     {PROVIDERS.map((provider) => {
                       const isSelected = selectedProvider?.id === provider.id;
                       const planLocked =
@@ -282,10 +290,12 @@ export default function OnboardPage() {
                             onClick={() => handleSelectProvider(provider)}
                             className={
                               isSelected
-                                ? "relative flex flex-col items-start gap-2 rounded-lg border-2 border-primary bg-card p-3.5 text-left transition-all"
-                                : isDisabled
-                                  ? "relative flex cursor-not-allowed flex-col items-start gap-2 rounded-lg border border-border/50 bg-card/50 p-3.5 text-left opacity-50 transition-all"
-                                  : "relative flex flex-col items-start gap-2 rounded-lg border border-border bg-card p-3.5 text-left transition-all hover:border-border/80 hover:bg-accent/50"
+                                ? "relative flex flex-col items-start gap-2 rounded-lg border border-primary bg-card p-3.5 text-left ring-2 ring-primary ring-offset-2 scale-[1.02] transition-all"
+                                : !provider.available
+                                  ? "relative flex cursor-not-allowed flex-col items-start gap-2 rounded-lg border border-border/50 bg-card/50 p-3.5 text-left opacity-60 grayscale-[50%] transition-all"
+                                  : planLocked
+                                    ? "relative flex cursor-not-allowed flex-col items-start gap-2 rounded-lg border border-border bg-card/70 p-3.5 text-left opacity-70 transition-all"
+                                    : "relative flex flex-col items-start gap-2 rounded-lg border border-border bg-card p-3.5 text-left transition-all hover:bg-accent/30 hover:scale-[1.01]"
                             }
                           >
                             <div className="flex w-full items-center justify-between">
@@ -306,12 +316,23 @@ export default function OnboardPage() {
                                 {provider.description}
                               </p>
                             </div>
-                            <Badge
-                              variant={provider.available && !planLocked ? "default" : "outline"}
-                              className="mt-1"
-                            >
-                              {!provider.available ? "Coming soon" : planLocked ? "Pro required" : "Available"}
-                            </Badge>
+                            {!provider.available ? (
+                              <Badge variant="outline" className="mt-1 text-[10px]">
+                                Coming soon
+                              </Badge>
+                            ) : planLocked ? (
+                              <Badge variant="outline" className="mt-1 text-[10px]">
+                                Pro required
+                              </Badge>
+                            ) : provider.badges.length > 0 ? (
+                              <div className="mt-1 flex flex-wrap gap-1">
+                                {provider.badges.map((badge) => (
+                                  <Badge key={badge} variant="outline" className="text-[10px] px-1.5 py-0">
+                                    {badge}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : null}
                           </button>
                         </UpgradeTooltip>
                       );
@@ -326,6 +347,24 @@ export default function OnboardPage() {
                       />
                     </div>
                   ) : null}
+
+                  <details className="mt-4 rounded-lg border bg-card/50">
+                    <summary className="flex cursor-pointer select-none items-center gap-2 px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors list-none">
+                      <span className="text-base leading-none">›</span>
+                      Why connect your own storage?
+                    </summary>
+                    <div className="border-t px-4 py-3 space-y-2 text-xs text-muted-foreground leading-relaxed">
+                      <p>
+                        BringBucket is a <strong className="text-foreground/80">management layer</strong>, not a storage provider. Your files are uploaded directly to your cloud account — we never see or store your data.
+                      </p>
+                      <p>
+                        This means <strong className="text-foreground/80">no per-GB fees from us</strong>, no lock-in, and full ownership. You pay your cloud provider at their rates, and you can disconnect any time.
+                      </p>
+                      <p>
+                        Your access credentials are encrypted with AES-256-GCM before saving — only your account can use them to access your bucket.
+                      </p>
+                    </div>
+                  </details>
 
                   <div className="mt-6 flex justify-end">
                     <Button
