@@ -1,8 +1,12 @@
+"use client"
+
 import Image from "next/image"
 import Link from "next/link"
+import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 
-import fullLogo from "@/public/bringbucket.png"
+import fullLogoLight from "@/public/bringbucket.png"
+import fullLogoDark from "@/public/bringbucket-dark.png"
 import iconLogo from "@/public/bringbutket-logo.png"
 
 type LogoProps = {
@@ -16,8 +20,16 @@ export function Logo({
   href = "/",
   className,
 }: LogoProps) {
-  const src = variant === "icon" ? iconLogo : fullLogo
-  const alt = variant === "icon" ? "BringBucket" : "BringBucket"
+  const { resolvedTheme } = useTheme()
+
+  const src =
+    variant === "icon"
+      ? iconLogo
+      : resolvedTheme === "dark"
+        ? fullLogoDark
+        : fullLogoLight
+
+  const alt = "BringBucket"
 
   const img = (
     <Image
