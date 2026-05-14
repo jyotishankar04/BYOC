@@ -9,10 +9,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 const ACTIONS = [
-  { label: "Upload File",           description: "Add files to your bucket",  icon: CloudUploadIcon,  href: "#" },
-  { label: "Create Folder",         description: "Organize with folders",      icon: FolderAddIcon,    href: "#" },
-  { label: "Generate Private Link", description: "Share files securely",       icon: LinkSquare01Icon, href: "#" },
-  { label: "View Analytics",        description: "Storage insights",           icon: Analytics01Icon,  href: "#" },
+  { label: "Upload File",           description: "Add files to your bucket",  icon: CloudUploadIcon,  href: "/app/files" },
+  { label: "Create Folder",         description: "Organize with folders",      icon: FolderAddIcon,    href: "/app/files" },
+  { label: "Generate Share Link",   description: "Share files securely",       icon: LinkSquare01Icon, href: "/app/shared" },
+  { label: "View Analytics",        description: "Storage insights",           icon: Analytics01Icon,  href: "/app/analytics" },
 ] as const
 
 export function QuickActions() {

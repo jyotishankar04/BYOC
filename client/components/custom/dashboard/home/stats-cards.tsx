@@ -2,20 +2,28 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   HardDriveIcon,
   Folder01Icon,
-  DollarCircleIcon,
   LinkSquare01Icon,
+  CloudUploadIcon,
 } from "@hugeicons/core-free-icons"
 import { Card, CardHeader, CardDescription, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import { formatFileSize } from "@/lib/file-utils"
 
-const STATS = [
-  { label: "Total Storage Used", value: "128.4 GB", icon: HardDriveIcon,    color: "text-violet-500", bg: "bg-violet-500/10" },
-  { label: "Total Files",        value: "2,430",     icon: Folder01Icon,     color: "text-blue-500",   bg: "bg-blue-500/10"   },
-  { label: "Est. Monthly Cost",  value: "$4.82",     icon: DollarCircleIcon, color: "text-amber-500",  bg: "bg-amber-500/10"  },
-  { label: "Shared Links",       value: "18",        icon: LinkSquare01Icon, color: "text-emerald-500",bg: "bg-emerald-500/10"},
-] as const
+interface StatsCardsProps {
+  totalFiles: number;
+  totalSize: number;
+  activeShareLinks: number;
+  uploadsThisWeek: number;
+}
 
-export function StatsCards() {
+export function StatsCards({ totalFiles, totalSize, activeShareLinks, uploadsThisWeek }: StatsCardsProps) {
+  const STATS = [
+    { label: "Total Storage Used", value: formatFileSize(totalSize), icon: HardDriveIcon, color: "text-violet-500", bg: "bg-violet-500/10" },
+    { label: "Total Files", value: totalFiles.toLocaleString(), icon: Folder01Icon, color: "text-blue-500", bg: "bg-blue-500/10" },
+    { label: "Active Share Links", value: String(activeShareLinks), icon: LinkSquare01Icon, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+    { label: "Uploads This Week", value: String(uploadsThisWeek), icon: CloudUploadIcon, color: "text-amber-500", bg: "bg-amber-500/10" },
+  ] as const
+
   return (
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
       {STATS.map((stat) => (
