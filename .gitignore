@@ -16,3 +16,11 @@ Thumbs.db
 
 # logs
 *.log
+
+# planning / docs
+BACKEND_REQUIREMENTS.md
+GEMINI.md
+IMPLEMENTATION_PLAN.md
+
+# agent config
+.claude/
