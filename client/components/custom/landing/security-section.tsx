@@ -30,7 +30,7 @@ export const securityFeatures = [
 
 const SecurityFeatures = () => {
   return (
-    <div className="mx-auto flex max-w-7xl flex-col px-6 py-20">
+    <section id="security" className="mx-auto flex max-w-7xl flex-col px-6 py-20">
       <h2 className="text-pretty text-center font-medium text-4xl tracking-[-0.04em] sm:text-[2.75rem]">
         Your storage, your keys, your rules
       </h2>
@@ -59,7 +59,7 @@ const SecurityFeatures = () => {
           </div>
         ))}
       </div>
-    </div>
+    </section>
   )
 }
 

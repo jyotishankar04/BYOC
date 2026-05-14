@@ -5,63 +5,20 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion'
-import { Cloud, GraduationCap, Rocket, Code2 } from 'lucide-react'
 import Image from 'next/image'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { BorderBeam } from '@/components/ui/border-beam'
+import { useCases, type UseCaseKey } from './use-cases-data'
 
-type UseCaseKey = 'item-1' | 'item-2' | 'item-3' | 'item-4'
-
-export const useCases = [
-  {
-    key: 'item-1' as const,
-    icon: Cloud,
-    title: 'Personal cloud',
-    short: 'Your photos, documents, and backups in one place',
-    description:
-      'Manage personal photos, documents, videos, and backups from one dashboard — your bucket, your rules, your data.',
-    image: '/personal-cloud.png',
-    alt: 'Personal cloud dashboard with photos and documents',
-  },
-  {
-    key: 'item-2' as const,
-    icon: GraduationCap,
-    title: 'Student storage',
-    short: 'Notes, PDFs, and projects that won’t disappear at semester end',
-    description:
-      'Store notes, PDFs, assignments, projects, and study materials securely. No paywall surprises, no expiring trials — just your own bucket.',
-    image: '/student-view.png',
-    alt: 'Student file dashboard with PDFs and notes',
-  },
-  {
-    key: 'item-3' as const,
-    icon: Rocket,
-    title: 'Startup file manager',
-    short: 'A file UI for your team, on top of cloud you already pay for',
-    description:
-      'Give small teams a simple file management layer over their own cloud storage. Skip the per-seat SaaS pricing — pay your provider, not a middleman.',
-    image: '/startup-files.png',
-    alt: 'Team file management dashboard',
-  },
-  {
-    key: 'item-4' as const,
-    icon: Code2,
-    title: 'Developer asset storage',
-    short: 'Project files, exports, and logs in a bucket you control',
-    description:
-      'Store project files, images, exports, logs, and app assets in your own bucket. Browse, preview, and audit usage without writing a custom dashboard.',
-    image: '/developer-assets.png',
-    alt: 'Developer asset browser with logs and exports',
-  },
-]
+export { useCases } from './use-cases-data'
 
 export default function UseCasesSection() {
   const [activeItem, setActiveItem] = useState<UseCaseKey>('item-1')
   const active = useCases.find((u) => u.key === activeItem) ?? useCases[0]
 
   return (
-    <section className="py-12 md:py-20 lg:py-32">
+    <section id="use-cases" className="py-12 md:py-20 lg:py-32">
       <div className="mx-auto max-w-5xl space-y-8 px-6 md:space-y-16 lg:space-y-20 dark:[--color-border:color-mix(in_oklab,var(--color-white)_10%,transparent)]">
         {/* Header */}
         <div className="relative z-10 mx-auto max-w-2xl space-y-6 text-center">

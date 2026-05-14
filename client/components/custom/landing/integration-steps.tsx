@@ -28,7 +28,7 @@ const steps = [
 
 export default function StepsSection() {
   return (
-    <section className="bg-zinc-50 py-16 md:py-32 dark:bg-transparent">
+    <section id="how-it-works" className="bg-muted/40 py-16 md:py-32 dark:bg-transparent">
       <div className="@container mx-auto max-w-5xl px-6">
         <div className="text-center">
           <span className="text-muted-foreground font-mono text-xs tracking-[0.2em] uppercase">

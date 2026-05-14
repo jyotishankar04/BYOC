@@ -1,6 +1,6 @@
 import { Box, CircleCheck, Gem, Users, type LucideIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { PlanCtaButton } from '@/components/custom/pricing/plan-cta-button'
 
 interface PricingPlan {
   name: string
@@ -59,7 +59,7 @@ export const pricingPlans: PricingPlan[] = [
 
 const Pricing = () => {
   return (
-    <section className="mx-auto max-w-6xl px-6 py-20">
+    <section id="pricing" className="mx-auto max-w-6xl px-6 py-20">
       <h2 className="text-balance text-center font-medium text-4xl tracking-[-0.04em] sm:text-[2.75rem]">
         Plans &amp; Pricing
       </h2>
@@ -99,13 +99,12 @@ const PlanCard = ({ plan }: { plan: PricingPlan }) => {
         <p className="mt-1 text-muted-foreground text-sm">
           {plan.price === '$0' ? 'Free forever' : 'Billed monthly'}
         </p>
-        <Button
-          className="my-6 w-full"
-          size="lg"
+        <PlanCtaButton
+          plan={plan.name.toLowerCase() as 'free' | 'pro' | 'team'}
           variant={plan.isRecommended ? 'default' : 'outline'}
-        >
-          {plan.price === '$0' ? 'Get Started Free' : 'Get Started'}
-        </Button>
+          size="lg"
+          className="my-6 w-full"
+        />
         <ul className="mt-4 space-y-2">
           {plan.features.map((feature) => (
             <li className="flex items-center gap-2" key={feature}>

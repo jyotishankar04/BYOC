@@ -1,9 +1,9 @@
 import { Card, CardContent } from '@/components/ui/card'
-import { Cloud, ShieldCheck, FolderOpen, BarChart3, KeyRound, CreditCard } from 'lucide-react'
+import { Cloud, ShieldCheck, FolderOpen, KeyRound } from 'lucide-react'
 
 export default function FeaturesSection() {
   return (
-    <section id="features" className="bg-gray-50 py-20 md:py-32 dark:bg-transparent max-w-6xl mx-auto">
+    <section id="features" className="bg-muted/40 py-20 md:py-32 dark:bg-transparent max-w-6xl mx-auto">
       <div className="mx-auto w-full px-6">
         <div className="mx-auto mb-14 max-w-2xl text-center">
           <span className="rounded-full border px-3 py-1 text-sm text-muted-foreground">Features</span>
