@@ -1,8 +1,5 @@
-"use client"
-
 import Image from "next/image"
 import Link from "next/link"
-import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
 
 import fullLogoLight from "@/public/bringbucket.png"
@@ -15,33 +12,47 @@ type LogoProps = {
   className?: string
 }
 
+const IMG_BASE = "h-auto"
+const FULL_STYLE = `${IMG_BASE} w-[140px]`
+const ICON_STYLE = `${IMG_BASE} w-9`
+
 export function Logo({
   variant = "full",
   href = "/",
   className,
 }: LogoProps) {
-  const { resolvedTheme } = useTheme()
-
-  const src =
-    variant === "icon"
-      ? iconLogo
-      : resolvedTheme === "dark"
-        ? fullLogoDark
-        : fullLogoLight
-
   const alt = "BringBucket"
 
-  const img = (
-    <Image
-      src={src}
-      alt={alt}
-      width={variant === "icon" ? 36 : 140}
-      height={variant === "icon" ? 36 : 36}
-      className={cn("h-auto", variant === "icon" ? "w-9" : "w-[140px]", className)}
-      priority
-      suppressHydrationWarning
-    />
-  )
+  const img =
+    variant === "icon" ? (
+      <Image
+        src={iconLogo}
+        alt={alt}
+        width={36}
+        height={36}
+        className={cn(ICON_STYLE, className)}
+        priority
+      />
+    ) : (
+      <>
+        <Image
+          src={fullLogoLight}
+          alt={alt}
+          width={140}
+          height={36}
+          className={cn(FULL_STYLE, "dark:hidden", className)}
+          priority
+        />
+        <Image
+          src={fullLogoDark}
+          alt={alt}
+          width={140}
+          height={36}
+          className={cn(FULL_STYLE, "hidden dark:inline-block", className)}
+          priority
+        />
+      </>
+    )
 
   if (!href) return img
 
