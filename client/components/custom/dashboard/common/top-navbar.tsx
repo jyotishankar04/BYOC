@@ -1,8 +1,9 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Search01Icon,
   CloudUploadIcon,
@@ -15,13 +16,18 @@ import {
   HardDriveIcon,
   CloudServerIcon,
   InformationCircleIcon,
-} from "@hugeicons/core-free-icons"
-import { SidebarTrigger } from "@/components/ui/sidebar"
-import { Separator } from "@/components/ui/separator"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+  Shield01Icon,
+  User02Icon,
+  Delete01Icon,
+  Link01Icon,
+  Time01Icon,
+} from "@hugeicons/core-free-icons";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,37 +35,59 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { UploadDialog } from "@/components/custom/dashboard/common/upload-dialog"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/dropdown-menu";
+import { UploadDialog } from "@/components/custom/dashboard/common/upload-dialog";
+import { useNotifications } from "@/lib/notifications-context";
+import { useSession, signOut } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
+import type { NotificationType } from "@/lib/notifications";
 
-type HugeIcon = Parameters<typeof HugeiconsIcon>[0]["icon"]
+type HugeIcon = Parameters<typeof HugeiconsIcon>[0]["icon"];
 
-interface QuickNotif {
-  id: string
-  icon: HugeIcon
-  iconColor: string
-  iconBg: string
-  title: string
-  time: string
-  read: boolean
+const NOTIFICATION_ICON_MAP: Record<NotificationType, { icon: HugeIcon; color: string; bg: string }> = {
+  FILE_SHARED: { icon: Share01Icon, color: "text-violet-500", bg: "bg-violet-500/10" },
+  FILE_UPLOADED: { icon: FileUploadIcon, color: "text-blue-500", bg: "bg-blue-500/10" },
+  FILE_DELETED: { icon: Delete01Icon, color: "text-red-500", bg: "bg-red-500/10" },
+  MEMBER_JOINED: { icon: User02Icon, color: "text-emerald-500", bg: "bg-emerald-500/10" },
+  MEMBER_LEFT: { icon: User02Icon, color: "text-amber-500", bg: "bg-amber-500/10" },
+  INVITE_SENT: { icon: Share01Icon, color: "text-blue-500", bg: "bg-blue-500/10" },
+  STORAGE_ALERT: { icon: HardDriveIcon, color: "text-amber-500", bg: "bg-amber-500/10" },
+  SECURITY_ALERT: { icon: Shield01Icon, color: "text-red-500", bg: "bg-red-500/10" },
+  LINK_EXPIRED: { icon: Time01Icon, color: "text-slate-500", bg: "bg-slate-500/10" },
+  LINK_DISABLED: { icon: Link01Icon, color: "text-slate-500", bg: "bg-slate-500/10" },
+  SETTINGS_CHANGED: { icon: CloudServerIcon, color: "text-cyan-500", bg: "bg-cyan-500/10" },
+};
+
+function formatTimeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return "Just now";
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  return date.toLocaleDateString();
 }
 
-const INITIAL_NOTIFS: QuickNotif[] = [
-  { id: "q1", icon: FileUploadIcon,       iconColor: "text-blue-500",    iconBg: "bg-blue-500/10",    title: "project-demo.mp4 uploaded successfully", time: "Just now",    read: false },
-  { id: "q2", icon: Share01Icon,           iconColor: "text-violet-500",  iconBg: "bg-violet-500/10",  title: "invoice.pdf shared via public link",     time: "2 hours ago", read: false },
-  { id: "q3", icon: HardDriveIcon,         iconColor: "text-amber-500",   iconBg: "bg-amber-500/10",   title: "Storage usage reached 78% of limit",     time: "Yesterday",   read: false },
-  { id: "q4", icon: CloudServerIcon,       iconColor: "text-emerald-500", iconBg: "bg-emerald-500/10", title: "AWS S3 bucket connected successfully",   time: "2 days ago",  read: true  },
-  { id: "q5", icon: InformationCircleIcon, iconColor: "text-slate-500",   iconBg: "bg-slate-500/10",   title: "Scheduled maintenance on May 15",        time: "3 days ago",  read: true  },
-]
-
 export function TopNavbar() {
-  const [uploadOpen, setUploadOpen] = useState(false)
-  const [notifOpen, setNotifOpen]   = useState(false)
-  const [notifs, setNotifs]         = useState(INITIAL_NOTIFS)
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const { notifications, unreadCount, isLoading, markAllAsRead } = useNotifications();
+  const { data: session } = useSession();
+  const router = useRouter();
 
-  const unreadCount = notifs.filter((n) => !n.read).length
-  const markAllRead = () => setNotifs((p) => p.map((n) => ({ ...n, read: true })))
+  const user = session?.user;
+  const userInitials = user?.name
+    ?.split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase() || "U";
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/auth/login");
+  };
 
   return (
     <>
@@ -118,7 +146,7 @@ export function TopNavbar() {
                     variant="ghost"
                     size="sm"
                     className="h-7 px-2 text-[11px] text-muted-foreground hover:text-foreground"
-                    onClick={markAllRead}
+                    onClick={() => markAllAsRead()}
                   >
                     Mark all read
                   </Button>
@@ -126,28 +154,57 @@ export function TopNavbar() {
               </div>
 
               <div className="max-h-[360px] overflow-y-auto">
-                {notifs.map((n) => (
-                  <div
-                    key={n.id}
-                    className={cn(
-                      "flex items-start gap-3 border-b px-4 py-3 last:border-0 transition-colors cursor-default",
-                      n.read ? "hover:bg-muted/40" : "bg-primary/[0.04] hover:bg-primary/[0.07]",
-                    )}
-                  >
-                    <div className={cn("flex size-7 shrink-0 items-center justify-center rounded-lg mt-0.5", n.iconBg)}>
-                      <HugeiconsIcon icon={n.icon} className={cn("size-3.5", n.iconColor)} strokeWidth={1.5} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className={cn("text-xs leading-snug", !n.read && "font-medium")}>
-                        {n.title}
-                      </p>
-                      <p className="mt-0.5 text-[11px] text-muted-foreground">{n.time}</p>
-                    </div>
-                    {!n.read && (
-                      <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />
-                    )}
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="size-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                   </div>
-                ))}
+                ) : notifications.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <HugeiconsIcon
+                      icon={Notification01Icon}
+                      className="size-8 text-muted-foreground/50 mb-2"
+                      strokeWidth={1.5}
+                    />
+                    <p className="text-sm text-muted-foreground">No notifications</p>
+                  </div>
+                ) : (
+                  notifications.slice(0, 5).map((n) => {
+                    const iconConfig = NOTIFICATION_ICON_MAP[n.type] || {
+                      icon: InformationCircleIcon,
+                      color: "text-slate-500",
+                      bg: "bg-slate-500/10",
+                    };
+                    return (
+                      <div
+                        key={n.id}
+                        className={cn(
+                          "flex items-start gap-3 border-b px-4 py-3 last:border-0 transition-colors cursor-pointer",
+                          !n.read ? "bg-primary/[0.04] hover:bg-primary/[0.07]" : "hover:bg-muted/40",
+                        )}
+                      >
+                        <div className={cn("flex size-7 shrink-0 items-center justify-center rounded-lg mt-0.5", iconConfig.bg)}>
+                          <HugeiconsIcon icon={iconConfig.icon} className={cn("size-3.5", iconConfig.color)} strokeWidth={1.5} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className={cn("text-xs leading-snug", !n.read && "font-medium")}>
+                            {n.title}
+                          </p>
+                          {n.message && (
+                            <p className="mt-0.5 text-[11px] text-muted-foreground line-clamp-1">
+                              {n.message}
+                            </p>
+                          )}
+                          <p className="mt-0.5 text-[11px] text-muted-foreground">
+                            {formatTimeAgo(n.createdAt)}
+                          </p>
+                        </div>
+                        {!n.read && (
+                          <span className="mt-2 size-1.5 shrink-0 rounded-full bg-primary" />
+                        )}
+                      </div>
+                    );
+                  })
+                )}
               </div>
 
               <div className="border-t px-4 py-2.5">
@@ -167,14 +224,16 @@ export function TopNavbar() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full size-8">
                 <Avatar size="sm" className="size-7">
-                  <AvatarFallback className="text-[11px] font-semibold">JD</AvatarFallback>
+                  <AvatarFallback className="text-[11px] font-semibold">
+                    {userInitials}
+                  </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel className="py-2">
-                <p className="text-sm font-semibold">John Doe</p>
-                <p className="text-xs font-normal text-muted-foreground">john@example.com</p>
+                <p className="text-sm font-semibold">{user?.name || "User"}</p>
+                <p className="text-xs font-normal text-muted-foreground">{user?.email || ""}</p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
@@ -190,7 +249,7 @@ export function TopNavbar() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive">
+              <DropdownMenuItem variant="destructive" onClick={handleSignOut}>
                 <HugeiconsIcon icon={Logout01Icon} className="size-3.5" strokeWidth={1.5} />
                 Sign out
               </DropdownMenuItem>
@@ -201,5 +260,5 @@ export function TopNavbar() {
 
       <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} />
     </>
-  )
+  );
 }

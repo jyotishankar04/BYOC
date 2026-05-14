@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   ArrowDown01Icon,
@@ -43,6 +43,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { useSubscriptionSnapshot } from "@/lib/subscription"
+import { UpgradeTooltip } from "@/components/custom/subscription/upgrade-tooltip"
 import {
   useWorkspace,
   type CreateWorkspaceData,
@@ -67,6 +69,7 @@ function CreateWorkspaceDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const { createWorkspace } = useWorkspace()
+  const { subscription, checks, loading } = useSubscriptionSnapshot()
   const router = useRouter()
 
   const [name, setName]   = useState("")
@@ -81,13 +84,14 @@ function CreateWorkspaceDialog({
     if (!slugTouched) setSlug(v.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""))
   }
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!name.trim()) return
     const data: CreateWorkspaceData = { name: name.trim(), slug: derivedSlug || name.toLowerCase().replace(/\s+/g, "-"), type }
-    const id = createWorkspace(data)
+    const id = await createWorkspace(data)
     onOpenChange(false)
     setName(""); setSlug(""); setType("Personal"); setSlugTouched(false)
     router.push(`/app`)
+    void id
   }
 
   return (
@@ -143,7 +147,18 @@ function CreateWorkspaceDialog({
 
         <DialogFooter>
           <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" disabled={!name.trim()} onClick={handleCreate}>Create workspace</Button>
+          <UpgradeTooltip
+            disabled={!checks.canCreateWorkspace || loading}
+            message={`Upgrade to Pro to create more workspaces. Current plan: ${subscription?.plan ?? "Free"}.`}
+          >
+            <Button
+              size="sm"
+              disabled={!name.trim() || !checks.canCreateWorkspace || loading}
+              onClick={handleCreate}
+            >
+              Create workspace
+            </Button>
+          </UpgradeTooltip>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -154,11 +169,39 @@ function CreateWorkspaceDialog({
 
 export function WorkspaceSwitcher() {
   const { workspaces, currentWorkspace, switchWorkspace } = useWorkspace()
+  const { subscription, checks, loading } = useSubscriptionSnapshot()
   const { state } = useSidebar()
   const router = useRouter()
+  const pathname = usePathname()
   const [createOpen, setCreateOpen] = useState(false)
 
   const isCollapsed = state === "collapsed"
+
+  const handleSwitch = (id: string) => {
+    switchWorkspace(id)
+    // If on a workspace-specific page, navigate to the same page for the new workspace
+    const wsSettingsMatch = /^\/app\/workspaces\/([^/]+)(.*)$/.exec(pathname)
+    if (wsSettingsMatch) {
+      const rest = wsSettingsMatch[2] ?? ""
+      router.push(`/app/workspaces/${id}${rest}`)
+    }
+  }
+
+  if (!currentWorkspace) {
+    return (
+      <>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" disabled className="opacity-50">
+              <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted" />
+              <span className="text-sm text-muted-foreground">Loading…</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+        <CreateWorkspaceDialog open={createOpen} onOpenChange={setCreateOpen} />
+      </>
+    )
+  }
 
   return (
     <>
@@ -224,7 +267,7 @@ export function WorkspaceSwitcher() {
               {workspaces.map((ws) => (
                 <DropdownMenuItem
                   key={ws.id}
-                  onClick={() => switchWorkspace(ws.id)}
+                  onClick={() => handleSwitch(ws.id)}
                   className="gap-2.5"
                 >
                   <div className={cn("flex size-6 shrink-0 items-center justify-center rounded text-[10px] font-bold text-white", ws.color)}>
@@ -250,10 +293,19 @@ export function WorkspaceSwitcher() {
                 <HugeiconsIcon icon={Settings01Icon} className="size-3.5" strokeWidth={1.5} />
                 Manage workspace
               </DropdownMenuItem>
-              <DropdownMenuItem className="gap-2" onClick={() => setCreateOpen(true)}>
-                <HugeiconsIcon icon={Add01Icon} className="size-3.5" strokeWidth={2} />
-                Create new workspace
-              </DropdownMenuItem>
+              <UpgradeTooltip
+                disabled={!checks.canCreateWorkspace || loading}
+                message={`Upgrade to Pro to create more workspaces. You are currently on the ${subscription?.plan ?? "Free"} plan.`}
+                className="w-full"
+              >
+                <DropdownMenuItem
+                  className={cn("gap-2", (!checks.canCreateWorkspace || loading) && "pointer-events-none opacity-60")}
+                  onClick={() => setCreateOpen(true)}
+                >
+                  <HugeiconsIcon icon={Add01Icon} className="size-3.5" strokeWidth={2} />
+                  Create new workspace
+                </DropdownMenuItem>
+              </UpgradeTooltip>
             </DropdownMenuContent>
           </DropdownMenu>
         </SidebarMenuItem>
