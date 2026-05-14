@@ -1,29 +1,57 @@
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import type { Express } from 'express';
-import logger from '@/core/logger';
-import { requestLogger } from '@/shared/middleware/request-logger';
-import { errorHandler } from '@/shared/middleware/error-handler';
-import healthRoutes from '@/modules/health/health.routes'
-import { toNodeHandler } from "better-auth/node";
-import { auth } from '@/utils/auth';
-
-
+import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import type { Express } from "express";
+import { requestLogger } from "@/shared/middleware/request-logger";
+import { errorHandler } from "@/shared/middleware/error-handler";
+import healthRoutes from "@/modules/health/health.routes";
+import authRoutes, { authController } from "@/modules/auth/auth.route";
+import workspaceRoutes from "@/modules/workspace/workspace.route";
+import userRoutes from "@/modules/user/user.route";
+import onboardRoutes from "@/modules/auth/onboard.route";
+import webhookRoutes from "@/modules/webhooks/s3-webhook.route";
+import polarWebhookRoutes from "@/modules/webhooks/polar/polar-webhook.route";
+import billingRoutes from "@/modules/billing/billing.route";
+import notificationsRoutes from "@/modules/notifications/notifications.route";
+import activityRoutes from "@/modules/activity/activity.route";
+import shareLinksRoutes, { publicShareRouter } from "@/modules/share-links/share-links.route";
+import analyticsRoutes from "@/modules/analytics/analytics.route";
+import { startCronJobs } from "@/jobs/jobs";
+import env from "@/config/env";
 
 const app: Express = express();
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: env.FRONTEND_URL,
+  credentials: true,
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger);
 
-app.all("/api/v1/auth/*",toNodeHandler(auth))
+// Public Share Links (no auth)
+app.use("/s", publicShareRouter);
 
-app.use('/health', healthRoutes);
+app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/workspaces", workspaceRoutes);
+app.use("/api/v1/users", userRoutes);
+app.use("/api/v1/onboard", onboardRoutes);
+app.use("/api/v1/webhooks", webhookRoutes);
+app.use("/api/v1/webhooks", polarWebhookRoutes);
+app.use("/api/v1/billing", billingRoutes);
+app.use("/api/v1/users/me/notifications", notificationsRoutes);
+app.use("/api/v1/workspaces/:workspaceId/activity", activityRoutes);
+app.use("/api/v1/workspaces/:workspaceId/share-links", shareLinksRoutes);
+app.use("/api/v1/workspaces/:workspaceId", analyticsRoutes);
+app.use("/health", healthRoutes);
+
+// Google OAuth callback — must match URI registered in Google Cloud Console
+app.get("/api/auth/callback/google", authController.googleCallback);
 
 app.use(errorHandler);
 
+startCronJobs();
 
 export default app;
