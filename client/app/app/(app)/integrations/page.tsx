@@ -54,6 +54,7 @@ import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { LockedState } from "@/components/custom/subscription/locked-state"
 import { UpgradeTooltip } from "@/components/custom/subscription/upgrade-tooltip"
+import { useAppConfig, type ProviderKey } from "@/lib/admin"
 
 // ─── Available providers metadata ─────────────────────────────────────────────
 
@@ -68,65 +69,16 @@ interface AvailableProvider {
   initials: string
 }
 
-const AVAILABLE_PROVIDERS: AvailableProvider[] = [
-  {
-    id: "aws-s3", name: "Amazon S3", providerType: "S3",
-    description: "Industry-standard object storage with 99.999999999% durability and global availability.",
-    status: "available",
-    logoColor: "text-amber-600", logoBg: "bg-amber-500/10", initials: "S3",
-  },
-  {
-    id: "r2", name: "Cloudflare R2", providerType: "R2",
-    description: "Zero egress-fee object storage compatible with the S3 API — ideal for cost savings.",
-    status: "available",
-    logoColor: "text-orange-600", logoBg: "bg-orange-500/10", initials: "R2",
-  },
-]
-
-const COMING_SOON_PROVIDERS: AvailableProvider[] = [
-  {
-    id: "gcs", name: "Google Cloud Storage", providerType: "Other",
-    description: "Unified object storage for developers and enterprises with strong consistency.",
-    status: "coming-soon",
-    logoColor: "text-blue-600", logoBg: "bg-blue-500/10", initials: "GCS",
-  },
-  {
-    id: "azure-blob", name: "Azure Blob Storage", providerType: "Other",
-    description: "Massively scalable object storage from Microsoft Azure for any type of unstructured data.",
-    status: "coming-soon",
-    logoColor: "text-sky-600", logoBg: "bg-sky-500/10", initials: "AZ",
-  },
-  {
-    id: "backblaze", name: "Backblaze B2", providerType: "Other",
-    description: "Low-cost cloud storage, 1/4 the price of AWS S3, fully S3-compatible.",
-    status: "coming-soon",
-    logoColor: "text-red-600", logoBg: "bg-red-500/10", initials: "B2",
-  },
-  {
-    id: "minio", name: "MinIO", providerType: "MinIO",
-    description: "High-performance, self-hosted S3-compatible object storage for private cloud.",
-    status: "coming-soon",
-    logoColor: "text-red-600", logoBg: "bg-red-500/10", initials: "M",
-  },
-  {
-    id: "do-spaces", name: "DigitalOcean Spaces", providerType: "Other",
-    description: "Simple, scalable object storage built for developers with a flat monthly fee.",
-    status: "coming-soon",
-    logoColor: "text-cyan-600", logoBg: "bg-cyan-500/10", initials: "DO",
-  },
-  {
-    id: "wasabi", name: "Wasabi Hot Storage", providerType: "Other",
-    description: "Fast, low-cost, and reliable cloud object storage — no egress or API fees.",
-    status: "coming-soon",
-    logoColor: "text-emerald-600", logoBg: "bg-emerald-500/10", initials: "WS",
-  },
-  {
-    id: "supabase", name: "Supabase Storage", providerType: "Supabase",
-    description: "Built-in S3-compatible storage for Supabase projects with PostgreSQL integration.",
-    status: "coming-soon",
-    logoColor: "text-emerald-600", logoBg: "bg-emerald-500/10", initials: "SB",
-  },
-]
+// Static metadata for each provider key — status is resolved from admin config at runtime
+const ALL_PROVIDER_META: Record<ProviderKey, Omit<AvailableProvider, "status">> = {
+  S3:       { id: "aws-s3",      name: "Amazon S3",             providerType: "S3",       description: "Industry-standard object storage with 99.999999999% durability and global availability.", logoColor: "text-amber-600",   logoBg: "bg-amber-500/10",   initials: "S3" },
+  R2:       { id: "r2",          name: "Cloudflare R2",         providerType: "R2",       description: "Zero egress-fee object storage compatible with the S3 API — ideal for cost savings.",      logoColor: "text-orange-600",  logoBg: "bg-orange-500/10",  initials: "R2" },
+  GCS:      { id: "gcs",         name: "Google Cloud Storage",  providerType: "Other",    description: "Unified object storage for developers and enterprises with strong consistency.",            logoColor: "text-blue-600",    logoBg: "bg-blue-500/10",    initials: "GCS" },
+  Azure:    { id: "azure-blob",  name: "Azure Blob Storage",    providerType: "Other",    description: "Massively scalable object storage from Microsoft Azure for any type of unstructured data.",logoColor: "text-sky-600",     logoBg: "bg-sky-500/10",     initials: "AZ" },
+  MinIO:    { id: "minio",       name: "MinIO",                 providerType: "MinIO",    description: "High-performance, self-hosted S3-compatible object storage for private cloud.",            logoColor: "text-red-600",     logoBg: "bg-red-500/10",     initials: "M" },
+  Supabase: { id: "supabase",    name: "Supabase Storage",      providerType: "Supabase", description: "Built-in S3-compatible storage for Supabase projects with PostgreSQL integration.",       logoColor: "text-emerald-600", logoBg: "bg-emerald-500/10", initials: "SB" },
+  Other:    { id: "other-s3",    name: "Other S3-compatible",   providerType: "Other",    description: "Any S3-compatible endpoint — DigitalOcean Spaces, Wasabi, Backblaze B2, and more.",       logoColor: "text-violet-600",  logoBg: "bg-violet-500/10",  initials: "S3+" },
+}
 
 const ENDPOINT_REQUIRED: ProviderType[] = ["R2"]
 const STATUS_CLASSES: Record<string, string> = {
@@ -666,16 +618,22 @@ function ConnectedProviderCard({ onSettings }: { onSettings: () => void }) {
 export default function IntegrationsPage() {
   const { currentWorkspace } = useWorkspace()
   const { subscription, workspacePlan, loading } = useSubscriptionSnapshot()
+  const { data: appConfig } = useAppConfig()
   const workspaceId = currentWorkspace?.id ?? ""
   const provider = currentWorkspace?.storage
   const [connectTarget, setConnectTarget] = useState<AvailableProvider | null>(null)
   const [showSettings, setShowSettings] = useState(false)
 
-  // Filter out already-connected provider type from available list
-  const available = AVAILABLE_PROVIDERS.filter(
-    (p) => p.providerType !== provider?.name,
-  )
-  const comingSoon = COMING_SOON_PROVIDERS
+  // Build provider lists dynamically from admin config
+  const allFromConfig: AvailableProvider[] = Object.entries(appConfig?.providers ?? {}).flatMap(([key, status]) => {
+    if (status === "hidden") return []
+    const meta = ALL_PROVIDER_META[key as ProviderKey]
+    if (!meta) return []
+    return [{ ...meta, status: (status === "enabled" ? "available" : "coming-soon") as "available" | "coming-soon" }]
+  })
+
+  const available = allFromConfig.filter((p) => p.status === "available" && p.providerType !== provider?.name)
+  const comingSoon = allFromConfig.filter((p) => p.status === "coming-soon")
   const lockedAvailableCount = available.filter(
     (providerOption) => !canUseProvider(subscription, providerOption.providerType),
   ).length

@@ -17,12 +17,12 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Logo } from "@/components/common/logo";
 import { ProviderGuideDialog } from "@/components/custom/provider-guide-dialog";
-import { LockedState } from "@/components/custom/subscription/locked-state";
 import { UpgradeTooltip } from "@/components/custom/subscription/upgrade-tooltip";
 import { AuthGuard } from "@/components/custom/auth-guard";
 import { useSession } from "@/lib/auth-client";
 import api from "@/lib/axios";
 import { useUserProfile } from "@/lib/user-settings";
+import { useAppConfig, type ProviderKey } from "@/lib/admin";
 import { toast } from "sonner";
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
@@ -35,7 +35,7 @@ const STEPS = [
 
 interface Provider {
   id: string;
-  apiType: string;
+  apiType: ProviderKey;
   name: string;
   description: string;
   available: boolean;
@@ -44,85 +44,35 @@ interface Provider {
   badges: string[];
 }
 
-const PROVIDERS: Provider[] = [
-  {
-    id: "aws",
-    apiType: "S3",
-    name: "AWS S3",
-    description: "Enterprise-grade object storage",
-    available: true,
-    color: "text-amber-600",
-    bgColor: "bg-amber-500/10",
-    badges: ["Enterprise", "Global CDN"],
-  },
-  {
-    id: "r2",
-    apiType: "R2",
-    name: "Cloudflare R2",
-    description: "Zero egress fees, S3-compatible",
-    available: true,
-    color: "text-orange-600",
-    bgColor: "bg-orange-500/10",
-    badges: ["Zero egress", "S3 API"],
-  },
-  {
-    id: "minio",
-    apiType: "MinIO",
-    name: "MinIO",
-    description: "Self-hosted S3-compatible storage",
-    available: true,
-    color: "text-red-600",
-    bgColor: "bg-red-500/10",
-    badges: ["Self-hosted", "Pro+"],
-  },
-  {
-    id: "supabase",
-    apiType: "Supabase",
-    name: "Supabase Storage",
-    description: "PostgreSQL + Storage",
-    available: true,
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-500/10",
-    badges: ["PostgreSQL", "Pro+"],
-  },
-  {
-    id: "do",
-    apiType: "Other",
-    name: "DigitalOcean Spaces",
-    description: "Simple, predictable pricing",
-    available: false,
-    color: "text-blue-500",
-    bgColor: "bg-blue-500/10",
-    badges: [],
-  },
-  {
-    id: "b2",
-    apiType: "Other",
-    name: "Backblaze B2",
-    description: "Affordable cloud storage",
-    available: false,
-    color: "text-red-500",
-    bgColor: "bg-red-500/10",
-    badges: [],
-  },
-  {
-    id: "wasabi",
-    apiType: "Other",
-    name: "Wasabi",
-    description: "Hot cloud storage",
-    available: false,
-    color: "text-green-600",
-    bgColor: "bg-green-500/10",
-    badges: [],
-  },
-];
+const PROVIDER_META: Record<ProviderKey, Omit<Provider, "available">> = {
+  S3:       { id: "aws",      apiType: "S3",       name: "Amazon S3",         description: "Enterprise-grade object storage",      color: "text-amber-600",   bgColor: "bg-amber-500/10",   badges: ["Enterprise", "Global CDN"] },
+  R2:       { id: "r2",       apiType: "R2",       name: "Cloudflare R2",     description: "Zero egress fees, S3-compatible",      color: "text-orange-600",  bgColor: "bg-orange-500/10",  badges: ["Zero egress", "S3 API"] },
+  GCS:      { id: "gcs",      apiType: "GCS",      name: "Google Cloud",      description: "Google Cloud Storage buckets",         color: "text-blue-600",    bgColor: "bg-blue-500/10",    badges: ["Pro+"] },
+  Azure:    { id: "azure",    apiType: "Azure",    name: "Azure Blob",        description: "Microsoft Azure Blob Storage",         color: "text-sky-600",     bgColor: "bg-sky-500/10",     badges: ["Pro+"] },
+  MinIO:    { id: "minio",    apiType: "MinIO",    name: "MinIO",             description: "Self-hosted S3-compatible storage",    color: "text-red-600",     bgColor: "bg-red-500/10",     badges: ["Self-hosted", "Pro+"] },
+  Supabase: { id: "supabase", apiType: "Supabase", name: "Supabase",          description: "PostgreSQL + Storage",                 color: "text-emerald-600", bgColor: "bg-emerald-500/10", badges: ["PostgreSQL", "Pro+"] },
+  Other:    { id: "other",    apiType: "Other",    name: "Other S3-compat.",  description: "Any S3-compatible endpoint",           color: "text-violet-600",  bgColor: "bg-violet-500/10",  badges: ["S3 API"] },
+};
+
+const PROVIDER_INITIALS: Record<ProviderKey, string> = {
+  S3: "S3", R2: "R2", GCS: "GCS", Azure: "AZ", MinIO: "MI", Supabase: "SB", Other: "S3+",
+};
 
 // ─── Onboard Page ──────────────────────────────────────────────────────────────
 
 export default function OnboardPage() {
   const router = useRouter();
   const { data: session, isPending } = useSession();
-  const { data: profile, isLoading: subscriptionLoading } = useUserProfile();
+  const { data: profile } = useUserProfile();
+  const { data: appConfig } = useAppConfig();
+
+  // Build dynamic provider list from admin config (hidden providers excluded)
+  const PROVIDERS: Provider[] = Object.entries(appConfig?.providers ?? {}).flatMap(([key, status]) => {
+    if (status === "hidden") return [];
+    const meta = PROVIDER_META[key as ProviderKey];
+    if (!meta) return [];
+    return [{ ...meta, available: status === "enabled" }];
+  });
 
   const [step, setStep] = useState(1);
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(
@@ -224,7 +174,7 @@ export default function OnboardPage() {
     <AuthGuard requireOnboarded={false}>
       <div className="flex min-h-screen flex-col items-center justify-center p-4">
         <Logo className="mb-6 size-10" />
-        <div className="w-full max-w-5xl">
+        <div className="w-full max-w-xl">
           <div className="w-full rounded-xl border border-border/70 sm:bg-card sm:p-1 sm:shadow-lg/3">
             <div
               className="rounded-lg border border-border/70 bg-muted/60 p-8 sm:shadow-sm/2"
@@ -270,7 +220,8 @@ export default function OnboardPage() {
               {/* Step 1: Provider selection */}
               {step === 1 && (
                 <div className="mt-8">
-                  <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3">
+                  <p className="mb-3 text-xs font-medium text-muted-foreground">Select a provider</p>
+                  <div className="flex flex-wrap gap-2">
                     {PROVIDERS.map((provider) => {
                       const isSelected = selectedProvider?.id === provider.id;
                       const planLocked =
@@ -288,65 +239,64 @@ export default function OnboardPage() {
                             type="button"
                             disabled={isDisabled}
                             onClick={() => handleSelectProvider(provider)}
-                            className={
+                            className={[
+                              "inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-all",
                               isSelected
-                                ? "relative flex flex-col items-start gap-2 rounded-lg border border-primary bg-card p-3.5 text-left ring-2 ring-primary ring-offset-2 scale-[1.02] transition-all"
+                                ? "border-primary bg-primary/5 text-primary ring-2 ring-primary ring-offset-1"
                                 : !provider.available
-                                  ? "relative flex cursor-not-allowed flex-col items-start gap-2 rounded-lg border border-border/50 bg-card/50 p-3.5 text-left opacity-60 grayscale-[50%] transition-all"
+                                  ? "cursor-not-allowed border-border/40 bg-card/50 text-muted-foreground opacity-55 grayscale"
                                   : planLocked
-                                    ? "relative flex cursor-not-allowed flex-col items-start gap-2 rounded-lg border border-border bg-card/70 p-3.5 text-left opacity-70 transition-all"
-                                    : "relative flex flex-col items-start gap-2 rounded-lg border border-border bg-card p-3.5 text-left transition-all hover:bg-accent/30 hover:scale-[1.01]"
-                            }
+                                    ? "cursor-not-allowed border-border bg-card/70 text-muted-foreground opacity-60"
+                                    : "border-border bg-card text-foreground hover:border-primary/40 hover:bg-accent/30",
+                            ].join(" ")}
                           >
-                            <div className="flex w-full items-center justify-between">
-                              <div
-                                className={`flex size-8 items-center justify-center rounded-lg ${provider.bgColor}`}
-                              >
-                                <Cloud className={`size-4 ${provider.color}`} />
-                              </div>
-                              {isSelected && (
-                                <CircleCheck className="size-4 text-primary" />
-                              )}
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium">
-                                {provider.name}
-                              </p>
-                              <p className="mt-0.5 text-[11px] text-muted-foreground leading-tight">
-                                {provider.description}
-                              </p>
-                            </div>
-                            {!provider.available ? (
-                              <Badge variant="outline" className="mt-1 text-[10px]">
-                                Coming soon
-                              </Badge>
-                            ) : planLocked ? (
-                              <Badge variant="outline" className="mt-1 text-[10px]">
-                                Pro required
-                              </Badge>
-                            ) : provider.badges.length > 0 ? (
-                              <div className="mt-1 flex flex-wrap gap-1">
-                                {provider.badges.map((badge) => (
-                                  <Badge key={badge} variant="outline" className="text-[10px] px-1.5 py-0">
-                                    {badge}
-                                  </Badge>
-                                ))}
-                              </div>
-                            ) : null}
+                            <span
+                              className={`inline-flex items-center justify-center rounded-md px-1.5 py-0.5 text-[10px] font-bold ${provider.bgColor} ${provider.color}`}
+                            >
+                              {PROVIDER_INITIALS[provider.apiType]}
+                            </span>
+                            <span>{provider.name}</span>
+                            {!provider.available && (
+                              <span className="ml-0.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                Soon
+                              </span>
+                            )}
+                            {planLocked && (
+                              <span className="ml-0.5 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                Pro
+                              </span>
+                            )}
+                            {isSelected && <CircleCheck className="size-3.5 text-primary" />}
                           </button>
                         </UpgradeTooltip>
                       );
                     })}
                   </div>
 
-                  {!subscriptionLoading && profile?.subscription?.plan === "Free" ? (
-                    <div className="mt-4">
-                      <LockedState
-                        title="More provider options unlock on paid plans"
-                        description="Free workspaces can connect Amazon S3 and Cloudflare R2 during onboarding. Upgrade to Pro later to use MinIO, Supabase, and additional S3-compatible targets."
-                      />
+                  {selectedProvider && (
+                    <div className="mt-4 flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
+                      <div className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${selectedProvider.bgColor}`}>
+                        <Cloud className={`size-4 ${selectedProvider.color}`} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">{selectedProvider.name}</p>
+                        <p className="text-xs text-muted-foreground">{selectedProvider.description}</p>
+                      </div>
+                      {selectedProvider.badges.length > 0 && (
+                        <div className="ml-auto flex shrink-0 flex-wrap gap-1">
+                          {selectedProvider.badges.map((badge) => (
+                            <Badge key={badge} variant="outline" className="text-[10px] px-1.5 py-0">
+                              {badge}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  ) : null}
+                  )}
+
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    More providers will be added soon.
+                  </p>
 
                   <details className="mt-4 rounded-lg border bg-card/50">
                     <summary className="flex cursor-pointer select-none items-center gap-2 px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors list-none">
