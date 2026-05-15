@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/common/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "./providers";
+import { MaintenanceGate } from "@/components/common/maintenance-gate";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -75,7 +76,9 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
+            <MaintenanceGate>
+              {children}
+            </MaintenanceGate>
             <Toaster richColors position="bottom-right" />
           </ThemeProvider>
         </Providers>

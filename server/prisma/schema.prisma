@@ -145,6 +145,7 @@ model User {
   website       String?
   avatar        String?
   onboarded     Boolean?    @default(false)
+  isAdmin       Boolean     @default(false)
   accounts      Account[]
   sessions      Session[]
   workspaces    Workspace[]
@@ -164,6 +165,7 @@ model User {
   uploadSessions UploadSession[]  @relation("UserUploadSessions")
 
   subscription Subscription?
+  blogs        Blog[]
 
   @@unique([email])
   @@map("user")
@@ -528,4 +530,23 @@ model UploadSession {
 
   @@index([workspaceId])
   @@map("upload_sessions")
+}
+
+model Blog {
+  id          String    @id @default(uuid()) @db.Uuid
+  title       String
+  slug        String    @unique
+  content     String    @db.Text
+  excerpt     String?
+  coverImage  String?
+  authorId    String
+  author      User      @relation(fields: [authorId], references: [id])
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+  tags        String[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([published])
+  @@map("blogs")
 }

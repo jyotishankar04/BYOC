@@ -4,6 +4,7 @@ import helmet from "helmet";
 import type { Express } from "express";
 import { requestLogger } from "@/shared/middleware/request-logger";
 import { errorHandler } from "@/shared/middleware/error-handler";
+import { maintenanceModeMiddleware } from "@/shared/middleware/maintenance.middleware";
 import healthRoutes from "@/modules/health/health.routes";
 import authRoutes, { authController } from "@/modules/auth/auth.route";
 import workspaceRoutes from "@/modules/workspace/workspace.route";
@@ -12,6 +13,7 @@ import onboardRoutes from "@/modules/auth/onboard.route";
 import webhookRoutes from "@/modules/webhooks/s3-webhook.route";
 import polarWebhookRoutes from "@/modules/webhooks/polar/polar-webhook.route";
 import billingRoutes from "@/modules/billing/billing.route";
+import adminRoutes, { publicBlogRouter, publicConfigRouter } from "@/modules/admin/admin.route";
 import notificationsRoutes from "@/modules/notifications/notifications.route";
 import activityRoutes from "@/modules/activity/activity.route";
 import shareLinksRoutes, { publicShareRouter } from "@/modules/share-links/share-links.route";
@@ -27,12 +29,19 @@ app.use(cors({
   credentials: true,
 }));
 
+app.use(maintenanceModeMiddleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger);
 
 // Public Share Links (no auth)
 app.use("/s", publicShareRouter);
+
+// Public Blogs (no auth)
+app.use("/api/v1/blogs", publicBlogRouter);
+
+// Public app config (no auth)
+app.use("/api/v1/config", publicConfigRouter);
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/workspaces", workspaceRoutes);
@@ -41,6 +50,7 @@ app.use("/api/v1/onboard", onboardRoutes);
 app.use("/api/v1/webhooks", webhookRoutes);
 app.use("/api/v1/webhooks", polarWebhookRoutes);
 app.use("/api/v1/billing", billingRoutes);
+app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/users/me/notifications", notificationsRoutes);
 app.use("/api/v1/workspaces/:workspaceId/activity", activityRoutes);
 app.use("/api/v1/workspaces/:workspaceId/share-links", shareLinksRoutes);

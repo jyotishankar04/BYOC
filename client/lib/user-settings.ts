@@ -15,6 +15,7 @@ export interface UserProfile {
   website: string | null;
   avatar: string | null;
   onboarded: boolean | null;
+  isAdmin: boolean;
   createdAt: string;
   updatedAt: string;
   subscription: UserSubscriptionSnapshot;
