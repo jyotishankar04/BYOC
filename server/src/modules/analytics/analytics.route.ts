@@ -5,6 +5,7 @@ import {
   requireWorkspaceMember,
 } from "@/shared/middleware/workspace.middleware";
 import { AnalyticsController } from "./analytics.controller";
+import { requireFeature } from "@/shared/middleware/feature-flags.middleware";
 
 const analyticsRouter = Router({ mergeParams: true });
 const analyticsController = new AnalyticsController(prisma);
@@ -22,6 +23,7 @@ analyticsRouter.get(
   "/analytics",
   requireAuth,
   requireWorkspaceMember,
+  requireFeature("analytics"),
   analyticsController.getAnalytics,
 );
 

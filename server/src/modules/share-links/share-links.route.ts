@@ -6,6 +6,7 @@ import {
   requireWorkspaceMember,
   requirePermission,
 } from "@/shared/middleware/workspace.middleware";
+import { requireFeature } from "@/shared/middleware/feature-flags.middleware";
 
 const shareLinksRouter = Router({ mergeParams: true });
 const shareLinksController = new ShareLinksController(prisma);
@@ -15,6 +16,7 @@ shareLinksRouter.post(
   "/",
   requireAuth,
   requireWorkspaceMember,
+  requireFeature("shareLinks"),
   requirePermission("canShareFiles"),
   shareLinksController.createShareLink,
 );
@@ -24,6 +26,7 @@ shareLinksRouter.get(
   "/",
   requireAuth,
   requireWorkspaceMember,
+  requireFeature("shareLinks"),
   shareLinksController.listShareLinks,
 );
 
@@ -32,6 +35,7 @@ shareLinksRouter.get(
   "/:id",
   requireAuth,
   requireWorkspaceMember,
+  requireFeature("shareLinks"),
   shareLinksController.getShareLink,
 );
 
@@ -40,6 +44,7 @@ shareLinksRouter.patch(
   "/:id",
   requireAuth,
   requireWorkspaceMember,
+  requireFeature("shareLinks"),
   shareLinksController.updateShareLink,
 );
 
@@ -48,6 +53,7 @@ shareLinksRouter.delete(
   "/:id",
   requireAuth,
   requireWorkspaceMember,
+  requireFeature("shareLinks"),
   shareLinksController.deleteShareLink,
 );
 

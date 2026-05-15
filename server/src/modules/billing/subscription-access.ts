@@ -1,5 +1,6 @@
 import { WorkspacePlan } from "@/generated/prisma/client";
 import { AppError } from "@/core/errors";
+import { appSettings } from "@/config/app-settings";
 
 export type FeatureKey =
   | "passwordProtectedLinks"
@@ -80,11 +81,11 @@ export const PLAN_LIMITS: Record<WorkspacePlan, PlanLimits> = {
 };
 
 export function getPlanLimits(plan: WorkspacePlan): PlanLimits {
-  return PLAN_LIMITS[plan];
+  return PLAN_LIMITS[appSettings.getBetaModeSync() ? WorkspacePlan.Pro : plan];
 }
 
 export function getFeatureAccess(plan: WorkspacePlan): PlanFeatureAccess {
-  const limits = PLAN_LIMITS[plan];
+  const limits = PLAN_LIMITS[appSettings.getBetaModeSync() ? WorkspacePlan.Pro : plan];
   return {
     passwordProtectedLinks: limits.passwordProtectedLinks,
     customDomains: limits.customDomains,
@@ -143,6 +144,14 @@ export function assertProviderAccess(
   plan: WorkspacePlan,
   providerType: string,
 ): void {
+  const providerState = appSettings.getConfig().providers[providerType as import("@/config/app-settings").ProviderKey];
+  if (providerState === "hidden") {
+    throw new AppError(
+      `${providerType} storage is not available on this platform`,
+      403,
+      "PROVIDER_DISABLED",
+    );
+  }
   if (!PLAN_LIMITS[plan].allowedProviders.includes(providerType)) {
     throw new AppError(
       `${providerType} storage is not available on the ${plan} plan`,

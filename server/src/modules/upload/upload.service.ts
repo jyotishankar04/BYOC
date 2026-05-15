@@ -11,6 +11,7 @@ import { broadcast } from "@/modules/events/events.service";
 import { UploadRepository } from "./upload.repository";
 import { SubscriptionSnapshotService } from "@/modules/billing/subscription-snapshot.service";
 import { assertQuotaAvailable, buildQuotaSummary } from "@/modules/billing/subscription-access";
+import { appSettings } from "@/config/app-settings";
 import type {
   PresignDto,
   InitiateDto,
@@ -95,6 +96,23 @@ export class UploadService {
         422,
         "FILE_TOO_LARGE",
       );
+    }
+
+    const { allowedFileTypes } = appSettings.getConfig();
+    if (allowedFileTypes.length > 0) {
+      const allowed = allowedFileTypes.some((pattern) => {
+        if (pattern.endsWith("/*")) {
+          return dto.mimeType.startsWith(pattern.slice(0, -1));
+        }
+        return dto.mimeType === pattern;
+      });
+      if (!allowed) {
+        throw new AppError(
+          `File type "${dto.mimeType}" is not allowed on this platform`,
+          415,
+          "FILE_TYPE_NOT_ALLOWED",
+        );
+      }
     }
 
     const folderRecord = dto.folderId

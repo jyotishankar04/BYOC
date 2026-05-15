@@ -10,6 +10,7 @@ import { decrypt } from "@/shared/lib/crypto";
 import env from "@/config/env";
 import { SubscriptionSnapshotService } from "@/modules/billing/subscription-snapshot.service";
 import { assertFeatureAccess, assertQuotaAvailable, buildQuotaSummary } from "@/modules/billing/subscription-access";
+import { appSettings } from "@/config/app-settings";
 
 export class ShareLinksService {
   private repo: ShareLinksRepository;
@@ -68,6 +69,13 @@ export class ShareLinksService {
     );
 
     if (accessType === "PasswordProtected") {
+      if (!appSettings.getConfig().features.passwordProtectedLinks) {
+        throw new AppError(
+          "Password-protected links are currently disabled on this platform",
+          403,
+          "FEATURE_DISABLED",
+        );
+      }
       assertFeatureAccess(
         snapshot.plan,
         "passwordProtectedLinks",

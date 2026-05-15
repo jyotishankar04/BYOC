@@ -27,6 +27,8 @@ import {
   SESSION_EXPIRY_SECONDS,
 } from "./auth.config";
 import env from "@/config/env";
+import { AppError } from "@/core/errors";
+import { appSettings } from "@/config/app-settings";
 
 function parseCookies(header: string | undefined): Record<string, string> {
   if (!header) return {};
@@ -248,6 +250,13 @@ export class AuthService implements IAuthService {
     let isNewUser = false;
 
     if (!user) {
+      if (!appSettings.getConfig().signupsEnabled) {
+        throw new AppError(
+          "Sign-ups are currently closed",
+          403,
+          "SIGNUPS_CLOSED",
+        );
+      }
       user = await this.prisma.user.create({
         data: {
           id: crypto.randomUUID(),
