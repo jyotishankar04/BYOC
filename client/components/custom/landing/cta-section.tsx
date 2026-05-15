@@ -2,8 +2,12 @@
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { ArrowRight, Rocket } from 'lucide-react'
+import { useSession } from '@/lib/auth-client'
 
 const CTASection = () => {
+  const { data: session } = useSession()
+  const ctaHref = session?.user ? '/app' : '/auth/signup'
+
   return (
     <section className="relative overflow-hidden px-6 py-24 sm:py-32">
       {/* Background layers */}
@@ -29,9 +33,9 @@ const CTASection = () => {
 
         <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Button size="lg" asChild>
-            <Link href="/auth/signup">
+            <Link href={ctaHref}>
               <Rocket className="size-4" />
-              Get Started Free
+              {session?.user ? 'Go to Dashboard' : 'Get Started Free'}
             </Link>
           </Button>
           <Button size="lg" variant="outline" asChild>

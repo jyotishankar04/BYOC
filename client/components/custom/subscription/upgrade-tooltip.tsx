@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowRight01Icon, LockKeyIcon } from "@hugeicons/core-free-icons";
+import { LockKeyIcon } from "@hugeicons/core-free-icons";
 import {
   Tooltip,
   TooltipContent,
@@ -11,6 +11,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useBetaMode } from "@/lib/admin";
 
 export function UpgradeTooltip({
   disabled,
@@ -27,6 +28,8 @@ export function UpgradeTooltip({
   ctaHref?: string;
   className?: string;
 }) {
+  const { data: isBeta = true } = useBetaMode();
+
   if (!disabled) {
     return <>{children}</>;
   }
@@ -47,13 +50,15 @@ export function UpgradeTooltip({
             <HugeiconsIcon icon={LockKeyIcon} className="mt-0.5 size-3.5 shrink-0" strokeWidth={1.8} />
             <div className="space-y-1">
               <p>{message}</p>
-              <Link
-                href={ctaHref}
-                className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-400 underline underline-offset-2"
-              >
-                {ctaLabel}
-                <HugeiconsIcon icon={ArrowRight01Icon} className="size-3" strokeWidth={1.8} />
-              </Link>
+              {isBeta ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+                  Coming soon
+                </span>
+              ) : (
+                <Link href={ctaHref} className="inline-flex items-center gap-1 text-[11px] font-medium text-primary underline-offset-2 hover:underline">
+                  {ctaLabel}
+                </Link>
+              )}
             </div>
           </div>
         </TooltipContent>

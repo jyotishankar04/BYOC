@@ -1,6 +1,9 @@
-import { Box, CircleCheck, Gem, Users, type LucideIcon } from 'lucide-react'
+"use client"
+
+import { Box, CircleCheck, Gem, Users, Rocket, type LucideIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { PlanCtaButton } from '@/components/custom/pricing/plan-cta-button'
+import { useBetaMode } from '@/lib/admin'
 
 interface PricingPlan {
   name: string
@@ -58,6 +61,8 @@ export const pricingPlans: PricingPlan[] = [
 ]
 
 const Pricing = () => {
+  const { data: isBeta = true } = useBetaMode()
+
   return (
     <section id="pricing" className="mx-auto max-w-6xl px-6 py-20">
       <h2 className="text-balance text-center font-medium text-4xl tracking-[-0.04em] sm:text-[2.75rem]">
@@ -66,11 +71,41 @@ const Pricing = () => {
       <p className="mt-2 text-balance text-center text-md text-muted-foreground tracking-[-0.01em] sm:mt-4">
         Start free. Upgrade when you need more.
       </p>
-      <div className="mt-12 grid grid-cols-1 gap-1 rounded-xl border bg-muted/40 p-1 sm:mt-16 sm:grid-cols-2 md:mt-15 md:grid-cols-3">
-        {pricingPlans.map((plan) => (
-          <PlanCard key={plan.name} plan={plan} />
-        ))}
-      </div>
+
+      {isBeta ? (
+        /* Beta notice */
+        <div className="mx-auto mt-12 max-w-xl sm:mt-16">
+          <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/5 via-background to-primary/5 p-8 text-center sm:p-10">
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.04)_1px,transparent_1px)] bg-[size:40px_40px]" />
+            <div className="relative">
+              <Badge className="mb-4 gap-1.5 border-primary/30 bg-primary/10 text-primary">
+                <Rocket className="size-3" />
+                Beta Access
+              </Badge>
+              <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-primary/10">
+                <Gem className="size-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold tracking-tight">
+                Everyone gets Pro — free during beta
+              </h3>
+              <p className="mx-auto mt-3 max-w-sm text-sm text-muted-foreground">
+                Pricing will be introduced in a future release. For now, all users have full Pro access with no restrictions — no credit card needed.
+              </p>
+              <p className="mt-6 text-xs text-muted-foreground/60">
+                You&apos;ll be notified before any pricing changes take effect.
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Pricing cards */
+        <div className="mt-12 grid grid-cols-1 gap-1 rounded-xl border bg-muted/40 p-1 sm:mt-16 sm:grid-cols-2 md:mt-15 md:grid-cols-3">
+          {pricingPlans.map((plan) => (
+            <PlanCard key={plan.name} plan={plan} />
+          ))}
+        </div>
+      )}
+
       <p className="mt-6 text-center text-sm text-muted-foreground">
         All plans connect to your own storage bucket. You pay your cloud provider directly — we never touch your data.
       </p>

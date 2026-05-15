@@ -13,6 +13,8 @@ import {
   Crown02Icon,
   Cancel01Icon,
   LinkSquare01Icon,
+  Rocket01Icon,
+  GemIcon,
 } from "@hugeicons/core-free-icons"
 import {
   Card,
@@ -29,8 +31,8 @@ import api from "@/lib/axios"
 import { useSubscriptionSnapshot } from "@/lib/subscription"
 import { useWorkspace } from "@/lib/workspace-context"
 import { useDashboard } from "@/lib/analytics"
-import { formatFileSize } from "@/lib/file-utils"
 import { toast } from "sonner"
+import { useBetaMode } from "@/lib/admin"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -135,7 +137,6 @@ function useUsageEstimates() {
         },
       ] as const,
       totalCost,
-      isLoading: false,
       hasProvider: !!currentWorkspace?.storage?.bucket,
     }
   }, [dashboard, currentWorkspace])
@@ -302,22 +303,10 @@ function CancelDialog({
           </CardDescription>
         </CardHeader>
         <CardContent className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="flex-1"
-            onClick={onClose}
-            disabled={loading}
-          >
+          <Button variant="outline" size="sm" className="flex-1" onClick={onClose} disabled={loading}>
             Keep plan
           </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            className="flex-1"
-            onClick={onConfirm}
-            disabled={loading}
-          >
+          <Button variant="destructive" size="sm" className="flex-1" onClick={onConfirm} disabled={loading}>
             {loading ? "Canceling..." : "Yes, cancel"}
           </Button>
         </CardContent>
@@ -332,7 +321,8 @@ export default function BillingPage() {
   const [billingInterval, setBillingInterval] = useState<"month" | "6month">("month")
   const [showCancel, setShowCancel] = useState(false)
 
-  const { subscription, loading: subLoading } = useSubscriptionSnapshot()
+  const { data: IS_BETA = true } = useBetaMode()
+  const { subscription } = useSubscriptionSnapshot()
   const { data: paidPlans = [], isLoading: plansLoading } = useBillingPlans()
   const usage = useUsageEstimates()
   const checkout = useCheckout()
@@ -348,24 +338,13 @@ export default function BillingPage() {
     subscription && (subscription as unknown as Record<string, unknown>).currentPeriodEnd
       ? new Date(
           (subscription as unknown as Record<string, unknown>).currentPeriodEnd as string,
-        ).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        })
+        ).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
       : null
 
   const mutating = checkout.isPending || portal.isPending
 
-  const handleCheckout = (productId: string) => {
-    checkout.mutate(productId)
-  }
-
-  const handleCancel = () => {
-    cancel.mutate(undefined, {
-      onSuccess: () => setShowCancel(false),
-    })
-  }
+  const handleCheckout = (productId: string) => checkout.mutate(productId)
+  const handleCancel = () => cancel.mutate(undefined, { onSuccess: () => setShowCancel(false) })
 
   return (
     <div className="space-y-6">
@@ -376,6 +355,27 @@ export default function BillingPage() {
           Manage your plan and review estimated cloud storage costs.
         </p>
       </div>
+
+      {/* Beta notice */}
+      {IS_BETA && (
+        <div className="relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 via-background to-primary/5 p-4">
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.04)_1px,transparent_1px)] bg-[size:32px_32px]" />
+          <div className="relative flex items-start gap-3">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <HugeiconsIcon icon={Rocket01Icon} className="size-4 text-primary" strokeWidth={1.5} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-semibold">Beta — everyone gets Pro for free</p>
+                <Badge className="border-primary/30 bg-primary/10 text-primary text-[10px]">Beta</Badge>
+              </div>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Pricing will be enforced in a future release. All users currently have full Pro access — no credit card needed. You will be notified before any changes take effect.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Storage cost notice */}
       <div className="flex items-start gap-3 rounded-lg border border-blue-500/20 bg-blue-500/5 p-4">
@@ -398,22 +398,26 @@ export default function BillingPage() {
       </div>
 
       {/* Current plan card */}
-      <Card className={cn(isPaid ? "border-primary/40" : "")}>
+      <Card className={cn(!IS_BETA && isPaid ? "border-primary/40" : "")}>
         <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
               <HugeiconsIcon icon={Crown02Icon} className="size-5 text-primary" strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-sm font-semibold">{currentPlan} Plan</p>
-              <p className="text-xs text-muted-foreground">
-                {currentPlan === "Free"
-                  ? "1 workspace · 5 share links · basic analytics"
-                  : currentPlan === "Pro"
-                    ? "3 workspaces · unlimited links · advanced analytics"
-                    : "Unlimited workspaces · team management · audit logs"}
+              <p className="text-sm font-semibold">
+                {IS_BETA ? "Pro Plan" : `${currentPlan} Plan`}
               </p>
-              {periodEnd && (
+              <p className="text-xs text-muted-foreground">
+                {IS_BETA
+                  ? "3 workspaces · unlimited links · advanced analytics"
+                  : currentPlan === "Free"
+                    ? "1 workspace · 5 share links · basic analytics"
+                    : currentPlan === "Pro"
+                      ? "3 workspaces · unlimited links · advanced analytics"
+                      : "Unlimited workspaces · team management · audit logs"}
+              </p>
+              {!IS_BETA && periodEnd && (
                 <p className="mt-0.5 text-[11px] text-muted-foreground">
                   {isCanceling ? "Ends" : "Renews"} {periodEnd}
                 </p>
@@ -421,7 +425,9 @@ export default function BillingPage() {
             </div>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
-            {status ? (
+            {IS_BETA ? (
+              <Badge className="bg-primary/10 text-primary text-xs">Beta Access</Badge>
+            ) : status ? (
               <Badge
                 className={cn(
                   "text-xs",
@@ -435,7 +441,8 @@ export default function BillingPage() {
             ) : (
               <Badge className="bg-emerald-500/10 text-emerald-600 text-xs">Active</Badge>
             )}
-            {isPaid ? (
+
+            {!IS_BETA && isPaid && (
               <Button
                 size="sm"
                 variant="outline"
@@ -446,22 +453,21 @@ export default function BillingPage() {
                 <HugeiconsIcon icon={LinkSquare01Icon} className="size-3" strokeWidth={2} />
                 {portal.isPending ? "Opening..." : "Manage billing"}
               </Button>
-            ) : (
+            )}
+            {!IS_BETA && !isPaid && (
               <Button
                 size="sm"
                 variant="outline"
                 className="h-8 gap-1.5 text-xs"
                 onClick={() =>
-                  document
-                    .getElementById("plans-section")
-                    ?.scrollIntoView({ behavior: "smooth" })
+                  document.getElementById("plans-section")?.scrollIntoView({ behavior: "smooth" })
                 }
               >
                 <HugeiconsIcon icon={ArrowUpIcon} className="size-3" strokeWidth={2} />
                 Upgrade plan
               </Button>
             )}
-            {isPaid && !isCanceling && (
+            {!IS_BETA && isPaid && !isCanceling && (
               <Button
                 size="sm"
                 variant="ghost"
@@ -478,122 +484,119 @@ export default function BillingPage() {
 
       {/* Plans */}
       <section id="plans-section" className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold">Plans</h2>
-          <div className="flex items-center rounded-lg border p-0.5 text-xs">
-            <button
-              className={cn(
-                "rounded-md px-3 py-1 transition-colors",
-                billingInterval === "month"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-              onClick={() => setBillingInterval("month")}
-            >
-              Monthly
-            </button>
-            <button
-              className={cn(
-                "rounded-md px-3 py-1 transition-colors",
-                billingInterval === "6month"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-              onClick={() => setBillingInterval("6month")}
-            >
-              6 Month
-            </button>
+        <h2 className="text-sm font-semibold">Plans</h2>
+
+        {IS_BETA ? (
+          /* Beta: show notice instead of plan cards */
+          <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/5 via-background to-primary/5 p-8 text-center sm:p-10">
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.04)_1px,transparent_1px)] bg-[size:40px_40px]" />
+            <div className="relative">
+              <Badge className="mb-4 gap-1.5 border-primary/30 bg-primary/10 text-primary">
+                <HugeiconsIcon icon={Rocket01Icon} className="size-3" strokeWidth={1.5} />
+                Beta Access
+              </Badge>
+              <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-primary/10">
+                <HugeiconsIcon icon={GemIcon} className="size-6 text-primary" strokeWidth={1.5} />
+              </div>
+              <h3 className="text-xl font-semibold tracking-tight">
+                Everyone gets Pro — free during beta
+              </h3>
+              <p className="mx-auto mt-3 max-w-sm text-sm text-muted-foreground">
+                Pricing will be introduced in a future release. For now, all users have full Pro access with no restrictions — no credit card needed.
+              </p>
+              <p className="mt-6 text-xs text-muted-foreground/60">
+                You will be notified before any pricing changes take effect.
+              </p>
+            </div>
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          {/* Free card */}
-          <Card
-            className={cn(
-              "relative overflow-hidden transition-shadow hover:shadow-md",
-              currentPlan === "Free" && "ring-1 ring-primary",
-            )}
-          >
-            {currentPlan === "Free" && (
-              <div className="absolute right-3 top-3">
-                <Badge className="bg-primary/10 text-primary text-[10px]">Current</Badge>
+        ) : (
+          /* Pricing active: show interval toggle + plan cards */
+          <>
+            <div className="flex items-center justify-end">
+              <div className="flex items-center rounded-lg border p-0.5 text-xs">
+                <button
+                  className={cn(
+                    "rounded-md px-3 py-1 transition-colors",
+                    billingInterval === "month"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                  onClick={() => setBillingInterval("month")}
+                >
+                  Monthly
+                </button>
+                <button
+                  className={cn(
+                    "rounded-md px-3 py-1 transition-colors",
+                    billingInterval === "6month"
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
+                  onClick={() => setBillingInterval("6month")}
+                >
+                  6 Month
+                </button>
               </div>
-            )}
-            <CardHeader className="pb-3 bg-primary/5">
-              <CardTitle className="text-base font-bold">Free</CardTitle>
-              <CardDescription className="text-[11px]">
-                For individuals getting started.
-              </CardDescription>
-              <div className="flex items-end gap-1 pt-1">
-                <span className="text-2xl font-bold tracking-tight">$0</span>
-                <span className="pb-0.5 text-xs text-muted-foreground">/forever</span>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <ul className="space-y-2">
-                {PLAN_FEATURES.Free.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-xs">
-                    <HugeiconsIcon
-                      icon={CheckmarkCircle01Icon}
-                      className="mt-0.5 size-3.5 shrink-0 text-emerald-500"
-                      strokeWidth={2}
-                    />
-                    <span>{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <Button size="sm" variant="outline" className="mt-5 w-full h-8 text-xs" disabled>
-                Current plan
-              </Button>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Pro card */}
-          {plansLoading ? (
-            <Card className="animate-pulse">
-              <CardHeader className="pb-3 bg-blue-500/5">
-                <div className="h-4 w-12 rounded bg-muted" />
-              </CardHeader>
-              <CardContent className="pt-4 space-y-2">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-3 rounded bg-muted" />
-                ))}
-              </CardContent>
-            </Card>
-          ) : (
-            <PlanCard
-              tier="Pro"
-              isCurrent={currentPlan === "Pro"}
-              plans={paidPlans}
-              interval={billingInterval}
-              onCheckout={handleCheckout}
-              mutating={mutating}
-            />
-          )}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {/* Free card */}
+              <Card
+                className={cn(
+                  "relative overflow-hidden transition-shadow hover:shadow-md",
+                  currentPlan === "Free" && "ring-1 ring-primary",
+                )}
+              >
+                {currentPlan === "Free" && (
+                  <div className="absolute right-3 top-3">
+                    <Badge className="bg-primary/10 text-primary text-[10px]">Current</Badge>
+                  </div>
+                )}
+                <CardHeader className="pb-3 bg-primary/5">
+                  <CardTitle className="text-base font-bold">Free</CardTitle>
+                  <CardDescription className="text-[11px]">For individuals getting started.</CardDescription>
+                  <div className="flex items-end gap-1 pt-1">
+                    <span className="text-2xl font-bold tracking-tight">$0</span>
+                    <span className="pb-0.5 text-xs text-muted-foreground">/forever</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-4">
+                  <ul className="space-y-2">
+                    {PLAN_FEATURES.Free.map((f) => (
+                      <li key={f} className="flex items-start gap-2 text-xs">
+                        <HugeiconsIcon icon={CheckmarkCircle01Icon} className="mt-0.5 size-3.5 shrink-0 text-emerald-500" strokeWidth={2} />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button size="sm" variant="outline" className="mt-5 w-full h-8 text-xs" disabled>
+                    Current plan
+                  </Button>
+                </CardContent>
+              </Card>
 
-          {/* Team card */}
-          {plansLoading ? (
-            <Card className="animate-pulse">
-              <CardHeader className="pb-3 bg-violet-500/5">
-                <div className="h-4 w-16 rounded bg-muted" />
-              </CardHeader>
-              <CardContent className="pt-4 space-y-2">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-3 rounded bg-muted" />
-                ))}
-              </CardContent>
-            </Card>
-          ) : (
-            <PlanCard
-              tier="Team"
-              isCurrent={currentPlan === "Team"}
-              plans={paidPlans}
-              interval={billingInterval}
-              onCheckout={handleCheckout}
-              mutating={mutating}
-            />
-          )}
-        </div>
+              {/* Pro card */}
+              {plansLoading ? (
+                <Card className="animate-pulse">
+                  <CardHeader className="pb-3 bg-blue-500/5"><div className="h-4 w-12 rounded bg-muted" /></CardHeader>
+                  <CardContent className="pt-4 space-y-2">{[1,2,3].map((i) => <div key={i} className="h-3 rounded bg-muted" />)}</CardContent>
+                </Card>
+              ) : (
+                <PlanCard tier="Pro" isCurrent={currentPlan === "Pro"} plans={paidPlans} interval={billingInterval} onCheckout={handleCheckout} mutating={mutating} />
+              )}
+
+              {/* Team card */}
+              {plansLoading ? (
+                <Card className="animate-pulse">
+                  <CardHeader className="pb-3 bg-violet-500/5"><div className="h-4 w-16 rounded bg-muted" /></CardHeader>
+                  <CardContent className="pt-4 space-y-2">{[1,2,3].map((i) => <div key={i} className="h-3 rounded bg-muted" />)}</CardContent>
+                </Card>
+              ) : (
+                <PlanCard tier="Team" isCurrent={currentPlan === "Team"} plans={paidPlans} interval={billingInterval} onCheckout={handleCheckout} mutating={mutating} />
+              )}
+            </div>
+          </>
+        )}
       </section>
 
       {/* Estimated costs */}
@@ -604,17 +607,8 @@ export default function BillingPage() {
             <Card key={u.label}>
               <CardContent className="p-5">
                 <div className="flex items-start gap-3">
-                  <div
-                    className={cn(
-                      "flex size-9 shrink-0 items-center justify-center rounded-lg",
-                      u.iconBg,
-                    )}
-                  >
-                    <HugeiconsIcon
-                      icon={u.icon}
-                      className={cn("size-4", u.iconColor)}
-                      strokeWidth={1.5}
-                    />
+                  <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg", u.iconBg)}>
+                    <HugeiconsIcon icon={u.icon} className={cn("size-4", u.iconColor)} strokeWidth={1.5} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
@@ -625,12 +619,8 @@ export default function BillingPage() {
                     {u.showBar && (
                       <div className="mt-3 space-y-1.5">
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-muted-foreground">
-                            {u.used} {u.unit} used
-                          </span>
-                          <span className="text-muted-foreground">
-                            {u.limit} {u.unit} limit
-                          </span>
+                          <span className="text-muted-foreground">{u.used} {u.unit} used</span>
+                          <span className="text-muted-foreground">{u.limit} {u.unit} limit</span>
                         </div>
                         <Progress value={(u.used / u.limit) * 100} className="h-1.5" />
                         <p className="text-[11px] text-muted-foreground">{u.costLabel}</p>
@@ -645,14 +635,11 @@ export default function BillingPage() {
             </Card>
           ))}
         </div>
-
         <Card className="border-dashed">
           <CardContent className="flex items-center justify-between p-4">
             <div>
               <p className="text-sm font-medium">Total estimated this month</p>
-              <p className="text-[11px] text-muted-foreground">
-                BringBucket ($0.00) + Provider estimate
-              </p>
+              <p className="text-[11px] text-muted-foreground">BringBucket ($0.00) + Provider estimate</p>
             </div>
             <p className="text-lg font-bold tracking-tight">${usage.totalCost.toFixed(2)}</p>
           </CardContent>
@@ -666,31 +653,28 @@ export default function BillingPage() {
           <CardContent className="flex items-center justify-between p-5">
             <div className="flex items-center gap-3">
               <div className="flex size-9 items-center justify-center rounded-lg bg-muted">
-                <HugeiconsIcon
-                  icon={CreditCardIcon}
-                  className="size-4 text-muted-foreground"
-                  strokeWidth={1.5}
-                />
+                <HugeiconsIcon icon={CreditCardIcon} className="size-4 text-muted-foreground" strokeWidth={1.5} />
               </div>
               <div>
-                {isPaid ? (
+                {IS_BETA ? (
+                  <>
+                    <p className="text-sm font-medium">No payment required</p>
+                    <p className="text-xs text-muted-foreground">Billing is not active during the beta period</p>
+                  </>
+                ) : isPaid ? (
                   <>
                     <p className="text-sm font-medium">Managed via Polar</p>
-                    <p className="text-xs text-muted-foreground">
-                      Update your card in the billing portal
-                    </p>
+                    <p className="text-xs text-muted-foreground">Update your card in the billing portal</p>
                   </>
                 ) : (
                   <>
                     <p className="text-sm font-medium">No payment method</p>
-                    <p className="text-xs text-muted-foreground">
-                      Required only if you upgrade to a paid plan
-                    </p>
+                    <p className="text-xs text-muted-foreground">Required only if you upgrade to a paid plan</p>
                   </>
                 )}
               </div>
             </div>
-            {isPaid && (
+            {!IS_BETA && isPaid && (
               <Button
                 size="sm"
                 variant="outline"
@@ -711,33 +695,33 @@ export default function BillingPage() {
         <h2 className="text-sm font-semibold">Billing History</h2>
         <Card>
           <CardContent className="p-0">
-            {isPaid ? (
-              <div className="flex flex-col items-center gap-3 py-10 text-center">
-                <p className="text-sm text-muted-foreground">
-                  View your invoices in the billing portal
-                </p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 text-xs gap-1.5"
-                  disabled={portal.isPending}
-                  onClick={() => portal.mutate()}
-                >
-                  <HugeiconsIcon icon={LinkSquare01Icon} className="size-3" strokeWidth={1.5} />
-                  Open billing portal
-                </Button>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-10 text-center">
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              {IS_BETA ? (
+                <p className="text-sm text-muted-foreground">No invoices during the beta period</p>
+              ) : isPaid ? (
+                <>
+                  <p className="text-sm text-muted-foreground">View your invoices in the billing portal</p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-3 h-7 text-xs gap-1.5"
+                    disabled={portal.isPending}
+                    onClick={() => portal.mutate()}
+                  >
+                    <HugeiconsIcon icon={LinkSquare01Icon} className="size-3" strokeWidth={1.5} />
+                    Open billing portal
+                  </Button>
+                </>
+              ) : (
                 <p className="text-sm text-muted-foreground">No invoices yet</p>
-              </div>
-            )}
+              )}
+            </div>
           </CardContent>
         </Card>
       </section>
 
-      {/* Cancel dialog */}
-      {showCancel && (
+      {/* Cancel dialog — only shown outside beta */}
+      {!IS_BETA && showCancel && (
         <CancelDialog
           onConfirm={handleCancel}
           onClose={() => setShowCancel(false)}

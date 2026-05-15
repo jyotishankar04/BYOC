@@ -6,6 +6,7 @@ import { ArrowRight, Rocket } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import HeroPreview from '@/components/custom/landing/hero-preview'
 import { motion } from 'motion/react'
+import { useSession } from '@/lib/auth-client'
 
 const containerVariants = {
   initial: {},
@@ -39,6 +40,9 @@ const previewVariants = {
 }
 
 export default function HeroSection() {
+  const { data: session } = useSession()
+  const ctaHref = session?.user ? '/app' : '/auth/signup'
+
   return (
     <section className="relative">
       {/* Background layers */}
@@ -103,9 +107,9 @@ export default function HeroSection() {
               className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
             >
               <Button size="lg" asChild>
-                <Link href="/auth/signup">
+                <Link href={ctaHref}>
                   <Rocket className="size-4" />
-                  Connect Your Cloud
+                  {session?.user ? 'Go to Dashboard' : 'Connect Your Cloud'}
                 </Link>
               </Button>
 

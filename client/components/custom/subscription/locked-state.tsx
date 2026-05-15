@@ -2,21 +2,24 @@
 
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowRight01Icon, LockKeyIcon } from "@hugeicons/core-free-icons";
+import { LockKeyIcon } from "@hugeicons/core-free-icons";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useBetaMode } from "@/lib/admin";
 
 export function LockedState({
   title,
   description,
   ctaHref = "/app/billing",
-  ctaLabel = "Compare plans",
+  ctaLabel = "Upgrade",
 }: {
   title: string;
   description: string;
   ctaHref?: string;
   ctaLabel?: string;
 }) {
+  const { data: isBeta = true } = useBetaMode();
+
   return (
     <Card className="border-dashed border-amber-500/40 bg-amber-500/5">
       <CardContent className="flex flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
@@ -29,12 +32,15 @@ export function LockedState({
             <p className="text-sm text-muted-foreground">{description}</p>
           </div>
         </div>
-        <Button asChild size="sm" className="gap-1.5">
-          <Link href={ctaHref}>
-            {ctaLabel}
-            <HugeiconsIcon icon={ArrowRight01Icon} className="size-3.5" strokeWidth={1.8} />
-          </Link>
-        </Button>
+        {isBeta ? (
+          <Button size="sm" variant="outline" className="gap-1.5" disabled>
+            Coming soon
+          </Button>
+        ) : (
+          <Button size="sm" variant="outline" className="gap-1.5" asChild>
+            <Link href={ctaHref}>{ctaLabel}</Link>
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
