@@ -5,4 +5,8 @@ export interface IHealthService {
     uptime: number;
     environment: string;
   };
+  ready(): Promise<{
+    success: boolean;
+    checks: { database: boolean; redis: boolean };
+  }>;
 }

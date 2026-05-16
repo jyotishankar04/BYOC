@@ -60,6 +60,8 @@ model Subscription {
   trialEndsAt         DateTime?
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
+
+  @@index([status])
 }
 
 enum StorageProviderType {
@@ -413,6 +415,8 @@ model File {
   @@unique([workspaceId, storagePath])
   @@index([workspaceId])
   @@index([folderId])
+  @@index([workspaceId, folderId])
+  @@index([uploadedById])
   @@map("files")
 }
 
@@ -444,6 +448,8 @@ model ShareLink {
   @@index([workspaceId])
   @@index([fileId])
   @@index([folderId])
+  @@index([status])
+  @@index([expiresAt])
 }
 
 model ShareLinkVisit {
@@ -472,6 +478,8 @@ model ActivityLog {
   createdAt   DateTime  @default(now())
 
   @@index([workspaceId])
+  @@index([createdAt])
+  @@index([workspaceId, createdAt])
 }
 
 //////////////////////////////////////////////////////
@@ -530,6 +538,8 @@ model UploadSession {
   updatedAt DateTime @updatedAt
 
   @@index([workspaceId])
+  @@index([status])
+  @@index([createdAt])
   @@map("upload_sessions")
 }
 
