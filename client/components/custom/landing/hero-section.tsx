@@ -114,7 +114,7 @@ export default function HeroSection() {
               </Button>
 
               <Button size="lg" variant="outline" asChild>
-                <Link href="#how-it-works">
+                <Link href="/docs#getting-started">
                   See How It Works
                   <ArrowRight className="size-4" />
                 </Link>

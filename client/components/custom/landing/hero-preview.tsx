@@ -1,189 +1,93 @@
 "use client";
 
-import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  DashboardSquare02Icon,
+  Folder01Icon,
+  Image01Icon,
+  LegalDocument01Icon,
+  Video01Icon,
+  LinkSquare01Icon,
+  Analytics01Icon,
+  Plug01Icon,
+  CreditCardIcon,
+  CalculatorIcon,
+  Settings01Icon,
+  HardDriveIcon,
+  CloudUploadIcon,
+  Search01Icon,
+  Notification01Icon,
+  CloudServerIcon,
+  FolderAddIcon,
+} from "@hugeicons/core-free-icons";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Cloud,
-  Files,
-  Clock,
-  Share2,
-  Trash2,
-  Server,
-  Users,
-  Receipt,
-  Settings,
-  Upload,
-  FolderPlus,
-  LayoutGrid,
-  ChevronRight,
-  FileImage,
-  FileArchive,
-  FileSpreadsheet,
-  FileCode2,
-  Folder,
-  PlugZap,
-  BookOpen,
-  Circle,
-} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-interface FolderItem {
-  name: string;
-  size: string;
-  count: string;
-  color: string;
-  iconColor: string;
-}
-
-interface FileItem {
-  name: string;
-  size: string;
-  modified: string;
-  type: string;
-  badgeBg: string;
-  badgeText: string;
-  icon: React.ReactNode;
-}
-
-interface BucketItem {
-  name: string;
-  size: string;
-  pct: string;
-  dotColor: string;
-}
-
-interface ProviderItem {
-  name: string;
-  region: string;
-  status: "online" | "warning";
-}
+type HugeIcon = Parameters<typeof HugeiconsIcon>[0]["icon"];
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 
-const FOLDERS: FolderItem[] = [
-  { name: "images", size: "1.2 GB", count: "840 files", color: "bg-primary/10", iconColor: "text-primary" },
-  { name: "backups", size: "8.4 GB", count: "23 files", color: "bg-amber-500/10", iconColor: "text-amber-500" },
-  { name: "exports", size: "340 MB", count: "57 files", color: "bg-emerald-500/10", iconColor: "text-emerald-500" },
-  { name: "logs", size: "2.1 GB", count: "4,201 files", color: "bg-muted", iconColor: "text-muted-foreground" },
+const STATS = [
+  { label: "Total Storage Used", value: "14.8 GB", icon: HardDriveIcon,   color: "text-violet-500", bg: "bg-violet-500/10" },
+  { label: "Total Files",        value: "2,847",   icon: Folder01Icon,     color: "text-blue-500",   bg: "bg-blue-500/10"   },
+  { label: "Active Share Links", value: "12",       icon: LinkSquare01Icon, color: "text-emerald-500",bg: "bg-emerald-500/10"},
+  { label: "Uploads This Week",  value: "48",       icon: CloudUploadIcon,  color: "text-amber-500",  bg: "bg-amber-500/10"  },
 ];
 
-const FILES: FileItem[] = [
-  {
-    name: "hero-banner.jpg",
-    size: "2.4 MB",
-    modified: "Today, 9:12 AM",
-    type: "JPG",
-    badgeBg: "bg-primary/10",
-    badgeText: "text-primary",
-    icon: <FileImage className="w-4 h-4 text-primary" />,
-  },
-  {
-    name: "db-snapshot.tar.gz",
-    size: "420 MB",
-    modified: "Yesterday",
-    type: "TAR",
-    badgeBg: "bg-amber-500/10",
-    badgeText: "text-amber-600 dark:text-amber-400",
-    icon: <FileArchive className="w-4 h-4 text-amber-500" />,
-  },
-  {
-    name: "analytics-june.csv",
-    size: "840 KB",
-    modified: "3 days ago",
-    type: "CSV",
-    badgeBg: "bg-emerald-500/10",
-    badgeText: "text-emerald-600 dark:text-emerald-400",
-    icon: <FileSpreadsheet className="w-4 h-4 text-emerald-500" />,
-  },
-  {
-    name: "config.json",
-    size: "12 KB",
-    modified: "Jun 2",
-    type: "JSON",
-    badgeBg: "bg-violet-500/10",
-    badgeText: "text-violet-600 dark:text-violet-400",
-    icon: <FileCode2 className="w-4 h-4 text-violet-500" />,
-  },
+const STORAGE_KINDS = [
+  { label: "Images",    pct: 42, size: "6.2 GB", dot: "bg-violet-500", bar: "[&>[data-slot=progress-indicator]]:bg-violet-500" },
+  { label: "Videos",   pct: 34, size: "5.1 GB", dot: "bg-blue-500",   bar: "[&>[data-slot=progress-indicator]]:bg-blue-500"   },
+  { label: "Documents",pct: 15, size: "2.3 GB", dot: "bg-amber-500",  bar: "[&>[data-slot=progress-indicator]]:bg-amber-500"  },
+  { label: "Archives", pct:  9, size: "1.2 GB", dot: "bg-cyan-500",   bar: "[&>[data-slot=progress-indicator]]:bg-cyan-500"   },
 ];
 
-const BUCKETS: BucketItem[] = [
-  { name: "my-prod-bucket", size: "8.4 GB", pct: "57%", dotColor: "bg-primary" },
-  { name: "media-cdn", size: "4.2 GB", pct: "28%", dotColor: "bg-emerald-500" },
-  { name: "cold-backups", size: "2.2 GB", pct: "15%", dotColor: "bg-amber-500" },
+const QUICK_ACTIONS = [
+  { label: "Upload File",   desc: "Add files to bucket",  icon: CloudUploadIcon  },
+  { label: "New Folder",    desc: "Organize with folders", icon: FolderAddIcon    },
+  { label: "Share Link",    desc: "Share files securely",  icon: LinkSquare01Icon },
+  { label: "Analytics",     desc: "Storage insights",      icon: Analytics01Icon  },
 ];
 
-const PROVIDERS: ProviderItem[] = [
-  { name: "AWS S3", region: "us-east-1", status: "online" },
-  { name: "Cloudflare R2", region: "auto", status: "online" },
-  { name: "Backblaze B2", region: "us-west-004", status: "warning" },
+const RECENT_FILES = [
+  { name: "hero-banner.jpg",      size: "2.4 MB",  when: "Today, 9:12 AM" },
+  { name: "db-snapshot.tar.gz",   size: "420 MB",  when: "Yesterday"      },
+  { name: "analytics-june.csv",   size: "840 KB",  when: "3 days ago"     },
 ];
 
-// ─── Sidebar nav ───────────────────────────────────────────────────────────────
-
-const DISCOVER_NAV = [
-  { icon: Files, label: "All files" },
-  { icon: Clock, label: "Recent" },
-  { icon: Share2, label: "Shared", badge: "4" },
-  { icon: Trash2, label: "Trash" },
+const NAV_MAIN: { label: string; icon: HugeIcon; active?: boolean }[] = [
+  { label: "Dashboard",    icon: DashboardSquare02Icon, active: true },
+  { label: "Files",        icon: Folder01Icon           },
+  { label: "Gallery",      icon: Image01Icon            },
+  { label: "Documents",    icon: LegalDocument01Icon    },
+  { label: "Videos",       icon: Video01Icon            },
+  { label: "Shared Links", icon: LinkSquare01Icon       },
 ];
 
-const MANAGE_NAV = [
-  { icon: Server, label: "Buckets" },
-  { icon: Users, label: "Access" },
-  { icon: Receipt, label: "Billing" },
-  { icon: Settings, label: "Settings" },
+const NAV_MANAGE: { label: string; icon: HugeIcon }[] = [
+  { label: "Analytics",      icon: Analytics01Icon },
+  { label: "Usage & Pricing",icon: CalculatorIcon  },
+  { label: "Integrations",   icon: Plug01Icon      },
+  { label: "Billing",        icon: CreditCardIcon  },
+  { label: "Settings",       icon: Settings01Icon  },
 ];
 
 // ─── Sub-components ────────────────────────────────────────────────────────────
 
-function SidebarItem({
-  icon: Icon,
-  label,
-  active,
-  badge,
-  onClick,
-}: {
-  icon: React.ElementType;
-  label: string;
-  active?: boolean;
-  badge?: string;
-  onClick?: () => void;
-}) {
+function NavItem({ icon, label, active }: { icon: HugeIcon; label: string; active?: boolean }) {
   return (
-    <button
-      onClick={onClick}
+    <div
       className={cn(
-        "w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-sm transition-colors text-left",
+        "flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs cursor-default select-none",
         active
           ? "bg-accent text-accent-foreground font-medium"
-          : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+          : "text-muted-foreground"
       )}
     >
-      <Icon className="w-3.5 h-3.5 shrink-0" />
-      <span className="flex-1 truncate">{label}</span>
-      {badge && (
-        <span className="text-[10px] bg-muted text-muted-foreground rounded-full px-1.5 py-0.5 leading-none">
-          {badge}
-        </span>
-      )}
-    </button>
-  );
-}
-
-function FolderCard({ folder }: { folder: FolderItem }) {
-  return (
-    <div className="group border border-border rounded-xl p-3 cursor-pointer hover:border-border/80 hover:bg-accent/50 transition-all">
-      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center mb-2", folder.color)}>
-        <Folder className={cn("w-4 h-4", folder.iconColor)} />
-      </div>
-      <p className="text-xs font-medium text-foreground truncate">{folder.name}</p>
-      <p className="text-[11px] text-muted-foreground mt-0.5">{folder.size} · {folder.count}</p>
+      <HugeiconsIcon icon={icon} className="size-3.5 shrink-0" strokeWidth={1.5} />
+      <span className="truncate">{label}</span>
     </div>
   );
 }
@@ -191,192 +95,206 @@ function FolderCard({ folder }: { folder: FolderItem }) {
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function HeroPreview() {
-  const [activeNav, setActiveNav] = useState("All files");
-
   return (
     <div className="mx-auto mt-16 max-w-6xl px-4">
       <div className="rounded-2xl border border-border overflow-hidden shadow-xl shadow-black/5 dark:shadow-black/40 bg-card">
 
-        {/* Top bar */}
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-muted/50">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-foreground flex items-center justify-center">
-              <Cloud className="w-3.5 h-3.5 text-background" />
+        {/* Top navbar */}
+        <div className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-background/95 px-4">
+          {/* Brand */}
+          <div className="flex w-[156px] shrink-0 items-center gap-2">
+            <div className="flex size-6 items-center justify-center rounded-md bg-foreground">
+              <svg className="size-3.5 text-background fill-current" viewBox="0 0 24 24">
+                <path d="M19.35 10.04A7.49 7.49 0 0012 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 000 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z" />
+              </svg>
             </div>
-            <span className="text-sm font-semibold text-foreground tracking-tight">BringBucket</span>
+            <span className="text-sm font-semibold tracking-tight text-foreground">BringBucket</span>
           </div>
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-card border border-border rounded-full px-3 py-1">
-              <Server className="w-3 h-3" />
-              3 buckets connected
+
+          <Separator orientation="vertical" className="h-4" />
+
+          {/* Search */}
+          <div className="relative flex max-w-xs flex-1 items-center">
+            <HugeiconsIcon
+              icon={Search01Icon}
+              className="absolute left-2.5 size-3.5 text-muted-foreground pointer-events-none"
+              strokeWidth={1.5}
+            />
+            <div className="flex h-8 w-full items-center rounded-md border border-transparent bg-muted/50 pl-8 pr-3">
+              <span className="text-xs text-muted-foreground">Search files and folders...</span>
             </div>
-            <div className="w-7 h-7 rounded-full bg-emerald-500/20 flex items-center justify-center text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+          </div>
+
+          <div className="ml-auto flex items-center gap-1.5">
+            {/* Upload button */}
+            <div className="flex h-8 cursor-default items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground">
+              <HugeiconsIcon icon={CloudUploadIcon} className="size-3.5" strokeWidth={1.5} />
+              Upload
+            </div>
+
+            {/* Notification bell */}
+            <div className="relative flex size-8 cursor-default items-center justify-center rounded-md">
+              <HugeiconsIcon icon={Notification01Icon} className="size-4 text-muted-foreground" strokeWidth={1.5} />
+              <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-primary" />
+            </div>
+
+            {/* User avatar */}
+            <div className="flex size-7 items-center justify-center rounded-full bg-emerald-500/20 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
               AK
             </div>
           </div>
         </div>
 
         {/* Body */}
-        <div className="grid grid-cols-[180px_1fr_196px] min-h-[360px]">
+        <div className="grid grid-cols-[156px_1fr] min-h-[440px]">
 
           {/* Sidebar */}
-          <aside className="border-r border-border bg-card py-4 px-2.5 flex flex-col gap-1">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 px-2.5 pb-1">Storage</p>
-            {DISCOVER_NAV.map(({ icon, label, badge }) => (
-              <SidebarItem
-                key={label}
-                icon={icon}
-                label={label}
-                badge={badge}
-                active={activeNav === label}
-                onClick={() => setActiveNav(label)}
-              />
-            ))}
-            <Separator className="my-2" />
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 px-2.5 pb-1">Manage</p>
-            {MANAGE_NAV.map(({ icon, label }) => (
-              <SidebarItem
-                key={label}
-                icon={icon}
-                label={label}
-                active={activeNav === label}
-                onClick={() => setActiveNav(label)}
-              />
-            ))}
+          <aside className="flex flex-col border-r border-border bg-card py-3 px-2">
+            <div className="flex flex-col gap-0.5">
+              {NAV_MAIN.map((item) => (
+                <NavItem key={item.label} icon={item.icon} label={item.label} active={item.active} />
+              ))}
+            </div>
+
+            <div className="px-2.5 pb-1 pt-4">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                Manage
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-0.5">
+              {NAV_MANAGE.map((item) => (
+                <NavItem key={item.label} icon={item.icon} label={item.label} />
+              ))}
+            </div>
+
+            {/* User footer */}
+            <div className="mt-auto pt-3">
+              <Separator className="mb-3" />
+              <div className="flex items-center gap-2 px-2">
+                <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[11px] font-semibold text-primary">
+                  AK
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-medium text-foreground">Alex Kim</p>
+                  <p className="truncate text-[10px] text-muted-foreground">Pro plan</p>
+                </div>
+              </div>
+            </div>
           </aside>
 
-          {/* Main */}
-          <ScrollArea className="bg-card">
-            <div className="px-5 py-4">
-              {/* Toolbar */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <span>my-prod-bucket</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                  <span className="text-foreground font-medium">assets /</span>
+          {/* Main content */}
+          <div className="overflow-hidden bg-background">
+            <div className="space-y-4 px-5 py-4">
+
+              {/* Welcome + connected provider */}
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-sm font-semibold tracking-tight text-foreground">Welcome back, Alex</h2>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    Manage your cloud files, storage, and provider settings.
+                  </p>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  {[Upload, FolderPlus, LayoutGrid].map((Icon, i) => (
-                    <button
-                      key={i}
-                      className="w-7 h-7 rounded-md border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                    </button>
-                  ))}
+                <div className="flex shrink-0 items-center gap-2.5 rounded-lg border border-border bg-card px-3 py-2">
+                  <div className="flex size-7 items-center justify-center rounded-lg bg-amber-500/10">
+                    <HugeiconsIcon icon={CloudServerIcon} className="size-3.5 text-amber-600" strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[11px] font-medium text-foreground">AWS S3</span>
+                      <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-medium text-emerald-600 dark:text-emerald-400">
+                        connected
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">my-prod-bucket · us-east-1</p>
+                  </div>
                 </div>
               </div>
 
-              {/* Folder grid */}
-              <div className="grid grid-cols-4 gap-2.5 mb-5">
-                {FOLDERS.map((f) => (
-                  <FolderCard key={f.name} folder={f} />
+              {/* Stats cards */}
+              <div className="grid grid-cols-4 gap-2.5">
+                {STATS.map((stat) => (
+                  <div key={stat.label} className="rounded-xl border border-border bg-card p-3">
+                    <div className="mb-2 flex items-start justify-between gap-1">
+                      <p className="text-[10px] leading-tight text-muted-foreground">{stat.label}</p>
+                      <div className={cn("flex size-6 shrink-0 items-center justify-center rounded-md", stat.bg)}>
+                        <HugeiconsIcon icon={stat.icon} className={cn("size-3", stat.color)} strokeWidth={1.5} />
+                      </div>
+                    </div>
+                    <p className="text-lg font-bold tracking-tight text-foreground">{stat.value}</p>
+                  </div>
                 ))}
               </div>
 
-              {/* File table */}
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-border">
-                    {["Name", "Size", "Modified", "Type"].map((h) => (
-                      <th key={h} className="text-left text-[11px] font-medium text-muted-foreground pb-2 px-1.5">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {FILES.map((f) => (
-                    <tr
-                      key={f.name}
-                      className="border-b border-border/50 hover:bg-accent/30 transition-colors group"
-                    >
-                      <td className="px-1.5 py-2.5">
-                        <div className="flex items-center gap-2 text-foreground font-medium">
-                          {f.icon}
-                          <span className="truncate max-w-[140px]">{f.name}</span>
+              {/* Storage usage + Quick actions */}
+              <div className="grid grid-cols-[1fr_196px] gap-3">
+
+                {/* Storage usage */}
+                <div className="rounded-xl border border-border bg-card p-4">
+                  <p className="text-xs font-semibold text-foreground">Storage Usage</p>
+                  <p className="mb-3 mt-0.5 text-[10px] text-muted-foreground">14.8 GB used across all categories</p>
+                  <div className="space-y-3">
+                    {STORAGE_KINDS.map((k) => (
+                      <div key={k.label} className="space-y-1">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <div className="flex items-center gap-1.5">
+                            <span className={cn("size-1.5 rounded-full", k.dot)} />
+                            <span className="text-foreground">{k.label}</span>
+                          </div>
+                          <span className="text-muted-foreground">{k.size}</span>
                         </div>
-                      </td>
-                      <td className="px-1.5 py-2.5 text-muted-foreground">{f.size}</td>
-                      <td className="px-1.5 py-2.5 text-muted-foreground/70">{f.modified}</td>
-                      <td className="px-1.5 py-2.5">
-                        <span className={cn("text-[10px] font-semibold px-1.5 py-0.5 rounded-md", f.badgeBg, f.badgeText)}>
-                          {f.type}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </ScrollArea>
-
-          {/* Right panel */}
-          <aside className="border-l border-border bg-card px-3.5 py-4 flex flex-col gap-5 overflow-hidden">
-
-            {/* Storage used */}
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-2.5">Storage used</p>
-              <div className="bg-muted/50 rounded-xl p-3">
-                <p className="text-[11px] text-muted-foreground mb-1">Total across buckets</p>
-                <p className="text-xl font-semibold text-foreground leading-none mb-2.5">14.8 GB</p>
-                <Progress value={59} className="h-1.5 mb-1.5" />
-                <p className="text-[11px] text-muted-foreground">of 25 GB · 59% used</p>
-              </div>
-            </div>
-
-            {/* Buckets */}
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-2.5">Buckets</p>
-              <div className="flex flex-col gap-2.5">
-                {BUCKETS.map((b) => (
-                  <div key={b.name} className="flex items-center gap-2">
-                    <div className={cn("w-2 h-2 rounded-full shrink-0", b.dotColor)} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-foreground font-medium truncate">{b.name}</p>
-                      <p className="text-[11px] text-muted-foreground">{b.size}</p>
-                    </div>
-                    <span className="text-[11px] text-muted-foreground shrink-0">{b.pct}</span>
+                        <Progress value={k.pct} className={cn("h-1.5", k.bar)} />
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
 
-            <Separator />
-
-            {/* Providers */}
-            <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 mb-2.5">Providers</p>
-              <div className="flex flex-col gap-0">
-                {PROVIDERS.map((p, i) => (
-                  <div
-                    key={p.name}
-                    className={cn(
-                      "flex items-center gap-2 py-2",
-                      i < PROVIDERS.length - 1 && "border-b border-border/50"
-                    )}
-                  >
-                    <div className="w-7 h-7 rounded-lg border border-border flex items-center justify-center shrink-0">
-                      <Server className="w-3.5 h-3.5 text-muted-foreground" />
+                  {/* Recent files mini-table */}
+                  <div className="mt-4 border-t border-border pt-3">
+                    <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Recent Files</p>
+                    <div className="space-y-1.5">
+                      {RECENT_FILES.map((f) => (
+                        <div key={f.name} className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <div className="flex size-5 shrink-0 items-center justify-center rounded-md bg-muted">
+                              <HugeiconsIcon icon={Folder01Icon} className="size-3 text-muted-foreground" strokeWidth={1.5} />
+                            </div>
+                            <span className="truncate text-[11px] font-medium text-foreground">{f.name}</span>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-3 text-[10px] text-muted-foreground">
+                            <span>{f.size}</span>
+                            <span>{f.when}</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-foreground truncate">{p.name}</p>
-                      <p className="text-[11px] text-muted-foreground">{p.region}</p>
-                    </div>
-                    <Circle
-                      className={cn(
-                        "w-2 h-2 shrink-0 fill-current",
-                        p.status === "online"
-                          ? "text-emerald-500"
-                          : "text-amber-400"
-                      )}
-                    />
                   </div>
-                ))}
+                </div>
+
+                {/* Quick actions */}
+                <div className="rounded-xl border border-border bg-card p-3">
+                  <p className="mb-3 text-xs font-semibold text-foreground">Quick Actions</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {QUICK_ACTIONS.map((action) => (
+                      <div
+                        key={action.label}
+                        className="flex cursor-default flex-col gap-2 rounded-lg border border-border bg-card p-2.5 transition-colors hover:bg-accent/50"
+                      >
+                        <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
+                          <HugeiconsIcon icon={action.icon} className="size-3.5 text-primary" strokeWidth={1.5} />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-medium leading-snug text-foreground">{action.label}</p>
+                          <p className="mt-0.5 text-[9px] leading-snug text-muted-foreground">{action.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
               </div>
             </div>
+          </div>
 
-          </aside>
         </div>
       </div>
     </div>

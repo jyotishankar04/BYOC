@@ -40,7 +40,9 @@ export function Logo({
           alt={alt}
           width={140}
           height={36}
+          sizes="140px"
           className={cn(FULL_STYLE, "dark:hidden", className)}
+          style={{ width: "auto", height: "auto" }}
           priority
         />
         <Image
@@ -48,7 +50,9 @@ export function Logo({
           alt={alt}
           width={140}
           height={36}
+          sizes="140px"
           className={cn(FULL_STYLE, "hidden dark:inline-block", className)}
+          style={{ width: "auto", height: "auto" }}
           priority
         />
       </>
