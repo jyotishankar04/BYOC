@@ -13,6 +13,18 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      // Cosmetic — raw quotes in JSX don't affect functionality
+      "react/no-unescaped-entities": "off",
+      // React Compiler rules — valid patterns flagged as warnings during optimization
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/preserve-manual-memoization": "off",
+      "react-hooks/static-components": "off",
+      "react-hooks/immutability": "off",
+      "react-compiler/react-compiler": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

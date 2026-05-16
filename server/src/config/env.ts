@@ -23,7 +23,8 @@ const envSchema = z.object({
   LOG_PRETTY: z.string().default("false").transform(val => val === "true"),
   FRONTEND_URL: z.string().default("http://localhost:3000"),
 
-  // Redis
+  // Redis — REDIS_URL takes precedence over host/port/password (use for Upstash)
+  REDIS_URL: z.string().optional(),
   REDIS_HOST: z.string().default("localhost"),
   REDIS_PORT: z.string().default("6379"),
   REDIS_PASSWORD: z.string().default(""),

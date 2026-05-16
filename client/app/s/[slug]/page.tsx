@@ -42,9 +42,9 @@ export default function PublicSharePage() {
       const result = await accessPublicShareLink(slug, pw)
       setData(result)
       setState("success")
-    } catch (err: any) {
-      const status = err.status ?? 0
-      const code = err.code
+    } catch (err: unknown) {
+      const status = (err as { status?: number }).status ?? 0
+      const code = (err as { code?: string }).code
 
       if (status === 401 && code === "PASSWORD_REQUIRED") {
         setState("password")

@@ -7,7 +7,7 @@ export function renderMarkdown(raw: string): string {
 
   // ── 1. Protect fenced code blocks ──────────────────────────────────────────
   const codeBlocks: string[] = [];
-  let text = raw.replace(/```(\w*)\n?([\s\S]*?)```/g, (_match, lang, code) => {
+  const text = raw.replace(/```(\w*)\n?([\s\S]*?)```/g, (_match, lang, code) => {
     const escaped = code
       .trim()
       .replace(/&/g, "&amp;")

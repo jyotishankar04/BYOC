@@ -35,6 +35,8 @@ RUN pnpm install --frozen-lockfile --prod
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/generated ./generated
 COPY prisma ./prisma
+COPY docker/start.sh ./start.sh
+RUN chmod +x start.sh
 
 EXPOSE 4000
 
@@ -43,4 +45,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 
 USER node
 
-CMD ["node", "dist/src/server.js"]
+CMD ["sh", "start.sh"]
