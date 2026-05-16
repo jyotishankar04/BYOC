@@ -11,6 +11,7 @@ import env from "@/config/env";
 import { SubscriptionSnapshotService } from "@/modules/billing/subscription-snapshot.service";
 import { assertFeatureAccess, assertQuotaAvailable, buildQuotaSummary } from "@/modules/billing/subscription-access";
 import { appSettings } from "@/config/app-settings";
+import { EmailQueueService } from "@/core/mail/mail.queue";
 
 export class ShareLinksService {
   private repo: ShareLinksRepository;
@@ -140,6 +141,21 @@ export class ShareLinksService {
         title: "File Shared",
         message: `Your file "${file.name}" was shared by another user.`,
       });
+
+      const [fileOwner, sharer] = await Promise.all([
+        this.prisma.user.findUnique({ where: { id: file.uploadedById }, select: { email: true, name: true } }),
+        this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } }),
+      ]);
+      if (fileOwner?.email) {
+        EmailQueueService.enqueue({
+          type: "share_link_created",
+          to: fileOwner.email,
+          ownerName: fileOwner.name,
+          sharerName: sharer?.name ?? "A workspace member",
+          fileName: file.name,
+          linkUrl: `${env.FRONTEND_URL}/s/${slug}`,
+        });
+      }
     }
 
     return {

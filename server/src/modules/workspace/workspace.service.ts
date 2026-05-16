@@ -16,7 +16,7 @@ import type {
   IWorkspaceRepository,
 } from "./workspace.interface";
 import { WorkspaceRepository } from "./workspace.repository";
-import { mailService } from "@/core/mail/mail.service";
+import { EmailQueueService } from "@/core/mail/mail.queue";
 import { broadcast } from "@/modules/events/events.service";
 
 export class WorkspaceService implements IWorkspaceService {
@@ -233,7 +233,9 @@ export class WorkspaceService implements IWorkspaceService {
         });
 
         if (linkUser.email) {
-          await mailService.sendLinkDisabledEmail(linkUser.email, {
+          EmailQueueService.enqueue({
+            type: "link_disabled",
+            to: linkUser.email,
             userName: linkUser.name,
             workspaceName,
           });

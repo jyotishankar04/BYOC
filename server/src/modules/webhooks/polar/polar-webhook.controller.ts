@@ -5,6 +5,7 @@ import { BillingRepository } from "@/modules/billing/billing.repository";
 import prisma from "@/config/db.config";
 import env from "@/config/env";
 import logger from "@/core/logger";
+import { EmailQueueService } from "@/core/mail/mail.queue";
 
 const repo = new BillingRepository(prisma);
 
@@ -50,12 +51,45 @@ function resolveUserId(data: Subscription): string | null {
 export async function handleSubscriptionActive(payload: { data: Subscription }): Promise<void> {
   const { data } = payload;
   await upsertSubscription(data, "Active");
+
+  const userId = resolveUserId(data);
+  const plan = resolvePlan(data);
+  if (userId && plan) {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true } });
+    if (user) {
+      EmailQueueService.enqueue({
+        type: "subscription_activated",
+        to: user.email,
+        name: user.name,
+        plan,
+        dashboardUrl: `${env.FRONTEND_URL}/app/billing`,
+      });
+    }
+  }
 }
 
 export async function handleSubscriptionCreated(payload: { data: Subscription }): Promise<void> {
   const { data } = payload;
   const mapped = mapPolarStatus(data.status);
   await upsertSubscription(data, mapped);
+
+  if (data.trialEnd) {
+    const userId = resolveUserId(data);
+    const plan = resolvePlan(data);
+    if (userId && plan) {
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true } });
+      if (user) {
+        EmailQueueService.enqueue({
+          type: "subscription_trial_started",
+          to: user.email,
+          name: user.name,
+          plan,
+          trialEnd: new Date(data.trialEnd).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+          dashboardUrl: `${env.FRONTEND_URL}/app/billing`,
+        });
+      }
+    }
+  }
 }
 
 export async function handleSubscriptionUpdated(payload: { data: Subscription }): Promise<void> {
@@ -68,11 +102,42 @@ export async function handleSubscriptionCanceled(payload: { data: Subscription }
   const { data } = payload;
   const mapped = mapPolarStatus(data.status);
   await upsertSubscription(data, mapped);
+
+  const userId = resolveUserId(data);
+  const plan = resolvePlan(data);
+  if (userId && plan) {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true } });
+    if (user) {
+      const periodEnd = data.currentPeriodEnd
+        ? new Date(data.currentPeriodEnd).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+        : "the end of your billing period";
+      EmailQueueService.enqueue({
+        type: "subscription_canceled",
+        to: user.email,
+        name: user.name,
+        plan,
+        periodEnd,
+      });
+    }
+  }
 }
 
 export async function handleSubscriptionPastDue(payload: { data: Subscription }): Promise<void> {
   const { data } = payload;
   await upsertSubscription(data, "PastDue");
+
+  const userId = resolveUserId(data);
+  if (userId) {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true } });
+    if (user) {
+      EmailQueueService.enqueue({
+        type: "subscription_past_due",
+        to: user.email,
+        name: user.name,
+        billingUrl: `${env.FRONTEND_URL}/app/billing`,
+      });
+    }
+  }
 }
 
 export async function handlePolarWebhookPayload(
@@ -102,6 +167,19 @@ export async function handleSubscriptionRevoked(payload: { data: Subscription })
   });
   await repo.updateUserPlan(userId, "Free");
   await repo.syncWorkspacePlans(userId, "Free");
+
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true } });
+  if (user) {
+    const plan = resolvePlan(data) ?? "Pro";
+    EmailQueueService.enqueue({
+      type: "subscription_canceled",
+      to: user.email,
+      name: user.name,
+      plan,
+      periodEnd: "now",
+    });
+  }
+
   logger.info({ userId, polarSubscriptionId: data.id }, "Polar webhook: subscription revoked, reverted to Free");
 }
 

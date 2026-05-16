@@ -7,8 +7,8 @@ import type {
   MyInviteRow,
 } from "./members.interface";
 import type MembersRepository from "./members.repository";
-import { mailService } from "@/core/mail/mail.service";
 import env from "@/config/env";
+import { EmailQueueService } from "@/core/mail/mail.queue";
 import { broadcast } from "@/modules/events/events.service";
 import prisma from "@/config/db.config";
 import { SubscriptionSnapshotService } from "@/modules/billing/subscription-snapshot.service";
@@ -76,12 +76,14 @@ class MembersService implements IMemberService {
     );
 
     if (workspace && invitee && inviter) {
-      await mailService.sendInvitationEmail(invitee.email, {
+      EmailQueueService.enqueue({
+        type: "invitation",
+        to: invitee.email,
         inviteeName: invitee.name,
         inviterName: inviter.name,
         workspaceName: workspace.name,
         role: "Member",
-        acceptUrl: `${env.FRONTEND_URL}/app/invite/${workspaceId}`,
+        inviteLink: `${env.FRONTEND_URL}/app/invite/${workspaceId}`,
       });
     }
   }
@@ -145,12 +147,13 @@ class MembersService implements IMemberService {
     ]);
 
     if (workspace && member) {
-      const changerName = changer?.name ?? "A workspace admin";
-      await mailService.sendRoleChangeEmail(member.email, {
+      EmailQueueService.enqueue({
+        type: "role_change",
+        to: member.email,
         memberName: member.name,
         workspaceName: workspace.name,
         newRole: role,
-        changedByName: changerName,
+        changedByName: changer?.name ?? "A workspace admin",
       });
     }
   }
