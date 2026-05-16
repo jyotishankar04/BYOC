@@ -4,6 +4,7 @@ import prisma from "@/config/db.config";
 import { AppError } from "@/core/errors";
 import { SubscriptionSnapshotService } from "@/modules/billing/subscription-snapshot.service";
 import { assertFeatureAccess, assertQuotaAvailable, buildQuotaSummary } from "@/modules/billing/subscription-access";
+import { cache } from "@/shared/cache/cache.service";
 import type {
   CreateWorkspaceDto,
   UpdateWorkspaceDto,
@@ -67,8 +68,9 @@ export class WorkspaceService implements IWorkspaceService {
   }
 
   async getWorkspace(workspaceId: string): Promise<Record<string, unknown>> {
-    const workspace =
-      await this.workspaceRepository.findWorkspaceById(workspaceId);
+    const workspace = await cache.wrap(`workspace:id:${workspaceId}`, 300, () =>
+      this.workspaceRepository.findWorkspaceById(workspaceId),
+    );
     if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
     return workspace;
   }
@@ -86,10 +88,12 @@ export class WorkspaceService implements IWorkspaceService {
         throw new AppError("Slug is already taken", 409, "SLUG_CONFLICT");
     }
 
-    return this.workspaceRepository.updateWorkspace(
+    const result = await this.workspaceRepository.updateWorkspace(
       workspaceId,
       data as Record<string, unknown>,
     );
+    await cache.del(`workspace:id:${workspaceId}`);
+    return result;
   }
 
   async deleteWorkspace(workspaceId: string, userId: string): Promise<void> {
@@ -106,6 +110,7 @@ export class WorkspaceService implements IWorkspaceService {
     }
 
     await this.workspaceRepository.deleteWorkspace(workspaceId);
+    await cache.del(`workspace:id:${workspaceId}`);
   }
 
   async transferOwnership(

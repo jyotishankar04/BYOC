@@ -15,6 +15,7 @@ import {
   type PlanFeatureAccess,
   type PlanLimits,
 } from "./subscription-access";
+import { cache } from "@/shared/cache/cache.service";
 
 export interface WorkspaceUsageSnapshot {
   workspaceId: string;
@@ -186,6 +187,14 @@ export class SubscriptionSnapshotService {
   }
 
   async getWorkspaceSnapshot(workspaceId: string): Promise<WorkspaceSnapshot> {
+    return cache.wrap(`billing:snapshot:${workspaceId}`, 300, () => this._fetchWorkspaceSnapshot(workspaceId));
+  }
+
+  async invalidateWorkspaceSnapshot(workspaceId: string): Promise<void> {
+    await cache.del(`billing:snapshot:${workspaceId}`);
+  }
+
+  private async _fetchWorkspaceSnapshot(workspaceId: string): Promise<WorkspaceSnapshot> {
     const workspace = await this.prisma.workspace.findUnique({
       where: { id: workspaceId },
       select: { id: true, ownerId: true, plan: true },

@@ -6,6 +6,7 @@ import prisma from "@/config/db.config";
 import env from "@/config/env";
 import logger from "@/core/logger";
 import { EmailQueueService } from "@/core/mail/mail.queue";
+import { cache } from "@/shared/cache/cache.service";
 
 const repo = new BillingRepository(prisma);
 
@@ -167,6 +168,7 @@ export async function handleSubscriptionRevoked(payload: { data: Subscription })
   });
   await repo.updateUserPlan(userId, "Free");
   await repo.syncWorkspacePlans(userId, "Free");
+  await cache.delPattern("billing:snapshot:*");
 
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true, name: true } });
   if (user) {
@@ -213,5 +215,6 @@ async function upsertSubscription(data: Subscription, status: SubscriptionStatus
 
   await repo.updateUserPlan(userId, plan);
   await repo.syncWorkspacePlans(userId, plan);
+  await cache.delPattern("billing:snapshot:*");
   logger.info({ userId, polarSubscriptionId: data.id, status, plan }, "Polar webhook: subscription upserted");
 }

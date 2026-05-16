@@ -19,6 +19,7 @@ import { enqueueSyncJob } from "@/jobs/bucket-sync.job";
 import { broadcast } from "@/modules/events/events.service";
 import { SubscriptionSnapshotService } from "@/modules/billing/subscription-snapshot.service";
 import { assertProviderAccess } from "@/modules/billing/subscription-access";
+import { cache } from "@/shared/cache/cache.service";
 
 export class ProviderService {
   private repository: ProviderRepository;
@@ -80,6 +81,7 @@ export class ProviderService {
       lastChecked: new Date(),
     });
 
+    await cache.del(`provider:${workspaceId}`);
     enqueueSyncJob(workspaceId);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -139,6 +141,8 @@ export class ProviderService {
       lastChecked: new Date(),
     });
 
+    await cache.del(`provider:${workspaceId}`);
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { encryptedCreds: _, ...safe } = row;
     return safe;
@@ -184,13 +188,16 @@ export class ProviderService {
   }
 
   async getDecryptedProvider(workspaceId: string): Promise<IStorageProvider> {
-    const row = await this.repository.findUnique(workspaceId);
+    type CachedRow = { providerType: string; encryptedCreds: string; bucket: string; region: string | null; status: string };
+    const row = await cache.wrap<CachedRow | null>(`provider:${workspaceId}`, 600, () =>
+      this.repository.findUnique(workspaceId) as Promise<CachedRow | null>,
+    );
     if (!row) throw new AppError("No provider connected", 404, "NOT_FOUND");
     if (row.status === StorageProviderStatus.Invalid) {
       throw new AppError("Provider is disconnected", 409, "PROVIDER_DISCONNECTED");
     }
 
     const creds = JSON.parse(decrypt(row.encryptedCreds)) as DecryptedCreds;
-    return getProvider(row.providerType, creds, row.bucket, row.region ?? undefined);
+    return getProvider(row.providerType as never, creds, row.bucket, row.region ?? undefined);
   }
 }
