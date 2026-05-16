@@ -15,10 +15,15 @@ import onboardRoutes from "@/modules/auth/onboard.route";
 import webhookRoutes from "@/modules/webhooks/s3-webhook.route";
 import polarWebhookRoutes from "@/modules/webhooks/polar/polar-webhook.route";
 import billingRoutes from "@/modules/billing/billing.route";
-import adminRoutes, { publicBlogRouter, publicConfigRouter } from "@/modules/admin/admin.route";
+import adminRoutes, {
+  publicBlogRouter,
+  publicConfigRouter,
+} from "@/modules/admin/admin.route";
 import notificationsRoutes from "@/modules/notifications/notifications.route";
 import activityRoutes from "@/modules/activity/activity.route";
-import shareLinksRoutes, { publicShareRouter } from "@/modules/share-links/share-links.route";
+import shareLinksRoutes, {
+  publicShareRouter,
+} from "@/modules/share-links/share-links.route";
 import analyticsRoutes from "@/modules/analytics/analytics.route";
 import { startCronJobs } from "@/jobs/jobs";
 import env from "@/config/env";
@@ -28,10 +33,12 @@ const app: Express = express();
 app.set("trust proxy", 1);
 
 app.use(helmet());
-app.use(cors({
-  origin: env.FRONTEND_URL,
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: env.FRONTEND_URL,
+    credentials: true,
+  }),
+);
 app.use(compression());
 
 app.use(maintenanceModeMiddleware);
