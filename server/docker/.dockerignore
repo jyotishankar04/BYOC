@@ -1,6 +1,9 @@
 node_modules/
 dist/
 .git/
-.env
+.env*
 *.md
 docker/
+*.test.ts
+src/test/
+coverage/

@@ -1,5 +1,5 @@
 import logger from "@/core/logger";
-import { transporter, mailOptions } from "./mail.config";
+import { sendMailViaAdapter } from "./mail.adapter";
 import {
   buildInvitationHtml,
   buildInvitationText,
@@ -57,10 +57,10 @@ export class MailService {
     to: string,
     subject: string,
     html: string,
-    text: string,
+    _text: string,
   ): Promise<void> {
     try {
-      await transporter.sendMail({ ...mailOptions, to, subject, html, text });
+      await sendMailViaAdapter({ to, subject, html });
       logger.info({ to, subject }, "Email sent");
     } catch (err) {
       logger.error({ err, to, subject }, "Failed to send email");

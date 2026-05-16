@@ -1,23 +1,46 @@
-FROM node:20-alpine AS builder
-
+# ── Stage 1: Install all dependencies ─────────────────────────────────────────
+FROM node:22-alpine AS deps
 WORKDIR /app
 
-COPY package*.json ./
-RUN npm ci --only=production
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
-COPY . .
-RUN npm run build
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
-FROM node:20-alpine
-
+# ── Stage 2: Build ─────────────────────────────────────────────────────────────
+FROM node:22-alpine AS builder
 WORKDIR /app
 
-COPY --from=builder /app/package*.json ./
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+COPY package.json pnpm-lock.yaml ./
+COPY prisma ./prisma
+COPY --from=deps /app/node_modules ./node_modules
+
+RUN pnpm prisma generate
+
+COPY src ./src
+COPY tsconfig.json ./
+RUN pnpm run build
+
+# ── Stage 3: Production runtime ────────────────────────────────────────────────
+FROM node:22-alpine AS runner
+WORKDIR /app
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile --prod
+
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/generated ./generated
+COPY prisma ./prisma
 
-EXPOSE 3000
+EXPOSE 4000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -qO- http://localhost:4000/health/ready || exit 1
 
 USER node
 
-CMD ["node", "dist/server.js"]
+CMD ["node", "dist/src/server.js"]
