@@ -164,8 +164,9 @@ model User {
   activityLogs   ActivityLog[]
   uploadSessions UploadSession[]  @relation("UserUploadSessions")
 
-  subscription Subscription?
-  blogs        Blog[]
+  subscription    Subscription?
+  blogs           Blog[]
+  emailBroadcasts EmailBroadcast[]
 
   @@unique([email])
   @@map("user")
@@ -530,6 +531,20 @@ model UploadSession {
 
   @@index([workspaceId])
   @@map("upload_sessions")
+}
+
+model EmailBroadcast {
+  id             String   @id @default(uuid()) @db.Uuid
+  subject        String
+  previewText    String?
+  body           String   @db.Text
+  audience       String   @default("all")
+  sentBy         String
+  admin          User     @relation(fields: [sentBy], references: [id])
+  recipientCount Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@map("email_broadcasts")
 }
 
 model Blog {

@@ -305,6 +305,47 @@ export function useAdminDeleteBlog() {
   });
 }
 
+// ─── Email Broadcasts ─────────────────────────────────────────────────────────
+
+export interface AdminBroadcast {
+  id: string;
+  subject: string;
+  previewText: string | null;
+  body: string;
+  audience: string;
+  recipientCount: number;
+  createdAt: string;
+  admin: { id: string; name: string; avatar: string | null };
+}
+
+export function useAdminBroadcasts(params: { page?: number } = {}) {
+  return useQuery({
+    queryKey: ["admin", "broadcasts", params],
+    queryFn: async () => {
+      const res = await api.get<{ broadcasts: AdminBroadcast[]; total: number; totalPages: number }>(
+        "/api/v1/admin/emails/broadcasts",
+        { params },
+      );
+      return res.data;
+    },
+  });
+}
+
+export function useAdminSendBroadcast() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: { subject: string; previewText?: string; body: string; audience: string }) => {
+      const res = await api.post<{ queued: number }>("/api/v1/admin/emails/broadcast", data);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      void qc.invalidateQueries({ queryKey: ["admin", "broadcasts"] });
+      toast.success(`Queued ${data.queued} emails`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
 // ─── Public blog hooks (for website blog page) ────────────────────────────────
 
 export function usePublicBlogs(params: { page?: number; tag?: string } = {}) {
@@ -325,5 +366,16 @@ export function usePublicBlog(slug: string) {
       return res.data.blog;
     },
     enabled: !!slug,
+  });
+}
+
+export function usePublicBlogTags() {
+  return useQuery({
+    queryKey: ["blogs", "tags"],
+    queryFn: async () => {
+      const res = await api.get<{ tags: string[] }>("/api/v1/blogs/tags");
+      return res.data.tags;
+    },
+    staleTime: 5 * 60 * 1000,
   });
 }

@@ -29,10 +29,12 @@ const envSchema = z.object({
   REDIS_PASSWORD: z.string().default(""),
 
   // Mail
+  MAIL_PROVIDER: z.enum(["smtp", "resend"]).default("smtp"),
   MAIL_HOST: z.string().default("localhost"),
   MAIL_PORT: z.string().default("1025"),
   MAIL_SECURE: z.string().default("false").transform(val => val === "true"),
   MAIL_FROM: z.string().default("no-reply@bringbucket.local"),
+  RESEND_API_KEY: z.string().optional(),
 
   // Google OAuth
   GOOGLE_CLIENT_ID: z.string().default(""),

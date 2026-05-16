@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Shield,
   Settings,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/common/logo";
@@ -25,6 +26,7 @@ const NAV = [
   { href: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
   { href: "/admin/blogs", label: "Blogs", icon: FileText },
   { href: "/admin/activity", label: "Activity", icon: Activity },
+  { href: "/admin/emails", label: "Emails", icon: Mail },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];
 

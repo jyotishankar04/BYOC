@@ -1,9 +1,11 @@
 import cron from "node-cron";
 import { runProviderHealthChecks } from "./provider-health.job";
 import { runBucketDiff } from "./bucket-diff.job";
+import { startEmailWorker } from "@/core/mail/mail.worker";
 import logger from "@/core/logger";
 
 export function startCronJobs(): void {
+  startEmailWorker();
   // Provider health check — every 6 hours
   cron.schedule("0 */6 * * *", () => {
     runProviderHealthChecks().catch((err) =>

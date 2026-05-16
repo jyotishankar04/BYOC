@@ -7,6 +7,7 @@ import { AdminSubscriptionsController } from "./admin-subscriptions.controller";
 import { AdminBlogsController, PublicBlogsController } from "./admin-blogs.controller";
 import { AdminActivityController } from "./admin-activity.controller";
 import { AdminSettingsController, PublicConfigController } from "./admin-settings.controller";
+import { AdminEmailsController } from "./admin-emails.controller";
 
 const router = Router();
 export const publicBlogRouter = Router();
@@ -21,6 +22,7 @@ const publicBlogs = new PublicBlogsController();
 const activity = new AdminActivityController();
 const settings = new AdminSettingsController();
 const publicConfig = new PublicConfigController();
+const emails = new AdminEmailsController();
 
 // ─── Admin routes (require admin auth) ───────────────────────────────────────
 
@@ -49,9 +51,13 @@ router.get("/blogs/:blogId", requireAdmin, blogs.getOne);
 router.patch("/blogs/:blogId", requireAdmin, blogs.update);
 router.delete("/blogs/:blogId", requireAdmin, blogs.remove);
 
+router.post("/emails/broadcast", requireAdmin, emails.sendBroadcast);
+router.get("/emails/broadcasts", requireAdmin, emails.listBroadcasts);
+
 // ─── Public routes (no auth) ──────────────────────────────────────────────────
 
 publicBlogRouter.get("/", publicBlogs.list);
+publicBlogRouter.get("/tags", publicBlogs.tags);
 publicBlogRouter.get("/:slug", publicBlogs.getBySlug);
 
 publicConfigRouter.get("/", publicConfig.getConfig);
