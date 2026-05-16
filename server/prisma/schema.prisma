@@ -5,7 +5,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum WorkspaceType {
@@ -134,21 +133,21 @@ enum NotificationType {
 }
 
 model User {
-  id            String      @id
+  id            String        @id
   name          String
   email         String
-  emailVerified Boolean     @default(false)
+  emailVerified Boolean       @default(false)
   image         String?
   plan          WorkspacePlan @default(Free)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
   username      String?
   bio           String?
   location      String?
   website       String?
   avatar        String?
-  onboarded     Boolean?    @default(false)
-  isAdmin       Boolean     @default(false)
+  onboarded     Boolean?      @default(false)
+  isAdmin       Boolean       @default(false)
   accounts      Account[]
   sessions      Session[]
   workspaces    Workspace[]
@@ -246,7 +245,7 @@ model Workspace {
   security        WorkspaceSecurity?
   storageProvider StorageProvider?
 
-  folders       Folder[]
+  folders        Folder[]
   files          File[]
   shareLinks     ShareLink[]
   activityLogs   ActivityLog[]
@@ -347,9 +346,9 @@ model StorageProvider {
   status StorageProviderStatus @default(Unchecked)
 
   // Sync tracking
-  syncStatus           String   @default("idle") @db.VarChar(20)
-  syncTotalObjects     Int      @default(0)
-  syncCompletedObjects Int      @default(0)
+  syncStatus           String    @default("idle") @db.VarChar(20)
+  syncTotalObjects     Int       @default(0)
+  syncCompletedObjects Int       @default(0)
   lastSyncedAt         DateTime?
 
   lastChecked DateTime?
@@ -365,11 +364,11 @@ model Folder {
   workspaceId String    @db.Uuid
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 
-  name   String @db.VarChar(255)
-  path   String @db.Text
+  name String @db.VarChar(255)
+  path String @db.Text
 
-  parentId String? @db.Uuid
-  parent   Folder? @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  parentId String?  @db.Uuid
+  parent   Folder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
   children Folder[] @relation("FolderHierarchy")
 
   source String @default("byoc") @db.VarChar(20)
@@ -377,7 +376,7 @@ model Folder {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  files File[]
+  files      File[]
   shareLinks ShareLink[]
 
   @@unique([workspaceId, path])
@@ -498,7 +497,7 @@ model Notification {
   message     String?          @db.Text
   link        String?          @db.VarChar(500)
   read        Boolean          @default(false)
-  dismissed     Boolean          @default(false)
+  dismissed   Boolean          @default(false)
   createdAt   DateTime         @default(now())
 
   @@index([userId, read])

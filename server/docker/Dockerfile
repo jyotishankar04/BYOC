@@ -17,11 +17,11 @@ COPY package.json pnpm-lock.yaml ./
 COPY prisma ./prisma
 COPY --from=deps /app/node_modules ./node_modules
 
-RUN pnpm prisma generate
+RUN pnpm dlx prisma generate
 
 COPY src ./src
 COPY tsconfig.json ./
-RUN pnpm run build
+RUN pnpm build
 
 # ── Stage 3: Production runtime ────────────────────────────────────────────────
 FROM node:22-alpine AS runner

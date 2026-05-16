@@ -3,8 +3,8 @@ import { z } from "zod";
 
 dotenv.config({
   path:
-    process.env.NODE_ENV === "production" 
-      ? ".env.prod"
+    process.env.NODE_ENV === "production"
+      ? ".env"
       : process.env.NODE_ENV === "test"
         ? ".env.test"
         : ".env.dev",
@@ -16,11 +16,20 @@ const envSchema = z.object({
     .enum(["development", "production", "test"])
     .default("development"),
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
-  JWT_ACCESS_SECRET: z.string().min(32, "JWT_ACCESS_SECRET must be at least 32 characters"),
-  JWT_REFRESH_SECRET: z.string().min(32, "JWT_REFRESH_SECRET must be at least 32 characters"),
+  JWT_ACCESS_SECRET: z
+    .string()
+    .min(32, "JWT_ACCESS_SECRET must be at least 32 characters"),
+  JWT_REFRESH_SECRET: z
+    .string()
+    .min(32, "JWT_REFRESH_SECRET must be at least 32 characters"),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
-  LOG_LEVEL: z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).default("info"),
-  LOG_PRETTY: z.string().default("false").transform(val => val === "true"),
+  LOG_LEVEL: z
+    .enum(["trace", "debug", "info", "warn", "error", "fatal"])
+    .default("info"),
+  LOG_PRETTY: z
+    .string()
+    .default("false")
+    .transform((val) => val === "true"),
   FRONTEND_URL: z.string().default("http://localhost:3000"),
 
   // Redis — REDIS_URL takes precedence over host/port/password (use for Upstash)
@@ -33,7 +42,10 @@ const envSchema = z.object({
   MAIL_PROVIDER: z.enum(["smtp", "resend"]).default("smtp"),
   MAIL_HOST: z.string().default("localhost"),
   MAIL_PORT: z.string().default("1025"),
-  MAIL_SECURE: z.string().default("false").transform(val => val === "true"),
+  MAIL_SECURE: z
+    .string()
+    .default("false")
+    .transform((val) => val === "true"),
   MAIL_FROM: z.string().default("no-reply@bringbucket.local"),
   RESEND_API_KEY: z.string().optional(),
 
@@ -62,7 +74,10 @@ const envSchema = z.object({
 const parsedEnv = envSchema.safeParse(process.env);
 
 if (!parsedEnv.success) {
-  console.error("❌ Invalid environment variables:", parsedEnv.error.flatten().fieldErrors);
+  console.error(
+    "❌ Invalid environment variables:",
+    parsedEnv.error.flatten().fieldErrors,
+  );
   process.exit(1);
 }
 

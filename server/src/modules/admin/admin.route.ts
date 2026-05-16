@@ -4,9 +4,15 @@ import { AdminDashboardController } from "./admin-dashboard.controller";
 import { AdminUsersController } from "./admin-users.controller";
 import { AdminWorkspacesController } from "./admin-workspaces.controller";
 import { AdminSubscriptionsController } from "./admin-subscriptions.controller";
-import { AdminBlogsController, PublicBlogsController } from "./admin-blogs.controller";
+import {
+  AdminBlogsController,
+  PublicBlogsController,
+} from "./admin-blogs.controller";
 import { AdminActivityController } from "./admin-activity.controller";
-import { AdminSettingsController, PublicConfigController } from "./admin-settings.controller";
+import {
+  AdminSettingsController,
+  PublicConfigController,
+} from "./admin-settings.controller";
 import { AdminEmailsController } from "./admin-emails.controller";
 
 const router = Router();
@@ -38,7 +44,11 @@ router.get("/workspaces/:workspaceId", requireAdmin, workspaces.getOne);
 router.delete("/workspaces/:workspaceId", requireAdmin, workspaces.remove);
 
 router.get("/subscriptions", requireAdmin, subscriptions.list);
-router.patch("/subscriptions/:subscriptionId", requireAdmin, subscriptions.update);
+router.patch(
+  "/subscriptions/:subscriptionId",
+  requireAdmin,
+  subscriptions.update,
+);
 
 router.get("/activity", requireAdmin, activity.list);
 
