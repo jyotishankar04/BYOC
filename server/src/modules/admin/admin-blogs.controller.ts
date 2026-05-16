@@ -6,7 +6,7 @@ import { NotFoundError, ValidationError } from "@/core/errors";
 const blogSchema = z.object({
   title: z.string().min(1).max(200),
   slug: z.string().min(1).max(200).regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens"),
-  content: z.string().min(1),
+  content: z.string().default(""),
   excerpt: z.string().max(500).optional(),
   coverImage: z.string().url().optional().or(z.literal("")),
   tags: z.array(z.string()).default([]),
@@ -168,6 +168,19 @@ export class PublicBlogsController {
       });
       if (!blog || !blog.published) throw new NotFoundError("Blog post");
       res.json({ blog });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  tags = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const blogs = await prisma.blog.findMany({
+        where: { published: true },
+        select: { tags: true },
+      });
+      const tags = [...new Set(blogs.flatMap((b) => b.tags))].sort();
+      res.json({ tags });
     } catch (err) {
       next(err);
     }
