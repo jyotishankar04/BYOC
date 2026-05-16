@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from "express";
 import { z } from "zod";
 import prisma from "@/config/db.config";
 import { NotFoundError, ValidationError } from "@/core/errors";
+import { cache } from "@/shared/cache/cache.service";
 
 const blogSchema = z.object({
   title: z.string().min(1).max(200),
@@ -52,7 +53,7 @@ export class AdminBlogsController {
   getOne = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const blog = await prisma.blog.findUnique({
-        where: { id: req.params.blogId },
+        where: { id: req.params.blogId as string as string },
         include: { author: { select: { id: true, name: true, avatar: true } } },
       });
       if (!blog) throw new NotFoundError("Blog");
@@ -81,6 +82,11 @@ export class AdminBlogsController {
         include: { author: { select: { id: true, name: true, avatar: true } } },
       });
 
+      await Promise.all([
+        cache.del("blog:tags"),
+        cache.delPattern("blog:list:*"),
+      ]);
+
       res.status(201).json({ blog });
     } catch (err) {
       next(err);
@@ -91,7 +97,7 @@ export class AdminBlogsController {
     try {
       const data = updateBlogSchema.parse(req.body);
 
-      const existing = await prisma.blog.findUnique({ where: { id: req.params.blogId } });
+      const existing = await prisma.blog.findUnique({ where: { id: req.params.blogId as string } });
       if (!existing) throw new NotFoundError("Blog");
 
       if (data.slug && data.slug !== existing.slug) {
@@ -105,10 +111,15 @@ export class AdminBlogsController {
         : existing.publishedAt;
 
       const blog = await prisma.blog.update({
-        where: { id: req.params.blogId },
+        where: { id: req.params.blogId as string as string },
         data: { ...data, publishedAt, coverImage: data.coverImage || null },
         include: { author: { select: { id: true, name: true, avatar: true } } },
       });
+
+      await Promise.all([
+        cache.del(`blog:slug:${existing.slug}`, "blog:tags"),
+        cache.delPattern("blog:list:*"),
+      ]);
 
       res.json({ blog });
     } catch (err) {
@@ -118,7 +129,16 @@ export class AdminBlogsController {
 
   remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      await prisma.blog.delete({ where: { id: req.params.blogId } });
+      const blog = await prisma.blog.findUnique({ where: { id: req.params.blogId as string }, select: { slug: true } });
+      await prisma.blog.delete({ where: { id: req.params.blogId as string } });
+
+      if (blog) {
+        await Promise.all([
+          cache.del(`blog:slug:${blog.slug}`, "blog:tags"),
+          cache.delPattern("blog:list:*"),
+        ]);
+      }
+
       res.json({ success: true });
     } catch (err) {
       next(err);
@@ -134,27 +154,32 @@ export class PublicBlogsController {
       const page = Math.max(1, Number(req.query.page) || 1);
       const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 9));
       const skip = (page - 1) * limit;
-      const tag = req.query.tag as string | undefined;
+      const tag = (req.query.tag as string | undefined) ?? "";
 
-      const where: Record<string, unknown> = { published: true };
-      if (tag) where.tags = { has: tag };
+      const cacheKey = `blog:list:${page}:${limit}:${tag}`;
+      const result = await cache.wrap(cacheKey, 300, async () => {
+        const where: Record<string, unknown> = { published: true };
+        if (tag) where.tags = { has: tag };
 
-      const [blogs, total] = await Promise.all([
-        prisma.blog.findMany({
-          where,
-          skip,
-          take: limit,
-          orderBy: { publishedAt: "desc" },
-          select: {
-            id: true, title: true, slug: true, excerpt: true,
-            coverImage: true, tags: true, publishedAt: true, createdAt: true,
-            author: { select: { id: true, name: true, avatar: true } },
-          },
-        }),
-        prisma.blog.count({ where }),
-      ]);
+        const [blogs, total] = await Promise.all([
+          prisma.blog.findMany({
+            where,
+            skip,
+            take: limit,
+            orderBy: { publishedAt: "desc" },
+            select: {
+              id: true, title: true, slug: true, excerpt: true,
+              coverImage: true, tags: true, publishedAt: true, createdAt: true,
+              author: { select: { id: true, name: true, avatar: true } },
+            },
+          }),
+          prisma.blog.count({ where }),
+        ]);
 
-      res.json({ blogs, total, page, limit, totalPages: Math.ceil(total / limit) });
+        return { blogs, total, page, limit, totalPages: Math.ceil(total / limit) };
+      });
+
+      res.json(result);
     } catch (err) {
       next(err);
     }
@@ -162,10 +187,13 @@ export class PublicBlogsController {
 
   getBySlug = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const blog = await prisma.blog.findUnique({
-        where: { slug: req.params.slug },
-        include: { author: { select: { id: true, name: true, avatar: true } } },
-      });
+      const slug = req.params.slug as string;
+      const blog = await cache.wrap(`blog:slug:${slug}`, 600, () =>
+        prisma.blog.findUnique({
+          where: { slug },
+          include: { author: { select: { id: true, name: true, avatar: true } } },
+        }),
+      );
       if (!blog || !blog.published) throw new NotFoundError("Blog post");
       res.json({ blog });
     } catch (err) {
@@ -175,11 +203,13 @@ export class PublicBlogsController {
 
   tags = async (_req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const blogs = await prisma.blog.findMany({
-        where: { published: true },
-        select: { tags: true },
+      const tags = await cache.wrap("blog:tags", 3600, async () => {
+        const blogs = await prisma.blog.findMany({
+          where: { published: true },
+          select: { tags: true },
+        });
+        return [...new Set(blogs.flatMap((b) => b.tags))].sort();
       });
-      const tags = [...new Set(blogs.flatMap((b) => b.tags))].sort();
       res.json({ tags });
     } catch (err) {
       next(err);

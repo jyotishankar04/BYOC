@@ -23,7 +23,11 @@ foldersRouter.post(
 );
 
 // PATCH /workspaces/:workspaceId/folders/:folderId
-foldersRouter.patch("/:folderId", foldersController.renameFolder);
+foldersRouter.patch(
+  "/:folderId",
+  requirePermission("canCreateFolders"),
+  foldersController.renameFolder,
+);
 
 // DELETE /workspaces/:workspaceId/folders/:folderId
 foldersRouter.delete(
@@ -33,6 +37,10 @@ foldersRouter.delete(
 );
 
 // PATCH /workspaces/:workspaceId/folders/:folderId/move
-foldersRouter.patch("/:folderId/move", foldersController.moveFolder);
+foldersRouter.patch(
+  "/:folderId/move",
+  requirePermission("canCreateFolders"),
+  foldersController.moveFolder,
+);
 
 export default foldersRouter;

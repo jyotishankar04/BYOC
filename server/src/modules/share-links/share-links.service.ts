@@ -70,6 +70,9 @@ export class ShareLinksService {
     );
 
     if (accessType === "PasswordProtected") {
+      if (!password) {
+        throw new AppError("Password is required for password-protected links", 400, "PASSWORD_REQUIRED");
+      }
       if (!appSettings.getConfig().features.passwordProtectedLinks) {
         throw new AppError(
           "Password-protected links are currently disabled on this platform",
@@ -197,6 +200,12 @@ export class ShareLinksService {
       }
 
       if (data.accessType === "PasswordProtected") {
+        if (!data.password) {
+          const existing = await this.repo.findById(linkId, workspaceId);
+          if (!existing?.passwordHash) {
+            throw new AppError("Password is required when setting password-protected access", 400, "PASSWORD_REQUIRED");
+          }
+        }
         assertFeatureAccess(
           snapshot.plan,
           "passwordProtectedLinks",

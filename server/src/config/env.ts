@@ -15,10 +15,10 @@ const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "production", "test"])
     .default("development"),
-  DATABASE_URL: z.string().default(""),
-  JWT_ACCESS_SECRET: z.string().default(""),
-  JWT_REFRESH_SECRET: z.string().default(""),
-  JWT_SECRET: z.string().default(""),
+  DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
+  JWT_ACCESS_SECRET: z.string().min(32, "JWT_ACCESS_SECRET must be at least 32 characters"),
+  JWT_REFRESH_SECRET: z.string().min(32, "JWT_REFRESH_SECRET must be at least 32 characters"),
+  JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
   LOG_LEVEL: z.enum(["trace", "debug", "info", "warn", "error", "fatal"]).default("info"),
   LOG_PRETTY: z.string().default("false").transform(val => val === "true"),
   FRONTEND_URL: z.string().default("http://localhost:3000"),
@@ -61,8 +61,7 @@ const envSchema = z.object({
 const parsedEnv = envSchema.safeParse(process.env);
 
 if (!parsedEnv.success) {
-  console.log(parsedEnv.error);
-  console.error("❌ Invalid environment variables");
+  console.error("❌ Invalid environment variables:", parsedEnv.error.flatten().fieldErrors);
   process.exit(1);
 }
 

@@ -6,6 +6,7 @@ import {
   requirePermission,
 } from "@/shared/middleware/workspace.middleware";
 import { UploadController } from "./upload.controller";
+import { uploadLimiter } from "@/config/rate-limiters";
 
 const uploadRouter = Router({ mergeParams: true });
 const uploadController = new UploadController(prisma);
@@ -15,6 +16,7 @@ uploadRouter.use(requireAuth);
 // POST /upload/presign
 uploadRouter.post(
   "/presign",
+  uploadLimiter,
   requireWorkspaceMember,
   requirePermission("canUpload"),
   uploadController.presignSmallFile,
@@ -23,6 +25,7 @@ uploadRouter.post(
 // POST /upload/initiate
 uploadRouter.post(
   "/initiate",
+  uploadLimiter,
   requireWorkspaceMember,
   requirePermission("canUpload"),
   uploadController.initiateMultipart,

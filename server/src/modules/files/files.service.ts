@@ -49,7 +49,7 @@ export class FilesService {
     if (folderId) {
       let currentId: string | null = folderId;
       while (currentId) {
-        const folder = await this.repository.findFolderById(currentId);
+        const folder = await this.repository.findFolderById(currentId, workspaceId);
         if (!folder) break;
         breadcrumbs.unshift({ id: folder.id, name: folder.name });
         currentId = folder.parentId;
@@ -106,8 +106,8 @@ export class FilesService {
 
     let folderPath: string | null = null;
     if (dto.folderId !== null) {
-      const folder = await this.repository.findFolderById(dto.folderId);
-      if (!folder || folder.workspaceId !== workspaceId)
+      const folder = await this.repository.findFolderById(dto.folderId, workspaceId);
+      if (!folder)
         throw new AppError("Folder not found", 404, "FOLDER_NOT_FOUND");
       folderPath = folder.path;
     }

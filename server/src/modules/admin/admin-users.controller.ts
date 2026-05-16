@@ -47,7 +47,7 @@ export class AdminUsersController {
   getOne = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const user = await prisma.user.findUnique({
-        where: { id: req.params.userId },
+        where: { id: req.params.userId as string },
         include: {
           subscription: true,
           _count: { select: { workspaces: true, shareLinks: true, files: true, activityLogs: true } },
@@ -65,7 +65,7 @@ export class AdminUsersController {
     try {
       const data = updateUserSchema.parse(req.body);
       const user = await prisma.user.update({
-        where: { id: req.params.userId },
+        where: { id: req.params.userId as string },
         data,
         select: { id: true, name: true, email: true, isAdmin: true, plan: true },
       });
@@ -77,7 +77,7 @@ export class AdminUsersController {
 
   remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      await prisma.user.delete({ where: { id: req.params.userId } });
+      await prisma.user.delete({ where: { id: req.params.userId as string } });
       res.json({ success: true });
     } catch (err) {
       next(err);

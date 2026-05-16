@@ -85,9 +85,9 @@ export class FilesRepository {
     });
   }
 
-  async findFolderById(folderId: string) {
-    return this.prisma.folder.findUnique({
-      where: { id: folderId },
+  async findFolderById(folderId: string, workspaceId?: string) {
+    return this.prisma.folder.findFirst({
+      where: { id: folderId, ...(workspaceId ? { workspaceId } : {}) },
       select: { id: true, name: true, path: true, parentId: true, workspaceId: true },
     });
   }

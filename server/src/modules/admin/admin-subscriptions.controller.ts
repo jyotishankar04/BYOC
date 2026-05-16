@@ -4,7 +4,7 @@ import prisma from "@/config/db.config";
 import { NotFoundError } from "@/core/errors";
 
 const updateSubSchema = z.object({
-  status: z.enum(["Active", "Canceled", "Trialing", "PastDue", "Incomplete", "Incomplete_expired", "Unpaid", "Paused"]).optional(),
+  status: z.enum(["Active", "Canceled", "Trialing", "PastDue", "Incomplete", "Expired"]).optional(),
   plan: z.enum(["Free", "Pro", "Team"]).optional(),
 });
 
@@ -41,7 +41,7 @@ export class AdminSubscriptionsController {
     try {
       const data = updateSubSchema.parse(req.body);
       const subscription = await prisma.subscription.update({
-        where: { id: req.params.subscriptionId },
+        where: { id: req.params.subscriptionId as string },
         data,
       });
       res.json({ subscription });

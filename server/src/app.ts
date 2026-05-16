@@ -1,10 +1,12 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import compression from "compression";
 import type { Express } from "express";
 import { requestLogger } from "@/shared/middleware/request-logger";
 import { errorHandler } from "@/shared/middleware/error-handler";
 import { maintenanceModeMiddleware } from "@/shared/middleware/maintenance.middleware";
+import { authLimiter, shareLinkPasswordLimiter } from "@/config/rate-limiters";
 import healthRoutes from "@/modules/health/health.routes";
 import authRoutes, { authController } from "@/modules/auth/auth.route";
 import workspaceRoutes from "@/modules/workspace/workspace.route";
@@ -23,19 +25,22 @@ import env from "@/config/env";
 
 const app: Express = express();
 
+app.set("trust proxy", 1);
+
 app.use(helmet());
 app.use(cors({
   origin: env.FRONTEND_URL,
   credentials: true,
 }));
+app.use(compression());
 
 app.use(maintenanceModeMiddleware);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger);
 
-// Public Share Links (no auth)
-app.use("/s", publicShareRouter);
+// Public Share Links (no auth) — rate limited to guard password brute-force
+app.use("/s", shareLinkPasswordLimiter, publicShareRouter);
 
 // Public Blogs (no auth)
 app.use("/api/v1/blogs", publicBlogRouter);
@@ -43,7 +48,7 @@ app.use("/api/v1/blogs", publicBlogRouter);
 // Public app config (no auth)
 app.use("/api/v1/config", publicConfigRouter);
 
-app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/auth", authLimiter, authRoutes);
 app.use("/api/v1/workspaces", workspaceRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/onboard", onboardRoutes);

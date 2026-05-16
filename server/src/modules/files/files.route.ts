@@ -33,6 +33,7 @@ filesRouter.get(
 filesRouter.patch(
   "/:fileId/rename",
   requireWorkspaceMember,
+  requirePermission("canUpload"),
   filesController.renameFile,
 );
 
@@ -40,6 +41,7 @@ filesRouter.patch(
 filesRouter.patch(
   "/:fileId/move",
   requireWorkspaceMember,
+  requirePermission("canUpload"),
   filesController.moveFile,
 );
 

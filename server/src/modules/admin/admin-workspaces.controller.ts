@@ -23,7 +23,7 @@ export class AdminWorkspacesController {
           include: {
             owner: { select: { id: true, name: true, email: true } },
             _count: { select: { members: true, files: true, shareLinks: true } },
-            storage: { select: { type: true, status: true } },
+            storageProvider: { select: { providerType: true, status: true } },
           },
         }),
         prisma.workspace.count({ where }),
@@ -38,10 +38,10 @@ export class AdminWorkspacesController {
   getOne = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const workspace = await prisma.workspace.findUnique({
-        where: { id: req.params.workspaceId },
+        where: { id: req.params.workspaceId as string },
         include: {
           owner: { select: { id: true, name: true, email: true } },
-          storage: true,
+          storageProvider: true,
           _count: { select: { members: true, files: true, shareLinks: true, folders: true } },
         },
       });
@@ -54,7 +54,7 @@ export class AdminWorkspacesController {
 
   remove = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      await prisma.workspace.delete({ where: { id: req.params.workspaceId } });
+      await prisma.workspace.delete({ where: { id: req.params.workspaceId as string } });
       res.json({ success: true });
     } catch (err) {
       next(err);
