@@ -29,6 +29,7 @@ import {
 import env from "@/config/env";
 import { AppError } from "@/core/errors";
 import { appSettings } from "@/config/app-settings";
+import { EmailQueueService } from "@/core/mail/mail.queue";
 
 function parseCookies(header: string | undefined): Record<string, string> {
   if (!header) return {};
@@ -161,6 +162,8 @@ export class AuthService implements IAuthService {
         throw err;
       }
     }
+
+    EmailQueueService.enqueue({ type: "welcome", to: user.email, name: user.name });
   }
 
   hashApiKey(key: string): string {
@@ -365,6 +368,13 @@ export class AuthService implements IAuthService {
       // Fire-and-forget onboarding — don't block the response
       this.onUserCreated(user).catch((err) => {
         console.error("onUserCreated failed:", err);
+      });
+    } else {
+      EmailQueueService.enqueue({
+        type: "login_alert",
+        to: user.email,
+        name: user.name,
+        ip: req.ip ?? req.socket?.remoteAddress,
       });
     }
 

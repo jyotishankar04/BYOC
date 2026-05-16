@@ -9,34 +9,7 @@ import { Logo } from "@/components/common/logo";
 import { signIn, useSession } from "@/lib/auth-client";
 import { toast } from "sonner";
 import { useAppConfig } from "@/lib/admin";
-import { Shield, Zap, Share2 } from "lucide-react";
-
-const FEATURES = [
-  {
-    icon: Zap,
-    title: "Connect any S3-compatible storage",
-    desc: "Amazon S3, Cloudflare R2, MinIO, Supabase and more — one dashboard for all of them.",
-  },
-  {
-    icon: Share2,
-    title: "Secure, expiring share links",
-    desc: "Generate public or password-protected links with optional expiry dates.",
-  },
-  {
-    icon: Shield,
-    title: "Your data stays yours",
-    desc: "Credentials are AES-256 encrypted at rest. We never read your files.",
-  },
-];
-
-const PROVIDERS = [
-  { initials: "S3", color: "bg-amber-500/15 text-amber-400", label: "Amazon S3" },
-  { initials: "R2", color: "bg-orange-500/15 text-orange-400", label: "Cloudflare R2" },
-  { initials: "GCS", color: "bg-blue-500/15 text-blue-400", label: "Google Cloud" },
-  { initials: "AZ", color: "bg-sky-500/15 text-sky-400", label: "Azure" },
-  { initials: "MI", color: "bg-red-500/15 text-red-400", label: "MinIO" },
-  { initials: "SB", color: "bg-emerald-500/15 text-emerald-400", label: "Supabase" },
-];
+import { AUTH_FEATURES, AUTH_PROVIDERS } from "@/lib/auth-constants";
 
 export default function Signup() {
   const [loading, setLoading] = useState(false);
@@ -147,7 +120,7 @@ export default function Signup() {
 
         {/* Middle — feature list */}
         <div className="relative space-y-6">
-          {FEATURES.map(({ icon: Icon, title, desc }) => (
+          {AUTH_FEATURES.map(({ icon: Icon, title, desc }) => (
             <div key={title} className="flex gap-4">
               <div className="mt-0.5 shrink-0 flex size-9 items-center justify-center rounded-lg bg-white/5 border border-white/10">
                 <Icon className="size-4 text-primary-foreground opacity-80" />
@@ -164,7 +137,7 @@ export default function Signup() {
         <div className="relative">
           <p className="text-xs text-white/35 mb-3 uppercase tracking-widest font-medium">Supported providers</p>
           <div className="flex flex-wrap gap-2">
-            {PROVIDERS.map(({ initials, color, label }) => (
+            {AUTH_PROVIDERS.map(({ initials, color, label }) => (
               <div
                 key={initials}
                 className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${color} border border-white/5`}
