@@ -4,29 +4,30 @@ import type { IUserRepository } from "./user.interface";
 import type { UpdateProfileDto, UpdatePreferencesDto } from "./user.schema";
 import redis from "@/config/redis.config";
 import prisma from "@/config/db.config";
+import { cache } from "@/shared/cache/cache.service";
 import { SubscriptionSnapshotService } from "@/modules/billing/subscription-snapshot.service";
 
 export class UserService implements IUserService {
   constructor(private userRepository: IUserRepository) {}
 
   async getProfile(userId: string): Promise<Record<string, unknown>> {
-    const user = await this.userRepository.findById(userId);
-    if (!user) throw new AppError("User not found", 404, "NOT_FOUND");
-    const subscriptionSnapshot = await new SubscriptionSnapshotService(
-      prisma,
-    ).getUserSnapshot(userId);
-
-    return {
-      ...user,
-      subscription: subscriptionSnapshot,
-    };
+    return cache.wrap(`user:profile:${userId}`, 120, async () => {
+      const user = await this.userRepository.findById(userId);
+      if (!user) throw new AppError("User not found", 404, "NOT_FOUND");
+      const subscriptionSnapshot = await new SubscriptionSnapshotService(
+        prisma,
+      ).getUserSnapshot(userId);
+      return { ...user, subscription: subscriptionSnapshot };
+    });
   }
 
   async updateProfile(
     userId: string,
     data: UpdateProfileDto,
   ): Promise<Record<string, unknown>> {
-    return this.userRepository.update(userId, data as Record<string, unknown>);
+    const result = await this.userRepository.update(userId, data as Record<string, unknown>);
+    await cache.del(`user:profile:${userId}`);
+    return result;
   }
 
   async getPreferences(userId: string): Promise<Record<string, unknown>> {

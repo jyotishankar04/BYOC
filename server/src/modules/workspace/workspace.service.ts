@@ -29,7 +29,9 @@ export class WorkspaceService implements IWorkspaceService {
   async listWorkspaces(
     userId: string,
   ): Promise<Array<Record<string, unknown>>> {
-    return this.workspaceRepository.findWorkspacesByUserId(userId);
+    return cache.wrap(`workspaces:user:${userId}`, 120, () =>
+      this.workspaceRepository.findWorkspacesByUserId(userId),
+    );
   }
 
   async createWorkspace(
@@ -53,7 +55,7 @@ export class WorkspaceService implements IWorkspaceService {
     if (slugTaken)
       throw new AppError("Slug is already taken", 409, "SLUG_CONFLICT");
 
-    return this.prisma.$transaction(async (tx) => {
+    const workspace = await this.prisma.$transaction(async (tx) => {
       return tx.workspace.create({
         data: {
           ...data,
@@ -65,6 +67,8 @@ export class WorkspaceService implements IWorkspaceService {
         include: { permissions: true, security: true },
       });
     });
+    await cache.del(`workspaces:user:${userId}`);
+    return workspace;
   }
 
   async getWorkspace(workspaceId: string): Promise<Record<string, unknown>> {
@@ -110,7 +114,7 @@ export class WorkspaceService implements IWorkspaceService {
     }
 
     await this.workspaceRepository.deleteWorkspace(workspaceId);
-    await cache.del(`workspace:id:${workspaceId}`);
+    await cache.del(`workspace:id:${workspaceId}`, `workspaces:user:${userId}`);
   }
 
   async transferOwnership(
