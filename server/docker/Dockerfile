@@ -35,7 +35,7 @@ RUN pnpm install --frozen-lockfile --prod
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/generated ./generated
 COPY prisma ./prisma
-RUN printf '#!/bin/sh\nset -e\nnpx prisma migrate deploy\nexec node dist/src/server.js\n' > start.sh && chmod +x start.sh
+RUN printf '#!/bin/sh\nset -e\npnpm prisma migrate deploy\nexec node dist/src/server.js\n' > start.sh && chmod +x start.sh
 
 EXPOSE 4000
 
