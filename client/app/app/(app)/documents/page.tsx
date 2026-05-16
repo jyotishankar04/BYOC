@@ -503,7 +503,7 @@ export default function DocumentsPage() {
 
   return (
     <>
-      <div className={cn("flex flex-col gap-5 transition-all duration-300", isDetailOpen && "lg:mr-[420px]")}>
+      <div className={cn("flex flex-col gap-5 transition-all duration-300", isDetailOpen && "lg:mr-[var(--detail-sidebar-width)]")}>
 
         {/* ── Header ── */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

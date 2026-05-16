@@ -51,7 +51,7 @@ export interface FileItem {
   id: string
   name: string
   type: "Video" | "Image" | "Document" | "Archive"
-  kind?: "image" | "video" | "document" | "audio" | "archive" | "other"
+  kind?: "image" | "video" | "document" | "audio" | "archive" | "other" | "file" | "folder"
   extension: string | null
   size: string
   sizeBytes?: number

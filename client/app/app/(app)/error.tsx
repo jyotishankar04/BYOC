@@ -24,7 +24,7 @@ export default function AppError({
         </div>
         <h2 className="text-lg font-semibold">Something went wrong</h2>
         <p className="text-sm text-muted-foreground">
-          {error.message || "An unexpected error occurred. Please try again."}
+          An unexpected error occurred. Please try again.
         </p>
         <Button onClick={reset} variant="outline" size="sm">
           Try again

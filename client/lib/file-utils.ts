@@ -1,5 +1,7 @@
 "use client";
 
+import type { FileKind } from "@/stores/upload-store";
+
 export function formatFileSize(bytes: number): string {
   if (bytes === 0) return "0 B";
   const units = ["B", "KB", "MB", "GB", "TB"];
@@ -7,6 +9,39 @@ export function formatFileSize(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   const value = bytes / Math.pow(k, i);
   return `${value < 10 ? value.toFixed(1) : Math.round(value)} ${units[i]}`;
+}
+
+export function formatBytes(bytes: number): string {
+  if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
+  if (bytes >= 1e6) return `${(bytes / 1e6).toFixed(1)} MB`;
+  if (bytes >= 1e3) return `${Math.round(bytes / 1e3)} KB`;
+  return `${bytes} B`;
+}
+
+export function detectKind(file: File): FileKind {
+  const t = file.type;
+  const n = file.name.toLowerCase();
+  if (t.startsWith("video/")) return "Video";
+  if (t.startsWith("image/")) return "Image";
+  if (
+    t.includes("pdf") ||
+    t.includes("document") ||
+    t.includes("sheet") ||
+    t.includes("presentation") ||
+    n.endsWith(".docx") ||
+    n.endsWith(".xlsx") ||
+    n.endsWith(".pptx")
+  )
+    return "Document";
+  if (
+    t.includes("zip") ||
+    t.includes("tar") ||
+    t.includes("rar") ||
+    n.endsWith(".7z") ||
+    n.endsWith(".gz")
+  )
+    return "Archive";
+  return "Other";
 }
 
 export function formatDate(dateString: string): string {

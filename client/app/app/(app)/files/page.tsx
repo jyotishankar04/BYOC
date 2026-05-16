@@ -1155,7 +1155,7 @@ export default function FilesPage() {
       <div
         className={cn(
           "flex flex-col gap-5 transition-all duration-300",
-          isDetailOpen && "lg:mr-[420px]",
+          isDetailOpen && "lg:mr-[var(--detail-sidebar-width)]",
         )}
       >
         {/* ── Sync bar — only when a provider is connected ── */}
@@ -1386,11 +1386,11 @@ export default function FilesPage() {
         />
       )}
 
-      {movingFile && (
+      {movingFile && workspaceId && (
         <MoveFileDialog
           folders={folders}
           currentFolderId={currentFolderId}
-          workspaceId={workspaceId!}
+          workspaceId={workspaceId}
           fileId={movingFile.id}
           fileName={movingFile.name}
           onMove={(folderId) => {

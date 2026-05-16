@@ -17,6 +17,7 @@ import {
   Settings01Icon,
   Logout01Icon,
   UserCircle02Icon,
+  Notification01Icon,
 } from "@hugeicons/core-free-icons"
 import {
   Sidebar,
@@ -55,6 +56,7 @@ const NAV_MAIN = [
   { label: "Documents",    href: "/app/documents",  icon: LegalDocument01Icon,   exact: false },
   { label: "Videos",       href: "/app/videos",     icon: Video01Icon,           exact: false },
   { label: "Shared Links", href: "/app/shared",     icon: LinkSquare01Icon,      exact: false },
+  { label: "Notifications", href: "/app/notifications", icon: Notification01Icon, exact: false },
 ] as const
 
 const NAV_MANAGE = [
@@ -76,7 +78,7 @@ function isActive(pathname: string, href: string, exact: boolean) {
 }
 
 function isSettingsActive(pathname: string) {
-  return pathname === "/app/settings" || pathname.startsWith("/app/settings/")
+  return pathname === "/app/settings" || pathname.startsWith("/app/settings/") || pathname.startsWith("/app/workspaces/")
 }
 
 function SidebarUserMenu() {

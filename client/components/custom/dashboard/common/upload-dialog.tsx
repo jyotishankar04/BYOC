@@ -25,6 +25,7 @@ import { Separator } from "@/components/ui/separator";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { useUploadStore } from "@/stores/upload-store";
+import { formatBytes, detectKind } from "@/lib/file-utils";
 import { useWorkspace } from "@/lib/workspace-context";
 
 type FileKind = "Video" | "Image" | "Document" | "Archive" | "Other";
@@ -63,39 +64,6 @@ const KIND_META: Record<
     bg: "bg-muted",
   },
 };
-
-function formatBytes(bytes: number): string {
-  if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
-  if (bytes >= 1e6) return `${(bytes / 1e6).toFixed(1)} MB`;
-  if (bytes >= 1e3) return `${Math.round(bytes / 1e3)} KB`;
-  return `${bytes} B`;
-}
-
-function detectKind(file: File): FileKind {
-  const t = file.type;
-  const n = file.name.toLowerCase();
-  if (t.startsWith("video/")) return "Video";
-  if (t.startsWith("image/")) return "Image";
-  if (
-    t.includes("pdf") ||
-    t.includes("document") ||
-    t.includes("sheet") ||
-    t.includes("presentation") ||
-    n.endsWith(".docx") ||
-    n.endsWith(".xlsx") ||
-    n.endsWith(".pptx")
-  )
-    return "Document";
-  if (
-    t.includes("zip") ||
-    t.includes("tar") ||
-    t.includes("rar") ||
-    n.endsWith(".7z") ||
-    n.endsWith(".gz")
-  )
-    return "Archive";
-  return "Other";
-}
 
 function FileRow({
   file,

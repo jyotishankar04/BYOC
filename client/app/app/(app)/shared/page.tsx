@@ -13,13 +13,10 @@ import {
   LockedIcon,
   Copy01Icon,
   Delete01Icon,
-  EyeIcon,
   Cancel01Icon,
   CheckmarkCircle01Icon,
-  Calendar01Icon,
   Analytics01Icon,
   Settings01Icon,
-  Share01Icon,
   Loading01Icon,
 } from "@hugeicons/core-free-icons"
 import { Button } from "@/components/ui/button"
@@ -547,7 +544,7 @@ export default function SharedLinksPage() {
 
   return (
     <>
-      <div className={cn("flex flex-col gap-5 transition-all duration-300", isDetailOpen && "lg:mr-[400px]")}>
+      <div className={cn("flex flex-col gap-5 transition-all duration-300", isDetailOpen && "lg:mr-[var(--detail-sidebar-width)]")}>
 
         {/* ── Header ── */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
