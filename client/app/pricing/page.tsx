@@ -1,4 +1,5 @@
-import type { Metadata } from 'next'
+"use client"
+
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   CloudUploadIcon,
@@ -6,15 +7,13 @@ import {
   UserGroupIcon,
   MessageQuestionIcon,
   CheckmarkCircle01Icon,
+  RocketIcon,
+  DiamondIcon,
 } from '@hugeicons/core-free-icons'
 import Link from 'next/link'
 import { PlanCtaButton } from '@/components/custom/pricing/plan-cta-button'
-
-export const metadata: Metadata = {
-  title: 'Pricing — BringBucket',
-  description:
-    'Simple, transparent pricing. Connect your own cloud storage and pay only for the features you need.',
-}
+import { useBetaMode } from '@/lib/admin'
+import { Badge } from '@/components/ui/badge'
 
 type Cell = boolean | string
 
@@ -107,10 +106,11 @@ function DataRows({ rows }: { rows: Row[] }) {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function PricingPage() {
+  const { data: isBeta = true } = useBetaMode()
+
   return (
     <section className="py-16 md:py-28">
       <div className="mx-auto max-w-5xl px-6">
-        {/* Page header */}
         <div className="mb-14 text-center">
           <span className="rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground">
             Pricing
@@ -124,77 +124,102 @@ export default function PricingPage() {
           </p>
         </div>
 
-        {/* Comparison table */}
-        <div className="w-full overflow-auto lg:overflow-visible">
-          <table className="w-[200vw] border-separate border-spacing-x-3 md:w-full dark:[--color-muted:var(--color-zinc-900)]">
-            <thead className="bg-background sticky top-0">
-              <tr className="*:py-4 *:text-left *:font-medium">
-                <th className="lg:w-2/5" />
+        {isBeta ? (
+          <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/5 via-background to-primary/5 p-8 text-center sm:p-10">
+            <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.04)_1px,transparent_1px)] bg-[size:40px_40px]" />
+            <div className="relative">
+              <Badge className="mb-4 gap-1.5 border-primary/30 bg-primary/10 text-primary">
+                <HugeiconsIcon icon={RocketIcon} className="size-3" strokeWidth={1.5} />
+                Beta Access
+              </Badge>
+              <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-primary/10">
+                <HugeiconsIcon icon={DiamondIcon} className="size-6 text-primary" strokeWidth={1.5} />
+              </div>
+              <h3 className="text-xl font-semibold tracking-tight">
+                Everyone gets Pro — free during beta
+              </h3>
+              <p className="mx-auto mt-3 max-w-sm text-sm text-muted-foreground">
+                Pricing will be introduced in a future release. For now, all users have full Pro access with no restrictions — no credit card needed.
+              </p>
+              <p className="mt-6 text-xs text-muted-foreground/60">
+                You&apos;ll be notified before any pricing changes take effect.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="w-full overflow-auto lg:overflow-visible">
+              <table className="w-[200vw] border-separate border-spacing-x-3 md:w-full dark:[--color-muted:var(--color-zinc-900)]">
+                <thead className="bg-background sticky top-0">
+                  <tr className="*:py-4 *:text-left *:font-medium">
+                    <th className="lg:w-2/5" />
 
-                {/* Free */}
-                <th className="space-y-3">
-                  <div>
-                    <span className="block text-base">Free</span>
-                    <span className="text-muted-foreground text-sm font-normal">$0 / forever</span>
-                  </div>
-                  <PlanCtaButton plan="free" variant="outline" />
-                </th>
+                    {/* Free */}
+                    <th className="space-y-3">
+                      <div>
+                        <span className="block text-base">Free</span>
+                        <span className="text-muted-foreground text-sm font-normal">$0 / forever</span>
+                      </div>
+                      <PlanCtaButton plan="free" variant="outline" />
+                    </th>
 
-                {/* Pro — highlighted */}
-                <th className="bg-muted rounded-t-(--radius) space-y-3 px-4">
-                  <div>
-                    <span className="block text-base">Pro</span>
-                    <span className="text-muted-foreground text-sm font-normal">$9 / month</span>
-                  </div>
-                  <PlanCtaButton plan="pro" />
-                </th>
+                    {/* Pro — highlighted */}
+                    <th className="bg-muted rounded-t-(--radius) space-y-3 px-4">
+                      <div>
+                        <span className="block text-base">Pro</span>
+                        <span className="text-muted-foreground text-sm font-normal">$9 / month</span>
+                      </div>
+                      <PlanCtaButton plan="pro" />
+                    </th>
 
-                {/* Team */}
-                <th className="space-y-3">
-                  <div>
-                    <span className="block text-base">Team</span>
-                    <span className="text-muted-foreground text-sm font-normal">$29 / month</span>
-                  </div>
-                  <PlanCtaButton plan="team" variant="outline" />
-                </th>
-              </tr>
-            </thead>
+                    {/* Team */}
+                    <th className="space-y-3">
+                      <div>
+                        <span className="block text-base">Team</span>
+                        <span className="text-muted-foreground text-sm font-normal">$29 / month</span>
+                      </div>
+                      <PlanCtaButton plan="team" variant="outline" />
+                    </th>
+                  </tr>
+                </thead>
 
-            <tbody>
-              <SectionHeader icon={CloudUploadIcon} label="Storage & Files" />
-              <DataRows rows={storageRows} />
+                <tbody>
+                  <SectionHeader icon={CloudUploadIcon} label="Storage & Files" />
+                  <DataRows rows={storageRows} />
 
-              <SectionHeader icon={Analytics01Icon} label="Analytics" />
-              <DataRows rows={analyticsRows} />
+                  <SectionHeader icon={Analytics01Icon} label="Analytics" />
+                  <DataRows rows={analyticsRows} />
 
-              <SectionHeader icon={UserGroupIcon} label="Team" />
-              <DataRows rows={teamRows} />
+                  <SectionHeader icon={UserGroupIcon} label="Team" />
+                  <DataRows rows={teamRows} />
 
-              <SectionHeader icon={MessageQuestionIcon} label="Support" />
-              <DataRows rows={supportRows} />
+                  <SectionHeader icon={MessageQuestionIcon} label="Support" />
+                  <DataRows rows={supportRows} />
 
-              {/* Bottom cap for Pro column */}
-              <tr className="*:py-6">
-                <td />
-                <td />
-                <td className="bg-muted rounded-b-(--radius) border-none px-4" />
-                <td />
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                  {/* Bottom cap for Pro column */}
+                  <tr className="*:py-6">
+                    <td />
+                    <td />
+                    <td className="bg-muted rounded-b-(--radius) border-none px-4" />
+                    <td />
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
-        {/* Footer note */}
-        <p className="mt-8 text-center text-xs text-muted-foreground">
-          All prices in USD, billed monthly. Storage and bandwidth costs are billed directly by
-          your cloud provider — BringBucket never charges for data.
-          <br />
-          Need a custom plan?{' '}
-          <Link href="/contact" className="text-primary underline underline-offset-2">
-            Talk to us
-          </Link>
-          .
-        </p>
+            {/* Footer note */}
+            <p className="mt-8 text-center text-xs text-muted-foreground">
+              All prices in USD, billed monthly. Storage and bandwidth costs are billed directly by
+              your cloud provider — BringBucket never charges for data.
+              <br />
+              Need a custom plan?{' '}
+              <Link href="/contact" className="text-primary underline underline-offset-2">
+                Talk to us
+              </Link>
+              .
+            </p>
+          </>
+        )}
       </div>
     </section>
   )
