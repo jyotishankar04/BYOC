@@ -1,10 +1,12 @@
 import type { Metadata } from 'next'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { CheckmarkCircle02Icon, Alert01Icon, Clock01Icon } from '@hugeicons/core-free-icons'
+import { CheckmarkCircle01Icon } from '@hugeicons/core-free-icons'
+import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 
 export const metadata: Metadata = {
   title: 'System Status — BringBucket',
+  description: 'Check the current operational status of all BringBucket services and view historical uptime data.',
 }
 
 const services = [
@@ -64,7 +66,7 @@ export default function StatusPage() {
       {/* Overall status banner */}
       <div className="flex items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
         <HugeiconsIcon
-          icon={CheckmarkCircle02Icon}
+          icon={CheckmarkCircle01Icon}
           className="size-6 text-emerald-600"
           strokeWidth={1.5}
         />

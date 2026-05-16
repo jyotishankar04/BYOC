@@ -9,6 +9,7 @@ const staticRoutes = [
   '/changelog',
   '/contact',
   '/docs',
+  '/pricing',
   '/support',
   '/status',
   '/legal/privacy',

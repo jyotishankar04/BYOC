@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useParams } from "next/navigation"
+import Image from "next/image"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   LinkSquare01Icon,
@@ -177,10 +178,13 @@ export default function PublicSharePage() {
               <div className="rounded-xl border bg-card shadow-sm">
                 {data.fileType?.startsWith("image/") ? (
                   <div className="relative flex items-center justify-center rounded-t-xl bg-black/5 p-4">
-                    <img
+                    <Image
                       src={data.previewUrl}
                       alt={data.fileName}
-                      className="max-h-[60vh] rounded-lg object-contain"
+                      width={800}
+                      height={600}
+                      className="max-h-[60vh] rounded-lg object-contain w-auto h-auto"
+                      unoptimized
                     />
                   </div>
                 ) : data.fileType?.startsWith("video/") ? (

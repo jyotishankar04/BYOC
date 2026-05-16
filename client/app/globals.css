@@ -36,9 +36,9 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
   --font-sans: 'Inter', sans-serif;
-  --font-serif: 'Merriweather', serif;
   --font-mono: 'JetBrains Mono', monospace;
   --radius: 0.75rem;
+  --detail-sidebar-width: 420px;
   --shadow-x: 0px;
   --shadow-y: 4px;
   --shadow-blur: 15px;
@@ -93,9 +93,9 @@
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
   --font-sans: 'Inter', sans-serif;
-  --font-serif: 'Merriweather', serif;
   --font-mono: 'JetBrains Mono', monospace;
   --radius: 0.75rem;
+  --detail-sidebar-width: 420px;
   --shadow-x: 0px;
   --shadow-y: 10px;
   --shadow-blur: 25px;
@@ -148,12 +148,15 @@
 
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
-  --font-serif: var(--font-serif);
 
-  --radius-sm: var(--radius);
+  --radius-sm: calc(var(--radius) * 0.875);
   --radius-md: var(--radius);
-  --radius-lg: var(--radius);
-  --radius-xl: var(--radius);
+  --radius-lg: calc(var(--radius) * 1.125);
+  --radius-xl: calc(var(--radius) * 1.375);
+  --radius-2xl: calc(var(--radius) * 1.5);
+  --radius-3xl: calc(var(--radius) * 2);
+  --radius-4xl: calc(var(--radius) * 3);
+  --detail-sidebar-width: var(--detail-sidebar-width);
 
   --shadow-2xs: var(--shadow-2xs);
   --shadow-xs: var(--shadow-xs);
@@ -171,9 +174,7 @@
   --tracking-wider: calc(var(--tracking-normal) + 0.05em);
   --tracking-widest: calc(var(--tracking-normal) + 0.1em);
   --font-heading: var(--font-sans);
-  --radius-2xl: var(--radius);
-  --radius-3xl: var(--radius);
-  --radius-4xl: var(--radius);
+
 }
 
 @layer base {

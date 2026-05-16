@@ -1,7 +1,9 @@
+import type { Metadata } from 'next'
 import { Badge } from '@/components/ui/badge'
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Changelog — BringBucket',
+  description: 'Track the latest product updates, new features, and improvements to the BringBucket file management platform.',
 }
 
 const entries = [

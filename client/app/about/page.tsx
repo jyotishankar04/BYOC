@@ -1,11 +1,14 @@
+import type { Metadata } from 'next'
+
 import Link from 'next/link'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { LockIcon, ArrowRight02Icon, EyeIcon } from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'About — BringBucket',
+  description: 'Meet the team behind BringBucket and learn about our mission to give users full control over their cloud storage with no vendor lock-in.',
 }
 
 const values = [

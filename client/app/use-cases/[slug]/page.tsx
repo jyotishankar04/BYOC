@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { HugeiconsIcon } from '@hugeicons/react'
-import { CheckmarkCircle02Icon } from '@hugeicons/core-free-icons'
+import { CheckmarkCircle01Icon } from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -123,7 +123,7 @@ export default async function UseCasePage({ params }: PageProps) {
         {benefits.map((benefit) => (
           <div key={benefit} className="flex items-start gap-3">
             <HugeiconsIcon
-              icon={CheckmarkCircle02Icon}
+              icon={CheckmarkCircle01Icon}
               className="size-5 text-primary shrink-0 mt-0.5"
               strokeWidth={1.5}
             />

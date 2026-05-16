@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
-  CheckmarkCircle02Icon,
+  CheckmarkCircle01Icon,
   Cancel01Icon,
 } from '@hugeicons/core-free-icons'
 import { Button } from '@/components/ui/button'
@@ -31,7 +31,7 @@ function FeatureCell({ value }: { value: boolean | string }) {
   if (typeof value === 'boolean') {
     return value ? (
       <HugeiconsIcon
-        icon={CheckmarkCircle02Icon}
+        icon={CheckmarkCircle01Icon}
         className="size-4 text-emerald-500"
         strokeWidth={1.5}
       />
