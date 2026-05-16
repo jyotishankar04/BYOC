@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Terms of Service — BringBucket',
+  description: 'Read the terms and conditions governing the use of BringBucket services, including account responsibilities and usage limits.',
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

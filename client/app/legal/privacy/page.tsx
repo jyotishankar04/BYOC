@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy — BringBucket',
+  description: 'Learn how BringBucket handles your data, including what information we collect, how we use it, and your privacy rights.',
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

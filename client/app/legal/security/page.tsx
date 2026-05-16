@@ -3,6 +3,7 @@ import { securityFeatures } from '@/components/custom/landing/security-section'
 
 export const metadata: Metadata = {
   title: 'Security — BringBucket',
+  description: 'Learn about BringBucket security practices including AES-256 encryption, zero-access architecture, and SOC 2 compliance.',
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Cookie Policy — BringBucket',
+  description: 'Understand how BringBucket uses cookies and similar technologies, including what types of cookies we set and how to manage them.',
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

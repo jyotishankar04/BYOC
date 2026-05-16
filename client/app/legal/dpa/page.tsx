@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Data Processing Agreement — BringBucket',
+  description: 'View the Data Processing Agreement (DPA) outlining how BringBucket processes personal data on behalf of its customers in compliance with GDPR.',
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
