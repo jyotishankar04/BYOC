@@ -6,7 +6,7 @@ import type { Express } from "express";
 import { requestLogger } from "@/shared/middleware/request-logger";
 import { errorHandler } from "@/shared/middleware/error-handler";
 import { maintenanceModeMiddleware } from "@/shared/middleware/maintenance.middleware";
-import { authLimiter, shareLinkPasswordLimiter } from "@/config/rate-limiters";
+import { shareLinkPasswordLimiter } from "@/config/rate-limiters";
 import healthRoutes from "@/modules/health/health.routes";
 import authRoutes, { authController } from "@/modules/auth/auth.route";
 import workspaceRoutes from "@/modules/workspace/workspace.route";
@@ -55,7 +55,7 @@ app.use("/api/v1/blogs", publicBlogRouter);
 // Public app config (no auth)
 app.use("/api/v1/config", publicConfigRouter);
 
-app.use("/api/v1/auth", authLimiter, authRoutes);
+app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/workspaces", workspaceRoutes);
 app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/onboard", onboardRoutes);
