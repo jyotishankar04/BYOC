@@ -5,6 +5,7 @@ import app from "@/app";
 // Disable rate limiters so individual tests don't hit the 5/15min cap
 vi.mock("@/config/rate-limiters", () => ({
   authLimiter: (_req: unknown, _res: unknown, next: () => void) => next(),
+  refreshLimiter: (_req: unknown, _res: unknown, next: () => void) => next(),
   shareLinkPasswordLimiter: (_req: unknown, _res: unknown, next: () => void) => next(),
   uploadLimiter: (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
