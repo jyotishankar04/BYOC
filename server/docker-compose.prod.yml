@@ -1,30 +1,13 @@
 version: "3.8"
 
 services:
-  # redis:
-  #   image: redis:7-alpine
-  #   container_name: byoc-redis
-  #   volumes:
-  #     - redis_data:/data
-  #   healthcheck:
-  #     test: ["CMD", "redis-cli", "ping"]
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 5
-  #   restart: unless-stopped
-
   server:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
+    image: ghcr.io/jyotishankar04/bringbucket-server:latest
     container_name: byoc-server
     env_file:
       - .env
     environment:
-      NODE_ENV: production"
-    # depends_on:
-    #   redis:
-    #     condition: service_healthy
+      NODE_ENV: production
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:4000/health/ready"]
       interval: 30s
@@ -49,6 +32,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  # redis_data:
   caddy_data:
   caddy_config:
