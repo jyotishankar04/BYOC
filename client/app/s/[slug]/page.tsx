@@ -65,7 +65,7 @@ export default function PublicSharePage() {
       }
 
       if (status === 403) {
-        setError({ title: "Access Denied", message: err.message || "You don't have permission to access this file.", code: "FORBIDDEN" })
+        setError({ title: "Access Denied", message: (err as { message?: string }).message || "You don't have permission to access this file.", code: "FORBIDDEN" })
         setState("error")
         return
       }
@@ -76,7 +76,7 @@ export default function PublicSharePage() {
         return
       }
 
-      setError({ title: "Link Not Found", message: err.message || "This share link does not exist or has been removed." })
+      setError({ title: "Link Not Found", message: (err as { message?: string }).message || "This share link does not exist or has been removed." })
       setState("error")
     }
   }, [slug])
