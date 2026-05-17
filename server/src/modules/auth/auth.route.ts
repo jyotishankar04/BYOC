@@ -2,6 +2,7 @@ import { Router } from "express";
 import { requireAuth } from "./auth.middleware";
 import { authService } from "./auth.service";
 import { AuthController } from "./auth.controller";
+import { refreshLimiter } from "@/config/rate-limiters";
 
 const router = Router();
 export const authController = new AuthController(authService);
@@ -10,7 +11,7 @@ router.get("/ok", authController.healthCheck);
 
 router.get("/google", authController.googleLogin);
 router.get("/google/callback", authController.googleCallback);
-router.post("/refresh", authController.refresh);
+router.post("/refresh", refreshLimiter, authController.refresh);
 router.post("/logout", authController.logout);
 
 router.get("/me", requireAuth, authController.getMe);
