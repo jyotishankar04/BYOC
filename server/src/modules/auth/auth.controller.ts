@@ -37,7 +37,7 @@ export class AuthController {
 
       res.cookie(ACCESS_COOKIE_NAME, accessToken, {
         httpOnly: true,
-        sameSite: "lax",
+        sameSite: env.NODE_ENV === "production" ? "none" : "lax",
         maxAge: ACCESS_TOKEN_EXPIRY_MS,
         path: "/",
         secure: env.NODE_ENV === "production",
@@ -45,7 +45,7 @@ export class AuthController {
 
       res.cookie(REFRESH_COOKIE_NAME, refreshToken, {
         httpOnly: true,
-        sameSite: "lax",
+        sameSite: env.NODE_ENV === "production" ? "none" : "lax",
         maxAge: SESSION_EXPIRY_MS,
         path: "/",
         secure: env.NODE_ENV === "production",
@@ -83,7 +83,7 @@ export class AuthController {
 
       res.cookie(ACCESS_COOKIE_NAME, accessToken, {
         httpOnly: true,
-        sameSite: "lax",
+        sameSite: env.NODE_ENV === "production" ? "none" : "lax",
         maxAge: ACCESS_TOKEN_EXPIRY_MS,
         path: "/",
         secure: env.NODE_ENV === "production",
@@ -100,13 +100,13 @@ export class AuthController {
     } catch (err) {
       res.clearCookie(ACCESS_COOKIE_NAME, {
         httpOnly: true,
-        sameSite: "lax",
+        sameSite: env.NODE_ENV === "production" ? "none" : "lax",
         path: "/",
         secure: env.NODE_ENV === "production",
       });
       res.clearCookie(REFRESH_COOKIE_NAME, {
         httpOnly: true,
-        sameSite: "lax",
+        sameSite: env.NODE_ENV === "production" ? "none" : "lax",
         path: "/",
         secure: env.NODE_ENV === "production",
       });
@@ -128,13 +128,13 @@ export class AuthController {
 
       res.clearCookie(ACCESS_COOKIE_NAME, {
         httpOnly: true,
-        sameSite: "lax",
+        sameSite: env.NODE_ENV === "production" ? "none" : "lax",
         path: "/",
         secure: env.NODE_ENV === "production",
       });
       res.clearCookie(REFRESH_COOKIE_NAME, {
         httpOnly: true,
-        sameSite: "lax",
+        sameSite: env.NODE_ENV === "production" ? "none" : "lax",
         path: "/",
         secure: env.NODE_ENV === "production",
       });
