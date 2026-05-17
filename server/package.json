@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node dist/src/server.js",
     "dev": "tsx watch src/server.ts",
-    "build": "prisma generate && rm -rf dist && tsc && tsc-alias",
+    "build": "prisma generate && rm -rf dist && tsc && cp -r src/generated dist/src/generated && tsc-alias",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"

@@ -14,7 +14,6 @@ export default defineConfig({
   },
   resolve: {
     alias: [
-      { find: /^@\/generated(.*)$/, replacement: resolve(__dirname, "./generated$1") },
       { find: /^@\/(.*)$/, replacement: resolve(__dirname, "./src/$1") },
     ],
   },
