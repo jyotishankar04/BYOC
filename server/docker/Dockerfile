@@ -4,7 +4,7 @@ WORKDIR /app
 
 RUN npm install -g pnpm@10.33.0
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile
 
 # ── Stage 2: Build ─────────────────────────────────────────────────────────────
@@ -17,7 +17,7 @@ COPY package.json pnpm-lock.yaml ./
 COPY prisma ./prisma
 COPY --from=deps /app/node_modules ./node_modules
 
-RUN pnpm dlx prisma generate
+RUN pnpm exec prisma generate
 
 COPY src ./src
 COPY tsconfig.json ./
@@ -29,13 +29,13 @@ WORKDIR /app
 
 RUN npm install -g pnpm@10.33.0
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile --prod
 
 COPY --from=builder /app/dist ./dist
 COPY prisma ./prisma
 COPY prisma.config.ts ./
-RUN printf '#!/bin/sh\nset -e\npnpm exec prisma migrate \nexec node dist/src/server.js\n' > start.sh && chmod +x start.sh
+RUN printf '#!/bin/sh\nset -e\npnpm exec prisma migrate deploy\nexec node dist/src/server.js\n' > start.sh && chmod +x start.sh
 
 EXPOSE 4000
 
