@@ -31,6 +31,7 @@ const envSchema = z.object({
     .default("false")
     .transform((val) => val === "true"),
   FRONTEND_URL: z.string().default("http://localhost:3000"),
+  COOKIE_DOMAIN: z.string().default(""),
 
   // Redis — REDIS_URL takes precedence over host/port/password (use for Upstash)
   REDIS_URL: z.string().optional(),

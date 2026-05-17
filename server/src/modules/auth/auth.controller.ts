@@ -41,6 +41,7 @@ export class AuthController {
         maxAge: ACCESS_TOKEN_EXPIRY_MS,
         path: "/",
         secure: env.NODE_ENV === "production",
+        domain: env.COOKIE_DOMAIN || undefined,
       });
 
       res.cookie(REFRESH_COOKIE_NAME, refreshToken, {
@@ -49,6 +50,7 @@ export class AuthController {
         maxAge: SESSION_EXPIRY_MS,
         path: "/",
         secure: env.NODE_ENV === "production",
+        domain: env.COOKIE_DOMAIN || undefined,
       });
 
       // Check if user needs onboarding
@@ -87,6 +89,7 @@ export class AuthController {
         maxAge: ACCESS_TOKEN_EXPIRY_MS,
         path: "/",
         secure: env.NODE_ENV === "production",
+        domain: env.COOKIE_DOMAIN || undefined,
       });
 
       res.json({
@@ -103,12 +106,14 @@ export class AuthController {
         sameSite: env.NODE_ENV === "production" ? "none" : "lax",
         path: "/",
         secure: env.NODE_ENV === "production",
+        domain: env.COOKIE_DOMAIN || undefined,
       });
       res.clearCookie(REFRESH_COOKIE_NAME, {
         httpOnly: true,
         sameSite: env.NODE_ENV === "production" ? "none" : "lax",
         path: "/",
         secure: env.NODE_ENV === "production",
+        domain: env.COOKIE_DOMAIN || undefined,
       });
       next(err);
     }
@@ -131,12 +136,14 @@ export class AuthController {
         sameSite: env.NODE_ENV === "production" ? "none" : "lax",
         path: "/",
         secure: env.NODE_ENV === "production",
+        domain: env.COOKIE_DOMAIN || undefined,
       });
       res.clearCookie(REFRESH_COOKIE_NAME, {
         httpOnly: true,
         sameSite: env.NODE_ENV === "production" ? "none" : "lax",
         path: "/",
         secure: env.NODE_ENV === "production",
+        domain: env.COOKIE_DOMAIN || undefined,
       });
       res.json({ ok: true });
     } catch (err) {
