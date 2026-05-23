@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { X, ArrowRight, Sparkles, ImageIcon, BarChart3, Users, Palette, Globe } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 
-const STORAGE_KEY = 'bb-announcement-v0.7.0-dismissed'
+const STORAGE_KEY = 'bb-announcement-v0.7.0'
 
 const updates = [
   {
@@ -50,14 +50,8 @@ const backdropVariants = {
 
 const modalVariants = {
   hidden: { opacity: 0, y: 24, scale: 0.96 },
-  visible: {
-    opacity: 1, y: 0, scale: 1,
-    transition: { duration: 0.35, ease },
-  },
-  exit: {
-    opacity: 0, y: 16, scale: 0.97,
-    transition: { duration: 0.2, ease },
-  },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.35, ease } },
+  exit: { opacity: 0, y: 16, scale: 0.97, transition: { duration: 0.2, ease } },
 }
 
 const listVariants = {
@@ -71,7 +65,7 @@ const itemVariants = {
 }
 
 export default function AnnouncementBar() {
-  const [barVisible, setBarVisible] = useState(false)
+  const [visible, setVisible] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
 
   useEffect(() => {
@@ -80,23 +74,18 @@ export default function AnnouncementBar() {
     }
   }, [])
 
-  function setVisible(v: boolean) { setBarVisible(v) }
-
   function dismiss(e: React.MouseEvent) {
     e.stopPropagation()
     localStorage.setItem(STORAGE_KEY, '1')
-    setBarVisible(false)
+    setVisible(false)
     setModalOpen(false)
   }
-
-  function openModal() { setModalOpen(true) }
-  function closeModal() { setModalOpen(false) }
 
   return (
     <>
       {/* ── Floating bar ─────────────────────────────── */}
       <AnimatePresence>
-        {barVisible && (
+        {visible && (
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -104,10 +93,7 @@ export default function AnnouncementBar() {
             transition={{ duration: 0.35, ease }}
             className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2"
           >
-            <button
-              onClick={openModal}
-              className="group flex items-center gap-3 rounded-2xl border border-border/60 bg-background/90 px-4 py-2.5 shadow-xl backdrop-blur-md transition-shadow hover:shadow-2xl cursor-pointer"
-            >
+            <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-background/90 px-4 py-2.5 shadow-xl backdrop-blur-md">
               {/* Badge */}
               <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
                 v0.7.0
@@ -115,25 +101,29 @@ export default function AnnouncementBar() {
 
               <span className="text-muted-foreground/40 select-none">·</span>
 
-              <span className="text-sm text-muted-foreground whitespace-nowrap">
-                Workspace branding, avatars &amp; Team plan for all beta users
-              </span>
-
-              <span className="ml-1 flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground transition-colors group-hover:bg-secondary/80">
-                See what&apos;s new
-                <ArrowRight className="size-3 transition-transform duration-150 group-hover:translate-x-0.5" />
-              </span>
+              {/* Clickable message area */}
+              <button
+                onClick={() => setModalOpen(true)}
+                className="group flex items-center gap-2 text-left"
+              >
+                <span className="text-sm text-muted-foreground whitespace-nowrap">
+                  Workspace branding, avatars &amp; Team plan for all beta users
+                </span>
+                <span className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground transition-colors group-hover:bg-secondary/80">
+                  See what&apos;s new
+                  <ArrowRight className="size-3 transition-transform duration-150 group-hover:translate-x-0.5" />
+                </span>
+              </button>
 
               {/* Dismiss */}
-              <span
-                role="button"
+              <button
                 onClick={dismiss}
                 aria-label="Dismiss announcement"
                 className="ml-1 rounded-md p-1 text-muted-foreground/60 transition-colors hover:text-muted-foreground"
               >
                 <X className="size-3.5" />
-              </span>
-            </button>
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -230,4 +220,6 @@ export default function AnnouncementBar() {
       </AnimatePresence>
     </>
   )
+
+  function closeModal() { setModalOpen(false) }
 }
