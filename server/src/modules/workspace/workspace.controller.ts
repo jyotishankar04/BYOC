@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import type { IWorkspaceService } from "./workspace.interface";
+import { AppError } from "@/core/errors";
 import {
   createWorkspaceSchema,
   updateWorkspaceSchema,
@@ -153,5 +154,57 @@ export class WorkspaceController {
     } catch (err) {
       next(err);
     }
+  };
+
+  presignLogo = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const { contentType } = req.body as { contentType?: string };
+      if (!contentType) { next(new AppError("contentType is required", 400, "VALIDATION_ERROR")); return; }
+      const result = await this.workspaceService.presignLogoUpload(req.workspaceId!, contentType);
+      res.json(result);
+    } catch (err) { next(err); }
+  };
+
+  confirmLogo = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const { key } = req.body as { key?: string };
+      if (!key) { next(new AppError("key is required", 400, "VALIDATION_ERROR")); return; }
+      const logoUrl = await this.workspaceService.confirmLogoUpload(req.workspaceId!, key);
+      res.json({ logoUrl });
+    } catch (err) { next(err); }
+  };
+
+  presignBanner = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const { contentType } = req.body as { contentType?: string };
+      if (!contentType) { next(new AppError("contentType is required", 400, "VALIDATION_ERROR")); return; }
+      const result = await this.workspaceService.presignBannerUpload(req.workspaceId!, contentType);
+      res.json(result);
+    } catch (err) { next(err); }
+  };
+
+  confirmBanner = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const { key } = req.body as { key?: string };
+      if (!key) { next(new AppError("key is required", 400, "VALIDATION_ERROR")); return; }
+      const bannerUrl = await this.workspaceService.confirmBannerUpload(req.workspaceId!, key);
+      res.json({ bannerUrl });
+    } catch (err) { next(err); }
   };
 }

@@ -55,6 +55,11 @@ export function useSubscriptionSnapshot() {
   }, [currentWorkspace, user]);
 
   const workspacePlan = workspaceUsage?.plan ?? currentWorkspace?.plan ?? user?.subscription?.plan;
+
+  // Always derive limits and feature access from the betaMode-aware plan so that
+  // every consumer — regardless of whether it reads `subscription.featureAccess`,
+  // `subscription.limits`, or the dedicated `workspaceFeatureAccess` fields —
+  // sees a single consistent view.
   const workspaceLimits = useMemo(
     () => (workspacePlan ? getPlanLimits(workspacePlan, betaMode) : user?.subscription?.limits ?? null),
     [user, workspacePlan, betaMode],
@@ -75,7 +80,6 @@ export function useSubscriptionSnapshot() {
 
   const workspaceRemaining = useMemo(() => {
     if (!workspaceUsage || !workspaceLimits) return null;
-
     return {
       teamMembers: remainingQuota(
         workspaceLimits.maxTeamMembers,
@@ -88,32 +92,49 @@ export function useSubscriptionSnapshot() {
     };
   }, [workspaceLimits, workspaceUsage]);
 
-  const checks = useMemo(() => {
-    const snapshot = user?.subscription;
+  // canCreateWorkspace derives from the betaMode-aware limit so that
+  // beta users (Team plan → unlimited workspaces) are never blocked.
+  const canCreateWorkspace = useMemo(() => {
+    if (!workspaceLimits) return Boolean(user?.subscription?.checks.canCreateWorkspace);
+    if (workspaceLimits.maxWorkspaces === null) return true;
+    return (user?.subscription?.usage.workspacesOwned ?? 0) < workspaceLimits.maxWorkspaces;
+  }, [user, workspaceLimits]);
 
+  const checks = useMemo(() => ({
+    canCreateWorkspace,
+    canInviteMembers: Boolean(
+      workspaceUsage && workspaceLimits
+        ? !reachedLimit(
+            workspaceLimits.maxTeamMembers,
+            workspaceUsage.membersCount + workspaceUsage.pendingInvitesCount,
+          )
+        : false,
+    ),
+    canCreateShareLinks: Boolean(
+      workspaceUsage && workspaceLimits
+        ? !reachedLimit(
+            workspaceLimits.maxActiveShareLinks,
+            workspaceUsage.activeLinksCount,
+          )
+        : false,
+    ),
+  }), [canCreateWorkspace, workspaceLimits, workspaceUsage]);
+
+  // Merge computed limits/featureAccess back into the subscription object so
+  // all `subscription?.featureAccess.X` and `subscription?.limits.X` reads
+  // are automatically betaMode-aware without touching individual consumers.
+  const subscription = useMemo(() => {
+    if (!user?.subscription) return user?.subscription;
     return {
-      canCreateWorkspace: Boolean(snapshot?.checks.canCreateWorkspace),
-      canInviteMembers: Boolean(
-        workspaceUsage && workspaceLimits
-          ? !reachedLimit(
-              workspaceLimits.maxTeamMembers,
-              workspaceUsage.membersCount + workspaceUsage.pendingInvitesCount,
-            )
-          : false,
-      ),
-      canCreateShareLinks: Boolean(
-        workspaceUsage && workspaceLimits
-          ? !reachedLimit(
-              workspaceLimits.maxActiveShareLinks,
-              workspaceUsage.activeLinksCount,
-            )
-          : false,
-      ),
+      ...user.subscription,
+      limits: workspaceLimits ?? user.subscription.limits,
+      featureAccess: workspaceFeatureAccess ?? user.subscription.featureAccess,
+      checks: { ...user.subscription.checks, canCreateWorkspace },
     };
-  }, [user, workspaceLimits, workspaceUsage]);
+  }, [user, workspaceLimits, workspaceFeatureAccess, canCreateWorkspace]);
 
   return {
-    subscription: user?.subscription,
+    subscription,
     workspacePlan,
     workspaceLimits,
     workspaceFeatureAccess,

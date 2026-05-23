@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/axios";
 import { toast } from "sonner";
-import type { SyncStatus } from "@/lib/workspace-context";
+import type { SyncStatus, Workspace } from "@/lib/workspace-context";
 
 export type ProviderType = "S3" | "R2" | "MinIO" | "Supabase" | "Other";
 
@@ -128,7 +128,11 @@ export function useDisconnectProvider(workspaceId: string) {
       await api.delete(`/api/v1/workspaces/${workspaceId}/provider`);
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["workspaces"] });
+      // Immediately clear storage so the disconnect button vanishes before the refetch
+      qc.setQueryData<Workspace[]>(["workspaces"], (prev = []) =>
+        prev.map((w) => (w.id === workspaceId ? { ...w, storage: null } : w)),
+      );
+      void qc.invalidateQueries({ queryKey: ["workspaces"] });
       toast.success("Provider disconnected");
     },
     onError: (err: unknown) => {

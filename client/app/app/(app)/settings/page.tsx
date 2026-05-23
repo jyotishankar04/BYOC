@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   UserCircle02Icon,
@@ -22,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Select,
   SelectContent,
@@ -40,7 +40,9 @@ import {
   useRevokeSession,
   useUpdateUserPreferences,
   useUpdateUserProfile,
+  useUploadAvatar,
   useUserPreferences,
+  useUserProfile,
   useUserSessions,
   type ConnectedAccount,
   type UserSession,
@@ -170,7 +172,10 @@ function AccountSection() {
 
 function ProfileSection() {
   const { data: session, refresh } = useSession();
+  const { data: profile } = useUserProfile();
   const updateProfile = useUpdateUserProfile();
+  const uploadAvatar = useUploadAvatar();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const user = session?.user;
 
   const [name, setName] = useState("");
@@ -215,6 +220,17 @@ function ProfileSection() {
     await refresh();
   }
 
+  function handleAvatarClick() {
+    fileInputRef.current?.click();
+  }
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadAvatar.mutateAsync(file);
+    e.target.value = "";
+  }
+
   return (
     <div className="space-y-6">
       <SectionHeader
@@ -227,15 +243,39 @@ function ProfileSection() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-col items-center gap-4 text-center">
-              <Avatar className="size-20">
-                <AvatarFallback className="text-xl font-semibold">{initials}</AvatarFallback>
-              </Avatar>
+              <div className="relative">
+                <Avatar className="size-20">
+                  {profile?.avatarUrl && (
+                    <AvatarImage src={profile.avatarUrl} alt={name || "Avatar"} />
+                  )}
+                  <AvatarFallback className="text-xl font-semibold">{initials}</AvatarFallback>
+                </Avatar>
+                <button
+                  onClick={handleAvatarClick}
+                  disabled={uploadAvatar.isPending}
+                  className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity hover:opacity-100 disabled:cursor-not-allowed"
+                  title="Change photo"
+                >
+                  {uploadAvatar.isPending ? (
+                    <div className="size-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  ) : (
+                    <HugeiconsIcon icon={UserCircle02Icon} className="size-5 text-white" strokeWidth={1.5} />
+                  )}
+                </button>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/avif"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
               <div>
                 <p className="font-semibold">{name || "Unnamed user"}</p>
                 <p className="text-sm text-muted-foreground">{user.email}</p>
               </div>
               <p className="text-xs text-muted-foreground">
-                Avatar upload is not wired yet. Profile text updates are live.
+                Click the photo to change it. Requires a connected workspace.
               </p>
             </div>
           </CardContent>

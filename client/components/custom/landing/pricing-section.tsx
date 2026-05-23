@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from 'react'
 import { Box, CircleCheck, Gem, Users, Rocket, type LucideIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { PlanCtaButton } from '@/components/custom/pricing/plan-cta-button'
@@ -62,6 +63,8 @@ export const pricingPlans: PricingPlan[] = [
 
 const Pricing = () => {
   const { data: isBeta = true } = useBetaMode()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   return (
     <section id="pricing" className="mx-auto max-w-6xl px-6 py-20">
@@ -72,7 +75,8 @@ const Pricing = () => {
         Start free. Upgrade when you need more.
       </p>
 
-      {isBeta ? (
+      {/* Render nothing until mounted — avoids SSR/client betaMode mismatch */}
+      {mounted && isBeta ? (
         /* Beta notice */
         <div className="mx-auto mt-12 max-w-xl sm:mt-16">
           <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/5 via-background to-primary/5 p-8 text-center sm:p-10">
@@ -97,14 +101,14 @@ const Pricing = () => {
             </div>
           </div>
         </div>
-      ) : (
+      ) : mounted ? (
         /* Pricing cards */
         <div className="mt-12 grid grid-cols-1 gap-1 rounded-xl border bg-muted/40 p-1 sm:mt-16 sm:grid-cols-2 md:mt-15 md:grid-cols-3">
           {pricingPlans.map((plan) => (
             <PlanCard key={plan.name} plan={plan} />
           ))}
         </div>
-      )}
+      ) : null}
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         All plans connect to your own storage bucket. You pay your cloud provider directly — we never touch your data.

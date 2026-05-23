@@ -69,6 +69,42 @@ export class UserController {
     }
   };
 
+  presignAvatarUpload = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const { contentType } = req.body as { contentType?: string };
+      if (!contentType) {
+        res.status(400).json({ message: "contentType is required" });
+        return;
+      }
+      const result = await this.userService.presignAvatarUpload(req.userId!, contentType);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  confirmAvatarUpload = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
+    try {
+      const { key } = req.body as { key?: string };
+      if (!key) {
+        res.status(400).json({ message: "key is required" });
+        return;
+      }
+      const avatarUrl = await this.userService.confirmAvatarUpload(req.userId!, key);
+      res.json({ avatarUrl });
+    } catch (err) {
+      next(err);
+    }
+  };
+
   listMyInvites = async (
     req: Request,
     res: Response,

@@ -14,6 +14,8 @@ router.use(requireAuth);
 
 router.get("/me", userController.getProfile);
 router.patch("/me", userController.updateProfile);
+router.post("/me/avatar/presign", userController.presignAvatarUpload);
+router.post("/me/avatar/confirm", userController.confirmAvatarUpload);
 router.get("/me/accounts", userController.listAccounts);
 router.get("/me/sessions", userController.listSessions);
 router.delete("/me/sessions/others", userController.revokeOtherSessions);

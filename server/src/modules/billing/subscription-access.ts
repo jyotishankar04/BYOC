@@ -81,11 +81,11 @@ export const PLAN_LIMITS: Record<WorkspacePlan, PlanLimits> = {
 };
 
 export function getPlanLimits(plan: WorkspacePlan): PlanLimits {
-  return PLAN_LIMITS[appSettings.getBetaModeSync() ? WorkspacePlan.Pro : plan];
+  return PLAN_LIMITS[appSettings.getBetaModeSync() ? WorkspacePlan.Team : plan];
 }
 
 export function getFeatureAccess(plan: WorkspacePlan): PlanFeatureAccess {
-  const limits = PLAN_LIMITS[appSettings.getBetaModeSync() ? WorkspacePlan.Pro : plan];
+  const limits = PLAN_LIMITS[appSettings.getBetaModeSync() ? WorkspacePlan.Team : plan];
   return {
     passwordProtectedLinks: limits.passwordProtectedLinks,
     customDomains: limits.customDomains,

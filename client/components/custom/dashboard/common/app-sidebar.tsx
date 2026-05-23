@@ -41,10 +41,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Logo } from "@/components/common/logo"
 import { WorkspaceSwitcher } from "@/components/custom/dashboard/common/workspace-switcher"
 import { useSession, signOut } from "@/lib/auth-client"
+import { useUserProfile } from "@/lib/user-settings"
 import { featureUpgradeMessage, useSubscriptionSnapshot } from "@/lib/subscription"
 import { UpgradeTooltip } from "@/components/custom/subscription/upgrade-tooltip"
 import { cn } from "@/lib/utils"
@@ -83,6 +84,7 @@ function isSettingsActive(pathname: string) {
 
 function SidebarUserMenu() {
   const { data: session } = useSession()
+  const { data: profile } = useUserProfile()
   const router = useRouter()
 
   const user = session?.user
@@ -94,6 +96,7 @@ function SidebarUserMenu() {
     .join("")
     .toUpperCase()
     .slice(0, 2)
+  const avatarUrl = profile?.avatarUrl ?? null
 
   const handleSignOut = async () => {
     await signOut()
@@ -107,6 +110,7 @@ function SidebarUserMenu() {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent">
               <Avatar size="sm">
+                {avatarUrl && <AvatarImage src={avatarUrl} alt={userName} />}
                 <AvatarFallback className="text-[11px] font-semibold">{userInitials}</AvatarFallback>
               </Avatar>
               <div className="flex min-w-0 flex-col text-left leading-none">

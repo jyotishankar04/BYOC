@@ -233,7 +233,9 @@ model Workspace {
   type WorkspaceType
   plan WorkspacePlan @default(Free)
 
-  color String @default("#6366f1") @db.VarChar(7)
+  color  String  @default("#6366f1") @db.VarChar(7)
+  logo   String?
+  banner String?
 
   ownerId String
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)

@@ -116,3 +116,61 @@ export function useTransferOwnership(workspaceId: string) {
     },
   });
 }
+
+export function useUploadWorkspaceLogo(workspaceId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const { data: { uploadUrl, key } } = await api.post<{ uploadUrl: string; key: string }>(
+        `/api/v1/workspaces/${workspaceId}/logo/presign`,
+        { contentType: file.type },
+      );
+      await fetch(uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
+      const { data: { logoUrl } } = await api.post<{ logoUrl: string }>(
+        `/api/v1/workspaces/${workspaceId}/logo/confirm`,
+        { key },
+      );
+      return logoUrl;
+    },
+    onSuccess: (logoUrl) => {
+      patchCache(qc, workspaceId, { logoUrl });
+      toast.success("Workspace logo updated");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message ?? "Failed to upload logo");
+    },
+  });
+}
+
+export function useUploadWorkspaceBanner(workspaceId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const { data: { uploadUrl, key } } = await api.post<{ uploadUrl: string; key: string }>(
+        `/api/v1/workspaces/${workspaceId}/banner/presign`,
+        { contentType: file.type },
+      );
+      await fetch(uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
+      const { data: { bannerUrl } } = await api.post<{ bannerUrl: string }>(
+        `/api/v1/workspaces/${workspaceId}/banner/confirm`,
+        { key },
+      );
+      return bannerUrl;
+    },
+    onSuccess: (bannerUrl) => {
+      patchCache(qc, workspaceId, { bannerUrl });
+      toast.success("Workspace banner updated");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message ?? "Failed to upload banner");
+    },
+  });
+}

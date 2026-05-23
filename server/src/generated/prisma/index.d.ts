@@ -9267,6 +9267,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType | null
     plan: $Enums.WorkspacePlan | null
     color: string | null
+    logo: string | null
+    banner: string | null
     ownerId: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -9279,6 +9281,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType | null
     plan: $Enums.WorkspacePlan | null
     color: string | null
+    logo: string | null
+    banner: string | null
     ownerId: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -9291,6 +9295,8 @@ export namespace Prisma {
     type: number
     plan: number
     color: number
+    logo: number
+    banner: number
     ownerId: number
     createdAt: number
     updatedAt: number
@@ -9305,6 +9311,8 @@ export namespace Prisma {
     type?: true
     plan?: true
     color?: true
+    logo?: true
+    banner?: true
     ownerId?: true
     createdAt?: true
     updatedAt?: true
@@ -9317,6 +9325,8 @@ export namespace Prisma {
     type?: true
     plan?: true
     color?: true
+    logo?: true
+    banner?: true
     ownerId?: true
     createdAt?: true
     updatedAt?: true
@@ -9329,6 +9339,8 @@ export namespace Prisma {
     type?: true
     plan?: true
     color?: true
+    logo?: true
+    banner?: true
     ownerId?: true
     createdAt?: true
     updatedAt?: true
@@ -9414,6 +9426,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan: $Enums.WorkspacePlan
     color: string
+    logo: string | null
+    banner: string | null
     ownerId: string
     createdAt: Date
     updatedAt: Date
@@ -9443,6 +9457,8 @@ export namespace Prisma {
     type?: boolean
     plan?: boolean
     color?: boolean
+    logo?: boolean
+    banner?: boolean
     ownerId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -9467,6 +9483,8 @@ export namespace Prisma {
     type?: boolean
     plan?: boolean
     color?: boolean
+    logo?: boolean
+    banner?: boolean
     ownerId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -9480,6 +9498,8 @@ export namespace Prisma {
     type?: boolean
     plan?: boolean
     color?: boolean
+    logo?: boolean
+    banner?: boolean
     ownerId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -9493,12 +9513,14 @@ export namespace Prisma {
     type?: boolean
     plan?: boolean
     color?: boolean
+    logo?: boolean
+    banner?: boolean
     ownerId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type WorkspaceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "slug" | "type" | "plan" | "color" | "ownerId" | "createdAt" | "updatedAt", ExtArgs["result"]["workspace"]>
+  export type WorkspaceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "slug" | "type" | "plan" | "color" | "logo" | "banner" | "ownerId" | "createdAt" | "updatedAt", ExtArgs["result"]["workspace"]>
   export type WorkspaceInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     owner?: boolean | UserDefaultArgs<ExtArgs>
     members?: boolean | Workspace$membersArgs<ExtArgs>
@@ -9542,6 +9564,8 @@ export namespace Prisma {
       type: $Enums.WorkspaceType
       plan: $Enums.WorkspacePlan
       color: string
+      logo: string | null
+      banner: string | null
       ownerId: string
       createdAt: Date
       updatedAt: Date
@@ -9985,6 +10009,8 @@ export namespace Prisma {
     readonly type: FieldRef<"Workspace", 'WorkspaceType'>
     readonly plan: FieldRef<"Workspace", 'WorkspacePlan'>
     readonly color: FieldRef<"Workspace", 'String'>
+    readonly logo: FieldRef<"Workspace", 'String'>
+    readonly banner: FieldRef<"Workspace", 'String'>
     readonly ownerId: FieldRef<"Workspace", 'String'>
     readonly createdAt: FieldRef<"Workspace", 'DateTime'>
     readonly updatedAt: FieldRef<"Workspace", 'DateTime'>
@@ -28137,6 +28163,8 @@ export namespace Prisma {
     type: 'type',
     plan: 'plan',
     color: 'color',
+    logo: 'logo',
+    banner: 'banner',
     ownerId: 'ownerId',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
@@ -29162,6 +29190,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFilter<"Workspace"> | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFilter<"Workspace"> | $Enums.WorkspacePlan
     color?: StringFilter<"Workspace"> | string
+    logo?: StringNullableFilter<"Workspace"> | string | null
+    banner?: StringNullableFilter<"Workspace"> | string | null
     ownerId?: StringFilter<"Workspace"> | string
     createdAt?: DateTimeFilter<"Workspace"> | Date | string
     updatedAt?: DateTimeFilter<"Workspace"> | Date | string
@@ -29185,6 +29215,8 @@ export namespace Prisma {
     type?: SortOrder
     plan?: SortOrder
     color?: SortOrder
+    logo?: SortOrderInput | SortOrder
+    banner?: SortOrderInput | SortOrder
     ownerId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -29211,6 +29243,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFilter<"Workspace"> | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFilter<"Workspace"> | $Enums.WorkspacePlan
     color?: StringFilter<"Workspace"> | string
+    logo?: StringNullableFilter<"Workspace"> | string | null
+    banner?: StringNullableFilter<"Workspace"> | string | null
     ownerId?: StringFilter<"Workspace"> | string
     createdAt?: DateTimeFilter<"Workspace"> | Date | string
     updatedAt?: DateTimeFilter<"Workspace"> | Date | string
@@ -29234,6 +29268,8 @@ export namespace Prisma {
     type?: SortOrder
     plan?: SortOrder
     color?: SortOrder
+    logo?: SortOrderInput | SortOrder
+    banner?: SortOrderInput | SortOrder
     ownerId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -29252,6 +29288,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeWithAggregatesFilter<"Workspace"> | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanWithAggregatesFilter<"Workspace"> | $Enums.WorkspacePlan
     color?: StringWithAggregatesFilter<"Workspace"> | string
+    logo?: StringNullableWithAggregatesFilter<"Workspace"> | string | null
+    banner?: StringNullableWithAggregatesFilter<"Workspace"> | string | null
     ownerId?: StringWithAggregatesFilter<"Workspace"> | string
     createdAt?: DateTimeWithAggregatesFilter<"Workspace"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Workspace"> | Date | string
@@ -31024,6 +31062,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -31046,6 +31086,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -31068,6 +31110,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -31090,6 +31134,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -31112,6 +31158,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -31124,6 +31172,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -31135,6 +31185,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -33032,6 +33084,8 @@ export namespace Prisma {
     type?: SortOrder
     plan?: SortOrder
     color?: SortOrder
+    logo?: SortOrder
+    banner?: SortOrder
     ownerId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -33044,6 +33098,8 @@ export namespace Prisma {
     type?: SortOrder
     plan?: SortOrder
     color?: SortOrder
+    logo?: SortOrder
+    banner?: SortOrder
     ownerId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -33056,6 +33112,8 @@ export namespace Prisma {
     type?: SortOrder
     plan?: SortOrder
     color?: SortOrder
+    logo?: SortOrder
+    banner?: SortOrder
     ownerId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -36660,6 +36718,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     members?: WorkspaceMemberCreateNestedManyWithoutWorkspaceInput
@@ -36681,6 +36741,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     members?: WorkspaceMemberUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -37202,6 +37264,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFilter<"Workspace"> | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFilter<"Workspace"> | $Enums.WorkspacePlan
     color?: StringFilter<"Workspace"> | string
+    logo?: StringNullableFilter<"Workspace"> | string | null
+    banner?: StringNullableFilter<"Workspace"> | string | null
     ownerId?: StringFilter<"Workspace"> | string
     createdAt?: DateTimeFilter<"Workspace"> | Date | string
     updatedAt?: DateTimeFilter<"Workspace"> | Date | string
@@ -38588,6 +38652,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -38609,6 +38675,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -38784,6 +38852,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -38805,6 +38875,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -38976,6 +39048,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -38997,6 +39071,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -39034,6 +39110,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -39055,6 +39133,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -39076,6 +39156,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -39097,6 +39179,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -39134,6 +39218,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -39155,6 +39241,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -39464,6 +39552,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -39485,6 +39575,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -39522,6 +39614,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -39543,6 +39637,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -39564,6 +39660,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -39585,6 +39683,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -39785,6 +39885,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -39806,6 +39908,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -39912,6 +40016,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -39933,6 +40039,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -40158,6 +40266,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -40179,6 +40289,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -40344,6 +40456,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -40365,6 +40479,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -40575,6 +40691,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -40596,6 +40714,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -40891,6 +41011,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -40912,6 +41034,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -41018,6 +41142,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -41039,6 +41165,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -41135,6 +41263,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -41156,6 +41286,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -41262,6 +41394,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -41283,6 +41417,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -41379,6 +41515,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -41400,6 +41538,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -41555,6 +41695,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -41576,6 +41718,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -42040,6 +42184,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -42251,6 +42397,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     members?: WorkspaceMemberUpdateManyWithoutWorkspaceNestedInput
@@ -42272,6 +42420,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     members?: WorkspaceMemberUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -42293,6 +42443,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }

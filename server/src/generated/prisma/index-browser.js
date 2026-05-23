@@ -195,6 +195,8 @@ exports.Prisma.WorkspaceScalarFieldEnum = {
   type: 'type',
   plan: 'plan',
   color: 'color',
+  logo: 'logo',
+  banner: 'banner',
   ownerId: 'ownerId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

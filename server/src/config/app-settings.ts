@@ -13,6 +13,7 @@ export interface AppConfig {
     shareLinks: boolean;
     analytics: boolean;
     passwordProtectedLinks: boolean;
+    search: boolean;
   };
 }
 
@@ -37,6 +38,7 @@ const DEFAULT_CONFIG: AppConfig = {
     shareLinks: true,
     analytics: true,
     passwordProtectedLinks: true,
+    search: false,
   },
 };
 

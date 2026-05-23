@@ -32,6 +32,8 @@ export interface IUserService {
     userId: string,
     data: Record<string, unknown>,
   ): Promise<Record<string, unknown>>;
+  presignAvatarUpload(userId: string, contentType: string): Promise<{ uploadUrl: string; key: string }>;
+  confirmAvatarUpload(userId: string, key: string): Promise<string>;
   listMyInvites(userId: string): Promise<Record<string, unknown>[]>;
   listAccounts(userId: string): Promise<Record<string, unknown>[]>;
   listSessions(

@@ -78,7 +78,7 @@ export default function AdminSettingsPage() {
   const config = settings ?? {
     betaMode: true, maintenanceMode: false, signupsEnabled: true, allowedFileTypes: [],
     providers: { S3: "enabled", R2: "enabled", GCS: "coming_soon", Azure: "coming_soon", MinIO: "enabled", Supabase: "enabled", Other: "enabled" },
-    features: { shareLinks: true, analytics: true, passwordProtectedLinks: true },
+    features: { shareLinks: true, analytics: true, passwordProtectedLinks: true, search: false },
   } as AppConfig;
 
   function toggle(field: keyof Pick<AppConfig, "betaMode" | "maintenanceMode" | "signupsEnabled">, val: boolean) {
@@ -222,6 +222,7 @@ export default function AdminSettingsPage() {
               { key: "shareLinks" as const,            label: "Share Links",               desc: "Allow users to create public share links for files." },
               { key: "analytics" as const,             label: "Analytics",                 desc: "Show the analytics dashboard and usage insights." },
               { key: "passwordProtectedLinks" as const, label: "Password-Protected Links", desc: "Allow users to add passwords to share links." },
+              { key: "search" as const,                label: "Search",                    desc: "Show the search bar in the dashboard navbar." },
             ] as const
           ).map(({ key, label, desc }) => (
             <div key={key} className="flex items-center justify-between py-3">

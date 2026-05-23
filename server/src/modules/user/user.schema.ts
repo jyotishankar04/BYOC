@@ -6,9 +6,10 @@ export const updateProfileSchema = z.object({
   bio: z.string().max(500).optional(),
   location: z.string().max(100).optional(),
   website: z.string().url().max(500).optional().or(z.literal("")),
-  avatar: z.string().url().max(500).optional().or(z.literal("")),
+  avatar: z.string().max(600).optional().or(z.literal("")),
   onboarded: z.boolean().optional(),
 });
+
 
 export const updatePreferencesSchema = z.object({
   emailNotifications: z.boolean().optional(),

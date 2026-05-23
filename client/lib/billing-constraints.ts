@@ -65,7 +65,7 @@ export const PLAN_LIMITS: Record<WorkspacePlan, PlanLimits> = {
 };
 
 export function getPlanLimits(plan: WorkspacePlan, betaMode = false): PlanLimits {
-  return PLAN_LIMITS[betaMode ? "Pro" : plan];
+  return PLAN_LIMITS[betaMode ? "Team" : plan];
 }
 
 export function formatPlanLimit(plan: WorkspacePlan, key: keyof PlanLimits): string {

@@ -111,18 +111,25 @@ function formatDay(dateStr: string): string {
   return d.toLocaleDateString("en-US", { weekday: "short" })
 }
 
-function bytesToGb(bytes: number): number {
-  return Math.round((bytes / (1024 * 1024 * 1024)) * 10) / 10
+function getStorageUnit(maxBytes: number): { unit: string; divisor: number } {
+  if (maxBytes >= 1024 ** 3) return { unit: "GB", divisor: 1024 ** 3 }
+  if (maxBytes >= 1024 ** 2) return { unit: "MB", divisor: 1024 ** 2 }
+  if (maxBytes >= 1024) return { unit: "KB", divisor: 1024 }
+  return { unit: "B", divisor: 1 }
+}
+
+function scaleBytes(bytes: number, divisor: number): number {
+  return Math.round((bytes / divisor) * 10) / 10
 }
 
 // ─── Custom Tooltips ───────────────────────────────────────────────────────────
 
-function StorageTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
+function StorageTooltip({ active, payload, label, unit }: { active?: boolean; payload?: Array<{ value: number }>; label?: string; unit?: string }) {
   if (!active || !payload?.length) return null
   return (
     <div className="rounded-lg border bg-popover px-3 py-2 text-sm shadow-md">
       <p className="font-medium">{label}</p>
-      <p className="text-muted-foreground">{payload[0].value} GB used</p>
+      <p className="text-muted-foreground">{payload[0].value} {unit ?? "GB"} used</p>
     </div>
   )
 }
@@ -152,22 +159,34 @@ export default function AnalyticsPage() {
   const { data: dashboard } = useDashboard(workspaceId)
   const { data: analytics, isLoading } = useAnalytics(workspaceId, days)
 
+  const storageTrendUnit = useMemo(() => {
+    if (!analytics?.storageTrend?.length) return { unit: "GB", divisor: 1024 ** 3 }
+    const max = Math.max(...analytics.storageTrend.map((d) => d.size))
+    return getStorageUnit(max)
+  }, [analytics])
+
   const storageTrend = useMemo(() => {
     if (!analytics?.storageTrend) return []
     return analytics.storageTrend.map((d) => ({
       month: formatMonth(d.date),
-      used: bytesToGb(d.size),
+      used: scaleBytes(d.size, storageTrendUnit.divisor),
     }))
+  }, [analytics, storageTrendUnit])
+
+  const storageBreakdownUnit = useMemo(() => {
+    if (!analytics?.storageByKind?.length) return { unit: "GB", divisor: 1024 ** 3 }
+    const max = Math.max(...analytics.storageByKind.map((s) => s.size))
+    return getStorageUnit(max)
   }, [analytics])
 
   const storageBreakdown = useMemo(() => {
     if (!analytics?.storageByKind) return []
     return analytics.storageByKind.map((s) => ({
       name: KIND_LABEL[s.kind],
-      value: bytesToGb(s.size),
+      value: scaleBytes(s.size, storageBreakdownUnit.divisor),
       color: KIND_COLORS[s.kind] ?? "#94a3b8",
     }))
-  }, [analytics])
+  }, [analytics, storageBreakdownUnit])
 
   const uploadActivity = useMemo(() => {
     if (!analytics?.uploadDownloadActivity) return []
@@ -221,8 +240,6 @@ export default function AnalyticsPage() {
       }
     })
   }, [analytics])
-
-  const totalGb = dashboard ? bytesToGb(dashboard.totalSize) : 0
 
   if (workspaceId && (!currentWorkspace?.storage || currentWorkspace.storage.status === "Error")) {
     return <ProviderErrorGuard workspaceId={workspaceId} storage={currentWorkspace?.storage ?? null} />
@@ -287,7 +304,7 @@ export default function AnalyticsPage() {
           {/* Stats row */}
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {[
-              { label: "Total Storage", value: formatFileSize(dashboard?.totalSize ?? 0), sub: dashboard ? `${totalGb} GB total` : "", icon: HardDriveIcon, iconColor: "text-violet-500", iconBg: "bg-violet-500/10" },
+              { label: "Total Storage", value: formatFileSize(dashboard?.totalSize ?? 0), sub: `${dashboard?.totalFiles ?? 0} files stored`, icon: HardDriveIcon, iconColor: "text-violet-500", iconBg: "bg-violet-500/10" },
               { label: "Total Files", value: (dashboard?.totalFiles ?? 0).toLocaleString(), sub: `${dashboard?.uploadsThisWeek ?? 0} uploaded this week`, icon: Folder01Icon, iconColor: "text-blue-500", iconBg: "bg-blue-500/10" },
               { label: "Active Share Links", value: String(dashboard?.activeShareLinks ?? 0), sub: "Currently active", icon: LinkSquare01Icon, iconColor: "text-emerald-500", iconBg: "bg-emerald-500/10" },
               { label: "Uploads This Week", value: String(dashboard?.uploadsThisWeek ?? 0), sub: "In the last 7 days", icon: CloudUploadIcon, iconColor: "text-amber-500", iconBg: "bg-amber-500/10" },
@@ -329,8 +346,8 @@ export default function AnalyticsPage() {
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
                       <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                      <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}GB`} />
-                      <Tooltip content={<StorageTooltip />} />
+                      <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}${storageTrendUnit.unit}`} />
+                      <Tooltip content={({ active, payload, label }) => <StorageTooltip active={active} payload={payload as unknown as Array<{ value: number }>} label={String(label ?? "")} unit={storageTrendUnit.unit} />} />
                       <Area
                         type="monotone"
                         dataKey="used"
@@ -350,7 +367,7 @@ export default function AnalyticsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm font-semibold">Storage Breakdown</CardTitle>
-                <CardDescription className="text-xs">{formatFileSize(dashboard?.totalSize ?? 0)} total across file types</CardDescription>
+                <CardDescription className="text-xs">Total {formatFileSize(dashboard?.totalSize ?? 0)} across file types</CardDescription>
               </CardHeader>
               <CardContent>
                 {storageBreakdown.length === 0 ? (
@@ -373,7 +390,7 @@ export default function AnalyticsPage() {
                           ))}
                         </Pie>
                         <Tooltip
-                          formatter={(v) => [`${v} GB`, ""]}
+                          formatter={(v) => [`${v} ${storageBreakdownUnit.unit}`, ""]}
                           contentStyle={{ fontSize: 12, borderRadius: 8 }}
                         />
                       </PieChart>
@@ -385,7 +402,7 @@ export default function AnalyticsPage() {
                             <span className="size-2 rounded-full" style={{ backgroundColor: cat.color }} />
                             <span>{cat.name}</span>
                           </div>
-                          <span className="text-muted-foreground">{cat.value} GB</span>
+                          <span className="text-muted-foreground">{cat.value} {storageBreakdownUnit.unit}</span>
                         </div>
                       ))}
                     </div>
