@@ -8,6 +8,19 @@ export const metadata: Metadata = {
 
 const entries = [
   {
+    version: 'v0.7.0',
+    date: 'May 2026',
+    title: 'Workspace branding, user avatars & analytics improvements',
+    changes: [
+      'Upload a custom logo and cover banner for each workspace from Workspace Settings',
+      'New accounts automatically use your Google profile photo as the default workspace logo',
+      'Upload a profile picture from Profile Settings — stored directly in your platform bucket',
+      'Analytics storage charts now auto-scale units (B / KB / MB / GB) based on actual data',
+      'All users receive Team-tier features during the open beta period',
+      'Branded OG image and dynamic favicon for the marketing site',
+    ],
+  },
+  {
     version: 'v0.6.0',
     date: 'May 2025',
     title: 'Provider onboarding redesign',
