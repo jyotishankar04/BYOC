@@ -1,8 +1,6 @@
 "use client"
 
-const BACKEND = process.env.NEXT_PUBLIC_API_URL
-  ? process.env.NEXT_PUBLIC_API_URL.replace(":3000", ":4000")
-  : "http://localhost:4000"
+const BACKEND = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000"
 
 export type PublicShareResponse =
   | {

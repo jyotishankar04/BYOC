@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { FilesService } from "./files.service";
+import { AppError } from "@/core/errors";
 import {
   listFilesQuerySchema,
   renameFileSchema,
@@ -44,7 +45,7 @@ export class FilesController {
   getBatchPreviewUrls = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const fileIds = req.body?.fileIds;
-      if (!Array.isArray(fileIds)) return res.status(400).json({ error: "fileIds must be an array" });
+      if (!Array.isArray(fileIds)) { next(new AppError("fileIds must be an array", 400, "VALIDATION_ERROR")); return; }
       const result = await this.filesService.getBatchPreviewUrls(
         req.params["workspaceId"] as string,
         fileIds as string[],

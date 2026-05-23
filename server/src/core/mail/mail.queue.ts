@@ -1,5 +1,6 @@
 import { Queue } from "bullmq";
 import redisClient from "@/config/redis.config";
+import logger from "@/core/logger";
 
 export type EmailJobPayload =
   | { type: "welcome"; to: string; name: string }
@@ -29,7 +30,7 @@ export const emailQueue = new Queue<EmailJobPayload>("email", {
 export const EmailQueueService = {
   enqueue(payload: EmailJobPayload): void {
     emailQueue.add(payload.type, payload).catch((err) => {
-      console.error("[EmailQueue] Failed to enqueue job:", err);
+      logger.error({ err }, "EmailQueue failed to enqueue job");
     });
   },
 };

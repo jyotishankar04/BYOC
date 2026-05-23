@@ -29,6 +29,7 @@ import {
 import env from "@/config/env";
 import { AppError } from "@/core/errors";
 import { appSettings } from "@/config/app-settings";
+import logger from "@/core/logger";
 import { EmailQueueService } from "@/core/mail/mail.queue";
 
 function parseCookies(header: string | undefined): Record<string, string> {
@@ -130,8 +131,11 @@ export class AuthService implements IAuthService {
     id: string;
     email: string;
     name: string;
+    avatar?: string | null;
+    image?: string | null;
   }): Promise<void> {
     const baseSlug = getSlug(user.email);
+    const logoUrl = user.avatar ?? user.image ?? undefined;
 
     const tryCreate = (slug: string) =>
       this.prisma.$transaction(async (tx) => {
@@ -141,6 +145,7 @@ export class AuthService implements IAuthService {
             slug,
             type: WorkspaceType.PERSONAL,
             plan: WorkspacePlan.Free,
+            logo: logoUrl,
             owner: { connect: { id: user.id } },
             members: {
               create: { userId: user.id, role: WorkspaceRole.Owner },
@@ -267,14 +272,18 @@ export class AuthService implements IAuthService {
           email: profile.email,
           emailVerified: profile.verified_email,
           image: profile.picture,
+          avatar: profile.picture ?? undefined,
         },
       });
       isNewUser = true;
-    } else if (!user.image && profile.picture) {
-      // Update profile picture if missing
+    } else if (profile.picture && (!user.image || !user.avatar)) {
+      // Backfill missing picture fields without overwriting a manually uploaded avatar
       user = await this.prisma.user.update({
         where: { id: user.id },
-        data: { image: profile.picture },
+        data: {
+          image: user.image ?? profile.picture,
+          avatar: (user.avatar as string | null) ?? profile.picture,
+        },
       });
     }
 
@@ -367,7 +376,7 @@ export class AuthService implements IAuthService {
     if (isNewUser) {
       // Fire-and-forget onboarding — don't block the response
       this.onUserCreated(user).catch((err) => {
-        console.error("onUserCreated failed:", err);
+        logger.error({ err }, "onUserCreated failed");
       });
     } else {
       EmailQueueService.enqueue({

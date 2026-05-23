@@ -14,6 +14,7 @@ export interface UserProfile {
   location: string | null;
   website: string | null;
   avatar: string | null;
+  avatarUrl: string | null;
   onboarded: boolean | null;
   isAdmin: boolean;
   createdAt: string;
@@ -52,6 +53,8 @@ export interface WorkspaceUsageSnapshot {
 export interface UserSubscriptionSnapshot {
   plan: WorkspacePlan;
   status: string | null;
+  currentPeriodEnd: string | null;
+  trialEndsAt: string | null;
   limits: PlanLimits;
   featureAccess: {
     passwordProtectedLinks: boolean;
@@ -217,6 +220,41 @@ export function useRevokeOtherSessions() {
     },
     onError: (err: Error) => {
       toast.error(err.message ?? "Failed to revoke sessions");
+    },
+  });
+}
+
+export function useUploadAvatar() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (file: File) => {
+      // Step 1: get presigned PUT URL
+      const { data: { uploadUrl, key } } = await api.post<{ uploadUrl: string; key: string }>(
+        "/api/v1/users/me/avatar/presign",
+        { contentType: file.type },
+      );
+      // Step 2: upload directly to S3 (no server bandwidth used)
+      await fetch(uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
+      // Step 3: confirm — server writes key to DB and returns resolved URL
+      const { data: { avatarUrl } } = await api.post<{ avatarUrl: string }>(
+        "/api/v1/users/me/avatar/confirm",
+        { key },
+      );
+      return avatarUrl;
+    },
+    onSuccess: (avatarUrl) => {
+      qc.setQueryData<UserProfile>(userSettingsKeys.profile, (old) =>
+        old ? { ...old, avatarUrl } : old,
+      );
+      toast.success("Profile picture updated");
+    },
+    onError: (err: Error) => {
+      toast.error(err.message ?? "Failed to upload avatar");
     },
   });
 }

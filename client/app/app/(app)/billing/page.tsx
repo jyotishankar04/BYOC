@@ -335,10 +335,12 @@ export default function BillingPage() {
   const isCanceling = status === "Canceled" || status === "Incomplete_expired"
 
   const periodEnd =
-    subscription && (subscription as unknown as Record<string, unknown>).currentPeriodEnd
-      ? new Date(
-          (subscription as unknown as Record<string, unknown>).currentPeriodEnd as string,
-        ).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    subscription?.currentPeriodEnd
+      ? new Date(subscription.currentPeriodEnd).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })
       : null
 
   const mutating = checkout.isPending || portal.isPending

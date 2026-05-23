@@ -42,8 +42,8 @@ app.use(
 app.use(compression());
 
 app.use(maintenanceModeMiddleware);
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use(requestLogger);
 
 // Public Share Links (no auth) — rate limited to guard password brute-force

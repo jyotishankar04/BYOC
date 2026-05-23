@@ -44,16 +44,22 @@ export class FilesService {
       this.repository.findFolders(workspaceId, folderId),
     ]);
 
-    // Walk up the folder hierarchy to build breadcrumbs
+    // Build breadcrumbs with a single recursive CTE instead of N+1 queries
     const breadcrumbs: { id: string; name: string }[] = [];
     if (folderId) {
-      let currentId: string | null = folderId;
-      while (currentId) {
-        const folder = await this.repository.findFolderById(currentId, workspaceId);
-        if (!folder) break;
-        breadcrumbs.unshift({ id: folder.id, name: folder.name });
-        currentId = folder.parentId;
-      }
+      const rows = await this.prisma.$queryRaw<{ id: string; name: string; depth: number }[]>`
+        WITH RECURSIVE bc AS (
+          SELECT id, name, "parentId", 0 AS depth
+          FROM folders
+          WHERE id = ${folderId}::uuid AND "workspaceId" = ${workspaceId}::uuid
+          UNION ALL
+          SELECT f.id, f.name, f."parentId", bc.depth + 1
+          FROM folders f
+          INNER JOIN bc ON f.id = bc."parentId"
+        )
+        SELECT id, name, depth FROM bc ORDER BY depth DESC
+      `;
+      breadcrumbs.push(...rows.map((r) => ({ id: r.id, name: r.name })));
     }
 
     return { files, folders, breadcrumbs, total, page, limit };
