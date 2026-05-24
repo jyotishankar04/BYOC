@@ -12,6 +12,7 @@ import { UploadRepository } from "./upload.repository";
 import { SubscriptionSnapshotService } from "@/modules/billing/subscription-snapshot.service";
 import { assertQuotaAvailable, buildQuotaSummary } from "@/modules/billing/subscription-access";
 import { appSettings } from "@/config/app-settings";
+import { extractVideoMeta } from "@/shared/video-meta";
 import type {
   PresignDto,
   InitiateDto,
@@ -181,6 +182,18 @@ export class UploadService {
       status: FileStatus.uploaded,
       size: meta.size,
     });
+
+    if (confirmed.kind === FileKind.video) {
+      setImmediate(async () => {
+        try {
+          const previewUrl = await storage.generateGetPresignedUrl(confirmed.storagePath, 300);
+          const videoMeta = await extractVideoMeta(previewUrl);
+          if (videoMeta) {
+            await this.repository.updateFile(confirmed.id, videoMeta);
+          }
+        } catch { /* non-fatal */ }
+      });
+    }
 
     broadcast(workspaceId, {
       type: "file.uploaded",
@@ -400,6 +413,18 @@ export class UploadService {
       status: UploadSessionStatus.completed,
       completedChunks: parts,
     });
+
+    if (file.kind === FileKind.video) {
+      setImmediate(async () => {
+        try {
+          const previewUrl = await storage.generateGetPresignedUrl(file.storagePath, 300);
+          const videoMeta = await extractVideoMeta(previewUrl);
+          if (videoMeta) {
+            await this.repository.updateFile(file.id, videoMeta);
+          }
+        } catch { /* non-fatal */ }
+      });
+    }
 
     broadcast(workspaceId, {
       type: "file.uploaded",

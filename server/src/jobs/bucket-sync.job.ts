@@ -9,6 +9,7 @@ import { FileKind } from "@/generated/prisma/client";
 import type { DecryptedCreds } from "@/shared/storage/storage.factory";
 import logger from "@/core/logger";
 import { broadcast } from "@/modules/events/events.service";
+import { extractVideoMeta } from "@/shared/video-meta";
 
 const PAGE_SIZE = 1000;
 const SYNC_TOKEN_KEY = (workspaceId: string) => `sync:${workspaceId}:token`;
@@ -321,6 +322,13 @@ export async function runBucketSync(workspaceId: string): Promise<void> {
     });
 
     logger.info({ workspaceId, totalProcessed }, "Bucket sync completed");
+
+    // Backfill video metadata for files missing it (up to 50 per sync run)
+    setImmediate(() =>
+      backfillVideoMeta(workspaceId).catch((err) =>
+        logger.warn({ workspaceId, err }, "video meta backfill failed"),
+      ),
+    );
   } catch (err) {
     logger.error({ workspaceId, err }, "Bucket sync failed");
     await prisma.storageProvider
@@ -331,6 +339,38 @@ export async function runBucketSync(workspaceId: string): Promise<void> {
       payload: { completed: 0, total: 0, status: "failed" },
     });
   }
+}
+
+async function backfillVideoMeta(workspaceId: string): Promise<void> {
+  const videos = await prisma.file.findMany({
+    where: { workspaceId, kind: FileKind.video, width: null },
+    select: { id: true, storagePath: true },
+    take: 50,
+  });
+  if (videos.length === 0) return;
+
+  const providerRow = await prisma.storageProvider.findUnique({
+    where: { workspaceId },
+    select: { providerType: true, encryptedCreds: true, bucket: true, region: true },
+  });
+  if (!providerRow) return;
+
+  const creds = JSON.parse(decrypt(providerRow.encryptedCreds)) as DecryptedCreds;
+  const storage = getProvider(providerRow.providerType, creds, providerRow.bucket, providerRow.region ?? undefined);
+
+  for (const video of videos) {
+    try {
+      const url = await storage.generateGetPresignedUrl(video.storagePath, 300);
+      const meta = await extractVideoMeta(url);
+      if (meta) {
+        await prisma.file.update({ where: { id: video.id }, data: meta });
+      }
+    } catch {
+      // non-fatal — skip this file
+    }
+  }
+
+  logger.info({ workspaceId, count: videos.length }, "video meta backfill done");
 }
 
 export function enqueueSyncJob(workspaceId: string): void {
