@@ -17,6 +17,10 @@ const listQuerySchema = z.object({
   limit: z.coerce.number().min(1).max(100).default(20),
 });
 
+
+
+
+
 activityRouter.use(requireAuth);
 
 // GET /api/v1/workspaces/:workspaceId/activity
