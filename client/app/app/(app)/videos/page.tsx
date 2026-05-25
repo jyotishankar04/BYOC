@@ -1,5 +1,6 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useState, useCallback, useMemo, useEffect } from "react"
 import { toast } from "sonner"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -14,8 +15,6 @@ import {
   Copy01Icon,
   LinkSquare01Icon,
   MoveIcon,
-  ArrowLeft01Icon,
-  ArrowRight01Icon,
   Globe02Icon,
   LockedIcon,
   Clock01Icon,
@@ -23,11 +22,6 @@ import {
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
 import { Badge } from "@/components/ui/badge"
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,30 +49,17 @@ import { useFiles, useDeleteFile, useDownloadFile, type ApiFile } from "@/lib/fi
 import { VideoThumbnail } from "@/components/shared/video-thumbnail"
 import { formatFileSize, formatDate, getStorageFolderLabel } from "@/lib/file-utils"
 
+import type { VideoItem, Resolution } from "@/components/custom/dashboard/videos/video-lightbox"
+
+const VideoLightbox = dynamic(
+  () => import("@/components/custom/dashboard/videos/video-lightbox").then((m) => m.VideoLightbox),
+  { ssr: false },
+)
+
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-type Resolution = "4K" | "1080p" | "720p" | "480p" | "Unknown"
 type ResFilter  = "All" | "4K" | "1080p" | "720p"
 type SortKey    = "newest" | "oldest" | "name-az" | "name-za" | "duration-desc" | "duration-asc" | "size-desc" | "size-asc"
-
-interface VideoItem {
-  id: string
-  name: string
-  extension: string
-  mimeType: string | null
-  resolution: Resolution
-  duration: string
-  durationSecs: number
-  size: string
-  sizeBytes: number
-  folder: string
-  uploadedAt: string
-  uploadedMs: number
-  status: "Private" | "Shared"
-  shareLink?: string
-  downloadUrl?: string
-  previewUrl?: string
-}
 
 // ─── Resolution config ─────────────────────────────────────────────────────────
 
@@ -90,6 +71,27 @@ const RES_STYLE: Record<Resolution, { badge: string }> = {
   "Unknown": { badge: "bg-muted text-muted-foreground" },
 }
 const PAGE_SIZE = 24
+
+// ─── Metadata helpers ──────────────────────────────────────────────────────────
+
+function classifyResolution(width: number | null, height: number | null): Resolution {
+  if (!width || !height) return "Unknown"
+  const h = Math.max(width, height)
+  if (h >= 2160) return "4K"
+  if (h >= 1080) return "1080p"
+  if (h >= 720) return "720p"
+  if (h >= 480) return "480p"
+  return "Unknown"
+}
+
+function formatDuration(seconds: number | null): string {
+  if (!seconds || seconds <= 0) return "Unknown"
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = Math.floor(seconds % 60)
+  if (h > 0) return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
+  return `${m}:${String(s).padStart(2, "0")}`
+}
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -283,10 +285,14 @@ function VideoCard({
             )}
           </div>
 
-          {/* Duration — bottom right */}
-          {video.duration !== "Unknown" && (
+          {/* Duration or processing hint — bottom right of thumbnail */}
+          {video.duration !== "Unknown" ? (
             <span className="absolute bottom-9 right-2 flex items-center gap-1 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white">
               {video.duration}
+            </span>
+          ) : video.resolution === "Unknown" && (
+            <span className="absolute bottom-9 right-2 rounded bg-black/30 px-1.5 py-0.5 text-[9px] italic text-white/50">
+              Processing...
             </span>
           )}
 
@@ -308,8 +314,14 @@ function VideoCard({
           </div>
 
           {/* Footer */}
-          <div className="absolute bottom-0 left-0 right-0 border-t bg-card px-3 py-2">
-            <p className="truncate text-[11px] font-medium">{video.name}</p>
+          <div className="absolute bottom-0 left-0 right-0 border-t bg-card px-3 py-1.5">
+            <p className="truncate text-[11px] font-medium leading-tight">{video.name}</p>
+            <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
+              {[
+                video.duration !== "Unknown" ? video.duration : null,
+                video.resolution !== "Unknown" ? video.resolution : null,
+              ].filter(Boolean).join(" · ") || video.size}
+            </p>
           </div>
         </div>
       </ContextMenuTrigger>
@@ -420,93 +432,6 @@ function VideoListRow({
   )
 }
 
-// ─── Video Lightbox ────────────────────────────────────────────────────────────
-
-function VideoLightbox({
-  video,
-  allVideos,
-  onClose,
-  onNavigate,
-  onDownload,
-  onDelete,
-}: {
-  video: VideoItem
-  allVideos: VideoItem[]
-  onClose: () => void
-  onNavigate: (v: VideoItem | null) => void
-  onDownload: () => void
-  onDelete: () => void
-}) {
-  const idx = allVideos.findIndex((v) => v.id === video.id)
-  const hasPrev = idx > 0
-  const hasNext = idx < allVideos.length - 1
-
-  return (
-    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
-      <DialogContent className="max-w-2xl">
-        <DialogTitle className="flex items-center gap-2 text-base">
-          <HugeiconsIcon icon={Video01Icon} className="size-4 text-blue-500" strokeWidth={1.5} />
-          {video.name}
-        </DialogTitle>
-        {/* Player */}
-        <div className="flex aspect-video items-center justify-center rounded-lg bg-black overflow-hidden">
-          {video.previewUrl || video.downloadUrl ? (
-            <video
-              controls
-              autoPlay
-              className="w-full h-full object-contain"
-              src={video.previewUrl || video.downloadUrl}
-            />
-          ) : (
-            <div className="flex size-16 items-center justify-center rounded-full bg-background/80 shadow-lg">
-              <div className="ml-1.5 size-0 border-y-[12px] border-l-[20px] border-y-transparent border-l-foreground" />
-            </div>
-          )}
-        </div>
-        {/* Video info */}
-        <div className="grid grid-cols-3 gap-3 text-xs">
-          <div>
-            <span className="text-muted-foreground">Resolution</span>
-            <p className="font-medium">{video.resolution}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Duration</span>
-            <p className="font-medium">{video.duration}</p>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Size</span>
-            <p className="font-medium">{video.size}</p>
-          </div>
-        </div>
-        {/* Navigation */}
-        <div className="flex items-center justify-between gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={!hasPrev}
-            onClick={() => hasPrev && onNavigate(allVideos[idx - 1])}
-          >
-            <HugeiconsIcon icon={ArrowLeft01Icon} className="size-3.5" strokeWidth={1.5} />
-            Previous
-          </Button>
-          <span className="text-xs text-muted-foreground">
-            {idx + 1} of {allVideos.length}
-          </span>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={!hasNext}
-            onClick={() => hasNext && onNavigate(allVideos[idx + 1])}
-          >
-            Next
-            <HugeiconsIcon icon={ArrowRight01Icon} className="size-3.5" strokeWidth={1.5} />
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 const RES_FILTERS: ResFilter[] = ["All", "4K", "1080p", "720p"]
@@ -557,17 +482,15 @@ export default function VideosPage() {
       name: f.name,
       extension: f.extension?.replace(".", "") || "mp4",
       mimeType: f.mimeType,
-      resolution: "Unknown" as Resolution,
-      duration: "Unknown",
-      durationSecs: 0,
+      resolution: classifyResolution(f.width, f.height),
+      duration: formatDuration(f.durationSeconds),
+      durationSecs: f.durationSeconds ?? 0,
       size: formatFileSize(f.size),
       sizeBytes: f.size,
       folder: getStorageFolderLabel(f.storagePath),
       uploadedAt: formatDate(f.createdAt),
       uploadedMs: new Date(f.createdAt).getTime(),
       status: "Private" as const,
-      downloadUrl: (f as unknown as Record<string, unknown>).downloadUrl as string | undefined,
-      previewUrl: (f as unknown as Record<string, unknown>).previewUrl as string | undefined,
     }))
   }, [filesData])
 
@@ -773,10 +696,10 @@ export default function VideosPage() {
 
       {lightbox && (
         <VideoLightbox
+          key={lightbox.id}
           video={lightbox}
-          allVideos={visible}
+          workspaceId={workspaceId}
           onClose={closeLightbox}
-          onNavigate={setLightbox}
           onDownload={() => { downloadFileMutation.mutate(lightbox.id); closeLightbox() }}
           onDelete={() => { if (confirm(`Delete "${lightbox.name}"?`)) { deleteFileMutation.mutate(lightbox.id); closeLightbox() } }}
         />

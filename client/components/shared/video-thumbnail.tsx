@@ -11,7 +11,6 @@ interface VideoThumbnailProps {
   mimeType: string | null | undefined
   alt: string
   className?: string
-  imgClassName?: string
   fallback: React.ReactNode
 }
 
@@ -21,7 +20,6 @@ export function VideoThumbnail({
   mimeType,
   alt,
   className,
-  imgClassName,
   fallback,
 }: VideoThumbnailProps) {
   const ref = useRef<HTMLDivElement>(null)
@@ -56,7 +54,6 @@ export function VideoThumbnail({
     let cancelled = false
 
     const video = document.createElement("video")
-    video.crossOrigin = "anonymous"
     video.preload = "metadata"
     video.muted = true
     video.playsInline = true
@@ -102,7 +99,7 @@ export function VideoThumbnail({
         <img
           src={frame}
           alt={alt}
-          className={cn("absolute inset-0 h-full w-full object-cover", imgClassName)}
+          className="absolute inset-0 h-full w-full object-cover"
         />
       )}
 
