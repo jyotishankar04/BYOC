@@ -179,6 +179,19 @@ export class FilesService {
     });
   }
 
+  async getBatchPreviewUrls(workspaceId: string, fileIds: string[]): Promise<{ urls: Record<string, string>; expiresIn: number }> {
+    if (fileIds.length === 0) return { urls: {}, expiresIn: 3600 };
+    const files = await this.repository.findStoragePathsByIds(workspaceId, fileIds);
+    const storage = await this.providerService.getDecryptedProvider(workspaceId);
+    const entries = await Promise.all(
+      files.map(async (file) => {
+        const url = await storage.generateGetPresignedUrl(file.storagePath, 3600);
+        return [file.id, url] as [string, string];
+      }),
+    );
+    return { urls: Object.fromEntries(entries), expiresIn: 3600 };
+  }
+
   async getPreviewUrl(workspaceId: string, fileId: string): Promise<string> {
     const file = await this.getFile(workspaceId, fileId);
     const storage =

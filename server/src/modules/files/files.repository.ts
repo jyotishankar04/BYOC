@@ -107,6 +107,13 @@ export class FilesRepository {
     });
   }
 
+  async findStoragePathsByIds(workspaceId: string, fileIds: string[]) {
+    return this.prisma.file.findMany({
+      where: { id: { in: fileIds }, workspaceId, status: { not: FileStatus.deleted } },
+      select: { id: true, storagePath: true },
+    });
+  }
+
   async update(fileId: string, data: Partial<File>) {
     return this.prisma.file.update({
       where: { id: fileId },

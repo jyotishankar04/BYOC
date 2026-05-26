@@ -29,6 +29,9 @@ export interface ApiFile {
   kind: "image" | "video" | "document" | "audio" | "archive" | "other";
   status: "uploading" | "uploaded" | "failed" | "deleted";
   source: string;
+  durationSeconds: number | null;
+  width: number | null;
+  height: number | null;
   uploadedBy: { id: string; name: string; email: string; image: string | null };
   createdAt: string;
   updatedAt: string;
@@ -63,6 +66,8 @@ export const fileKeys = {
     ["workspaces", workspaceId, "files", query] as const,
   previewUrl: (workspaceId: string, fileId: string) =>
     ["workspaces", workspaceId, "files", fileId, "preview-url"] as const,
+  batchPreviewUrls: (workspaceId: string, fileIds: string[]) =>
+    ["workspaces", workspaceId, "files", "batch-preview-urls", [...fileIds].sort().join(",")] as const,
 };
 
 // ─── Hooks ─────────────────────────────────────────────────────────────────────
@@ -218,6 +223,30 @@ export function useDownloadFile(workspaceId: string | undefined) {
   });
 }
 
+export function usePreviewUrls(
+  workspaceId: string | undefined,
+  fileIds: string[],
+  enabled: boolean = true,
+) {
+  return useQuery<{ urls: Record<string, string>; expiresIn: number }>({
+    queryKey: fileKeys.batchPreviewUrls(workspaceId ?? "", fileIds),
+    queryFn: async () => {
+      const res = await api.post<{ urls: Record<string, string>; expiresIn: number }>(
+        `/api/v1/workspaces/${workspaceId}/files/preview-urls`,
+        { fileIds },
+      );
+      return res.data;
+    },
+    enabled: !!workspaceId && fileIds.length > 0 && enabled,
+    staleTime: (query) => {
+      const expiresIn = (query.state.data as { expiresIn?: number } | null)?.expiresIn;
+      return expiresIn ? expiresIn * 1000 * 0.85 : 0;
+    },
+    gcTime: 65 * 60 * 1000,
+    retry: false,
+  });
+}
+
 export function usePreviewUrl(
   workspaceId: string | undefined,
   fileId: string,
@@ -233,8 +262,11 @@ export function usePreviewUrl(
       return res.data;
     },
     enabled: !!workspaceId && !!(mimeType?.startsWith("image/") || mimeType?.startsWith("video/")) && enabled,
-    staleTime: 50 * 60 * 1000,
-    gcTime: 55 * 60 * 1000,
+    staleTime: (query) => {
+      const expiresIn = (query.state.data as { expiresIn?: number } | null)?.expiresIn
+      return expiresIn ? expiresIn * 1000 * 0.85 : 0
+    },
+    gcTime: 65 * 60 * 1000,
     retry: false,
   });
 }

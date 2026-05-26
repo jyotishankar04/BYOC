@@ -13,6 +13,13 @@ interface FileThumbnailProps {
   className?: string;
   imgClassName?: string;
   fallback: React.ReactNode;
+  /** Pre-fetched URL from a batch call */
+  previewUrl?: string;
+  /**
+   * When true, individual usePreviewUrl is never called — the parent owns fetching.
+   * Use alongside previewUrl in batch-fetch contexts (e.g. gallery page).
+   */
+  skipFetch?: boolean;
   /** Render the image at its natural dimensions instead of filling a fixed container */
   natural?: boolean;
 }
@@ -25,6 +32,8 @@ export function FileThumbnail({
   className,
   imgClassName,
   fallback,
+  previewUrl,
+  skipFetch = false,
   natural = false,
 }: FileThumbnailProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -49,13 +58,18 @@ export function FileThumbnail({
     return () => observer.disconnect();
   }, [isImage]);
 
-  const { data, isLoading } = usePreviewUrl(workspaceId, fileId, mimeType, inView);
+  // Individual fetch disabled when skipFetch is true (batch mode) or a URL is already provided
+  const { data, isLoading } = usePreviewUrl(workspaceId, fileId, mimeType, !skipFetch && !previewUrl && inView);
 
   const handleError = useCallback(() => setImgError(true), []);
   const handleLoad = useCallback(() => setImgLoaded(true), []);
 
-  const hasPreview = isImage && !imgError && !!data?.url;
-  const showSkeleton = isImage && inView && isLoading && !imgLoaded && !imgError;
+  const resolvedUrl = previewUrl ?? data?.url;
+  // In batch mode, gate rendering on inView so images outside viewport don't download
+  const hasPreview = isImage && !imgError && !!resolvedUrl && (skipFetch ? inView : true);
+  const showSkeleton = isImage && inView && !imgLoaded && !imgError && (
+    skipFetch ? !resolvedUrl : isLoading
+  );
 
   if (natural) {
     return (
@@ -64,7 +78,7 @@ export function FileThumbnail({
           <>
             {showSkeleton && !imgLoaded && <Skeleton className="h-28 w-full rounded-none" />}
             <img
-              src={data.url}
+              src={resolvedUrl}
               alt={alt}
               onError={handleError}
               onLoad={handleLoad}
@@ -88,7 +102,7 @@ export function FileThumbnail({
 
       {hasPreview && (
         <img
-          src={data.url}
+          src={resolvedUrl}
           alt={alt}
           onError={handleError}
           onLoad={handleLoad}
@@ -100,7 +114,6 @@ export function FileThumbnail({
         />
       )}
 
-      {/* Fallback always rendered — hidden once preview loads to prevent layout shift */}
       <div
         className={cn(
           "flex h-full w-full items-center justify-center transition-opacity duration-300",
