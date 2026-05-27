@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef as useInputRef, Fragment, useCallback } from "react"
+import { useState, useEffect, useRef as useInputRef, Fragment, useCallback, useMemo } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -58,6 +58,8 @@ import {
   FileDetailsSidebar,
   type FileItem,
 } from "@/components/custom/dashboard/common/file-details-sidebar"
+import { ImageLightbox } from "@/components/custom/dashboard/files/image-lightbox"
+import { VideoLightbox, type VideoItem } from "@/components/custom/dashboard/videos/video-lightbox"
 import { UploadDialog } from "@/components/custom/dashboard/common/upload-dialog"
 import { CreateShareLinkDialog } from "@/components/custom/dashboard/common/create-share-link-dialog"
 import { FILE_VISUAL } from "@/components/shared/file-visual"
@@ -69,6 +71,7 @@ import { useSyncStatus, useTriggerSync } from "@/lib/provider"
 import { Progress } from "@/components/ui/progress"
 import {
   useFiles,
+  usePreviewUrls,
   useCreateFolder,
   useDeleteFolder,
   useRenameFolder,
@@ -586,6 +589,8 @@ function FileCard({
   file,
   workspaceId,
   isSelected,
+  previewUrl,
+  skipFetch,
   onClick,
   onShare,
   onDownload,
@@ -596,6 +601,8 @@ function FileCard({
   file: FileNode
   workspaceId: string | undefined
   isSelected: boolean
+  previewUrl?: string
+  skipFetch?: boolean
   onClick: () => void
   onShare: () => void
   onDownload: () => void
@@ -620,6 +627,8 @@ function FileCard({
             fileId={file.id}
             mimeType={file.mimeType}
             alt={file.name}
+            previewUrl={previewUrl}
+            skipFetch={skipFetch}
             className="h-24"
             fallback={
               <div className={cn("flex h-24 w-full items-center justify-center bg-gradient-to-br", visual.gradientFrom, visual.gradientTo)}>
@@ -749,6 +758,8 @@ function FileListRow({
   file,
   workspaceId,
   isSelected,
+  previewUrl,
+  skipFetch,
   onClick,
   showBorder,
   onShare,
@@ -760,6 +771,8 @@ function FileListRow({
   file: FileNode
   workspaceId: string | undefined
   isSelected: boolean
+  previewUrl?: string
+  skipFetch?: boolean
   onClick: () => void
   showBorder: boolean
   onShare: () => void
@@ -785,6 +798,8 @@ function FileListRow({
             fileId={file.id}
             mimeType={file.mimeType}
             alt={file.name}
+            previewUrl={previewUrl}
+            skipFetch={skipFetch}
             className={cn("size-8 shrink-0 rounded-lg bg-gradient-to-br", visual.gradientFrom, visual.gradientTo)}
             imgClassName="object-cover"
             fallback={<HugeiconsIcon icon={visual.icon} className={cn("size-4", visual.iconColor)} strokeWidth={1.5} />}
@@ -1079,6 +1094,12 @@ export default function FilesPage() {
   )
   const filteredFiles = allFiles.filter((f) => matchesFilter(f, activeFilter))
 
+  const imageFileIds = useMemo(
+    () => filteredFiles.filter((f) => f.mimeType?.startsWith("image/")).map((f) => f.id),
+    [filteredFiles],
+  )
+  const { data: batchUrls } = usePreviewUrls(workspaceId, imageFileIds)
+
   const isEmpty = filteredFolders.length === 0 && filteredFiles.length === 0 && !isCreatingFolder && !isLoading
 
   // ── Navigation ──────────────────────────────────────────────────────────────
@@ -1169,6 +1190,14 @@ export default function FilesPage() {
   }
 
   const handleDownload = (file: FileNode) => downloadFileMutation.mutate(file.id)
+
+  const [previewFile, setPreviewFile] = useState<FileNode | null>(null)
+
+  const handlePreview = useCallback((file: FileNode) => {
+    if (file.mimeType?.startsWith("image/") || file.mimeType?.startsWith("video/")) {
+      setPreviewFile(file)
+    }
+  }, [])
 
   const isDetailOpen = selectedFile !== null
 
@@ -1309,6 +1338,8 @@ export default function FilesPage() {
                       file={file}
                       workspaceId={workspaceId}
                       isSelected={selectedFile?.id === file.id}
+                      previewUrl={batchUrls?.urls[file.id]}
+                      skipFetch={file.mimeType?.startsWith("image/")}
                       onClick={() => handleFileClick(file)}
                       onShare={() => handleShareFile(file)}
                       onDownload={() => handleDownload(file)}
@@ -1363,6 +1394,8 @@ export default function FilesPage() {
                 file={file}
                 workspaceId={workspaceId}
                 isSelected={selectedFile?.id === file.id}
+                previewUrl={batchUrls?.urls[file.id]}
+                skipFetch={file.mimeType?.startsWith("image/")}
                 onClick={() => handleFileClick(file)}
                 showBorder={i > 0 || filteredFolders.length > 0 || isCreatingFolder}
                 onShare={() => handleShareFile(file)}
@@ -1381,11 +1414,49 @@ export default function FilesPage() {
         isOpen={isDetailOpen}
         workspaceId={workspaceId}
         onClose={() => setSelectedFile(null)}
+        onPreview={(f) => handlePreview(f as FileNode)}
         onDownload={(f) => handleDownload(f as FileNode)}
         onShare={(f) => handleShareFile(f as FileNode)}
         onRename={(f) => handleRenameFile(f as FileNode)}
         onDelete={(f) => handleDeleteFile(f as FileNode)}
       />
+
+      {/* ── Previews ── */}
+      {previewFile?.mimeType?.startsWith("image/") && (
+        <ImageLightbox
+          key={previewFile.id}
+          fileId={previewFile.id}
+          fileName={previewFile.name}
+          mimeType={previewFile.mimeType}
+          workspaceId={workspaceId}
+          onClose={() => setPreviewFile(null)}
+          onDownload={() => { handleDownload(previewFile); setPreviewFile(null) }}
+        />
+      )}
+      {previewFile?.mimeType?.startsWith("video/") && (
+        <VideoLightbox
+          key={previewFile.id}
+          video={{
+            id: previewFile.id,
+            name: previewFile.name,
+            extension: previewFile.extension ?? "mp4",
+            mimeType: previewFile.mimeType,
+            resolution: "Unknown",
+            duration: "Unknown",
+            durationSecs: 0,
+            size: previewFile.size,
+            sizeBytes: 0,
+            folder: previewFile.folder,
+            uploadedAt: previewFile.uploadedAt,
+            uploadedMs: 0,
+            status: previewFile.status,
+          } satisfies VideoItem}
+          workspaceId={workspaceId}
+          onClose={() => setPreviewFile(null)}
+          onDownload={() => { handleDownload(previewFile); setPreviewFile(null) }}
+          onDelete={() => { handleDeleteFile(previewFile); setPreviewFile(null) }}
+        />
+      )}
 
       <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} folderId={currentFolderId} onUploadComplete={handleUploadComplete} />
       <CreateShareLinkDialog
