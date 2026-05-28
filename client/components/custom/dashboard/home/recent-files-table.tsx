@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Video01Icon,
@@ -33,6 +34,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { FileThumbnail } from "@/components/shared/file-thumbnail"
+import { usePreviewUrls } from "@/lib/files"
 import { formatFileSize, formatDate } from "@/lib/file-utils"
 import { toast } from "sonner"
 import type { FileKind } from "@/lib/analytics"
@@ -75,6 +77,12 @@ const KIND_LABEL: Record<FileKind, string> = {
 }
 
 export function RecentFilesTable({ files, workspaceId, onDownload, onShare, onRename, onDelete }: RecentFilesTableProps) {
+  const imageFileIds = useMemo(
+    () => files.filter((f) => f.mimeType?.startsWith("image/")).map((f) => f.id),
+    [files],
+  )
+  const { data: batchUrls } = usePreviewUrls(workspaceId, imageFileIds)
+
   if (files.length === 0) {
     return (
       <Card>
@@ -131,6 +139,8 @@ export function RecentFilesTable({ files, workspaceId, onDownload, onShare, onRe
                         fileId={file.id}
                         mimeType={file.mimeType}
                         alt={file.name}
+                        previewUrl={batchUrls?.urls[file.id]}
+                        skipFetch={!!file.mimeType?.startsWith("image/")}
                         className="size-7 shrink-0 rounded-md bg-muted"
                         imgClassName="object-cover"
                         fallback={<HugeiconsIcon icon={Icon} className="size-3.5 text-muted-foreground" strokeWidth={1.5} />}
