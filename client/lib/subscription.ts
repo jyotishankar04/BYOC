@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { getPlanLimits } from "./billing-constraints";
 import { useUserProfile, type UserSubscriptionSnapshot, type WorkspacePlan } from "./user-settings";
 import { useWorkspace } from "./workspace-context";
+import { useAppConfig } from "./admin";
 
 export type FeatureAccessKey =
   | "passwordProtectedLinks"
@@ -41,6 +42,8 @@ export function canUseProvider(
 export function useSubscriptionSnapshot() {
   const { data: user, isLoading, isFetching } = useUserProfile();
   const { currentWorkspace } = useWorkspace();
+  const { data: appConfig } = useAppConfig();
+  const betaMode = appConfig?.betaMode ?? true;
 
   const workspaceUsage = useMemo(() => {
     if (!currentWorkspace || !user?.subscription?.workspaces) return null;
@@ -53,8 +56,8 @@ export function useSubscriptionSnapshot() {
 
   const workspacePlan = workspaceUsage?.plan ?? currentWorkspace?.plan ?? user?.subscription?.plan;
   const workspaceLimits = useMemo(
-    () => (workspacePlan ? getPlanLimits(workspacePlan) : user?.subscription?.limits ?? null),
-    [user, workspacePlan],
+    () => (workspacePlan ? getPlanLimits(workspacePlan, betaMode) : user?.subscription?.limits ?? null),
+    [user, workspacePlan, betaMode],
   );
 
   const workspaceFeatureAccess = useMemo(() => {

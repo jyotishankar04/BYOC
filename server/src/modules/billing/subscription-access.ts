@@ -135,7 +135,7 @@ export function assertFeatureAccess(
   message: string,
   code: string,
 ): void {
-  if (!PLAN_LIMITS[plan][feature]) {
+  if (!getPlanLimits(plan)[feature]) {
     throw new AppError(message, 402, code);
   }
 }
@@ -152,7 +152,7 @@ export function assertProviderAccess(
       "PROVIDER_DISABLED",
     );
   }
-  if (!PLAN_LIMITS[plan].allowedProviders.includes(providerType)) {
+  if (!getPlanLimits(plan).allowedProviders.includes(providerType)) {
     throw new AppError(
       `${providerType} storage is not available on the ${plan} plan`,
       402,
