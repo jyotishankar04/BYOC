@@ -647,14 +647,22 @@ function MembersSection({
 
 // ─── CORS setup card ───────────────────────────────────────────────────────────
 
-const CORS_JSON = `[
+function buildCorsJson(origin: string) {
+  return `[
   {
     "AllowedHeaders": ["*"],
     "AllowedMethods": ["GET", "PUT", "HEAD", "DELETE"],
-    "AllowedOrigins": ["*"],
-    "ExposeHeaders": ["ETag", "Content-Length", "Content-Type"]
+    "AllowedOrigins": ["${origin}"],
+    "ExposeHeaders": [
+      "ETag",
+      "Content-Length",
+      "Content-Type",
+      "Content-Range",
+      "Accept-Ranges"
+    ]
   }
 ]`;
+}
 
 function IamPolicyCard({ bucketName }: { bucketName: string }) {
   const [open, setOpen] = useState(false);
@@ -761,8 +769,11 @@ function CorsSetupCard({ providerName }: { providerName: string; bucketName: str
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://yourdomain.com";
+  const corsJson = buildCorsJson(origin);
+
   const copy = () => {
-    navigator.clipboard.writeText(CORS_JSON).then(() => {
+    navigator.clipboard.writeText(corsJson).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
@@ -805,8 +816,7 @@ function CorsSetupCard({ providerName }: { providerName: string; bucketName: str
               CORS configuration required
             </p>
             <p className="mt-0.5 text-[11px] text-amber-700/80 dark:text-amber-300/70">
-              Browser uploads go directly to your storage. Your bucket needs a CORS policy
-              to allow this.
+              Required for browser uploads, image previews, and video playback. Without this, media will fail to load.
             </p>
           </div>
           <HugeiconsIcon
@@ -820,15 +830,16 @@ function CorsSetupCard({ providerName }: { providerName: string; bucketName: str
         </button>
 
         {open && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <p className="text-[11px] text-amber-700/80 dark:text-amber-300/70">
-              In the {instr.title} →{" "}
-              <span className="font-medium">{instr.path}</span>
-              , paste:
+              Open the{" "}
+              <span className="font-medium">{instr.title}</span> →{" "}
+              <span className="font-medium">{instr.path}</span> and paste the
+              policy below:
             </p>
             <div className="relative">
               <pre className="overflow-x-auto rounded-md bg-amber-100/80 dark:bg-amber-900/30 p-3 text-[11px] font-mono text-amber-900 dark:text-amber-100 leading-relaxed">
-                {CORS_JSON}
+                {corsJson}
               </pre>
               <button
                 onClick={copy}
@@ -841,6 +852,15 @@ function CorsSetupCard({ providerName }: { providerName: string; bucketName: str
                 />
                 {copied ? "Copied!" : "Copy"}
               </button>
+            </div>
+            <div className="space-y-1.5 text-[11px] text-amber-700/80 dark:text-amber-300/70">
+              <p className="font-medium">Why each field matters:</p>
+              <ul className="space-y-1 list-none">
+                <li><span className="font-mono font-medium">AllowedMethods</span> — GET/HEAD for streaming previews; PUT/DELETE for uploads</li>
+                <li><span className="font-mono font-medium">AllowedOrigins</span> — set to your app's domain (<span className="font-mono">{origin}</span>)</li>
+                <li><span className="font-mono font-medium">Content-Range / Accept-Ranges</span> — required for video seeking and range requests</li>
+                <li><span className="font-mono font-medium">ETag</span> — required for multipart upload completion</li>
+              </ul>
             </div>
           </div>
         )}
