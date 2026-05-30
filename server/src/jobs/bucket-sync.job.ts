@@ -228,8 +228,8 @@ export async function runBucketSync(workspaceId: string): Promise<void> {
     while (true) {
       const result = await provider.listObjects("", continuationToken, PAGE_SIZE);
 
-      const dirMarkers  = result.objects.filter((o) => o.key.endsWith("/"));
-      const realObjects = result.objects.filter((o) => !o.key.endsWith("/"));
+      const dirMarkers  = result.objects.filter((o) => o.key.endsWith("/") && !o.key.startsWith(".thumbnails/"));
+      const realObjects = result.objects.filter((o) => !o.key.endsWith("/") && !o.key.startsWith(".thumbnails/"));
 
       if (realObjects.length > 0 || dirMarkers.length > 0) {
         // ── 1. Resolve all folder paths for this page in bulk ──────────────

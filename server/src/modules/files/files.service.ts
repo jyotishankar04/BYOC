@@ -202,7 +202,7 @@ export class FilesService {
       throw err;
     }
 
-    return storage.generateGetPresignedUrl(file.storagePath, 60);
+    return storage.generateGetPresignedUrl(file.storagePath, 3600);
   }
 
   async getDownloadUrl(workspaceId: string, fileId: string): Promise<string> {

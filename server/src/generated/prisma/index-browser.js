@@ -282,6 +282,7 @@ exports.Prisma.FileScalarFieldEnum = {
   name: 'name',
   extension: 'extension',
   storagePath: 'storagePath',
+  thumbnailPath: 'thumbnailPath',
   size: 'size',
   mimeType: 'mimeType',
   kind: 'kind',

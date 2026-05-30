@@ -32,6 +32,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import { FileThumbnail } from "@/components/shared/file-thumbnail"
 import { formatFileSize, formatDate } from "@/lib/file-utils"
 import { toast } from "sonner"
 import type { FileKind } from "@/lib/analytics"
@@ -48,6 +49,7 @@ interface RecentFile {
 
 interface RecentFilesTableProps {
   files: RecentFile[];
+  workspaceId: string | undefined;
   onDownload?: (file: RecentFile) => void;
   onShare?: (file: RecentFile) => void;
   onRename?: (file: RecentFile) => void;
@@ -72,7 +74,7 @@ const KIND_LABEL: Record<FileKind, string> = {
   other: "Other",
 }
 
-export function RecentFilesTable({ files, onDownload, onShare, onRename, onDelete }: RecentFilesTableProps) {
+export function RecentFilesTable({ files, workspaceId, onDownload, onShare, onRename, onDelete }: RecentFilesTableProps) {
   if (files.length === 0) {
     return (
       <Card>
@@ -124,9 +126,15 @@ export function RecentFilesTable({ files, onDownload, onShare, onRename, onDelet
                 <TableRow key={file.id}>
                   <TableCell>
                     <div className="flex items-center gap-2.5">
-                      <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted">
-                        <HugeiconsIcon icon={Icon} className="size-3.5 text-muted-foreground" strokeWidth={1.5} />
-                      </div>
+                      <FileThumbnail
+                        workspaceId={workspaceId}
+                        fileId={file.id}
+                        mimeType={file.mimeType}
+                        alt={file.name}
+                        className="size-7 shrink-0 rounded-md bg-muted"
+                        imgClassName="object-cover"
+                        fallback={<HugeiconsIcon icon={Icon} className="size-3.5 text-muted-foreground" strokeWidth={1.5} />}
+                      />
                       <span className="max-w-[140px] truncate text-xs font-medium sm:max-w-none">{file.name}</span>
                     </div>
                   </TableCell>

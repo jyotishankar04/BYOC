@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { formatFileSize } from "@/lib/file-utils"
 import { useWorkspace } from "@/lib/workspace-context"
+import { ProviderErrorGuard } from "@/components/custom/dashboard/common/provider-error-guard"
 import { useDashboard } from "@/lib/analytics"
 import {
   PROVIDER_PRICING,
@@ -48,6 +49,7 @@ export default function UsagePricingPage() {
   const { currentWorkspace } = useWorkspace()
   const workspaceId = currentWorkspace?.id
   const provider = currentWorkspace?.storage
+
   const { data: dashboard } = useDashboard(workspaceId)
 
   const detectedId = provider ? guessProviderId(provider.name) : "AWS_S3"
@@ -68,6 +70,10 @@ export default function UsagePricingPage() {
     () => computeCosts(storageGb, transferGb, putRequests, getRequests, pricing),
     [storageGb, transferGb, putRequests, getRequests, pricing],
   )
+
+  if (workspaceId && (!currentWorkspace?.storage || currentWorkspace.storage.status === "Error")) {
+    return <ProviderErrorGuard workspaceId={workspaceId} storage={currentWorkspace?.storage ?? null} />
+  }
 
   return (
     <div className="space-y-6">

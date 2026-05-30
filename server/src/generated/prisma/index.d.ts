@@ -18533,6 +18533,7 @@ export namespace Prisma {
     name: string | null
     extension: string | null
     storagePath: string | null
+    thumbnailPath: string | null
     size: number | null
     mimeType: string | null
     kind: $Enums.FileKind | null
@@ -18550,6 +18551,7 @@ export namespace Prisma {
     name: string | null
     extension: string | null
     storagePath: string | null
+    thumbnailPath: string | null
     size: number | null
     mimeType: string | null
     kind: $Enums.FileKind | null
@@ -18567,6 +18569,7 @@ export namespace Prisma {
     name: number
     extension: number
     storagePath: number
+    thumbnailPath: number
     size: number
     mimeType: number
     kind: number
@@ -18594,6 +18597,7 @@ export namespace Prisma {
     name?: true
     extension?: true
     storagePath?: true
+    thumbnailPath?: true
     size?: true
     mimeType?: true
     kind?: true
@@ -18611,6 +18615,7 @@ export namespace Prisma {
     name?: true
     extension?: true
     storagePath?: true
+    thumbnailPath?: true
     size?: true
     mimeType?: true
     kind?: true
@@ -18628,6 +18633,7 @@ export namespace Prisma {
     name?: true
     extension?: true
     storagePath?: true
+    thumbnailPath?: true
     size?: true
     mimeType?: true
     kind?: true
@@ -18732,6 +18738,7 @@ export namespace Prisma {
     name: string
     extension: string | null
     storagePath: string
+    thumbnailPath: string | null
     size: number
     mimeType: string | null
     kind: $Enums.FileKind
@@ -18768,6 +18775,7 @@ export namespace Prisma {
     name?: boolean
     extension?: boolean
     storagePath?: boolean
+    thumbnailPath?: boolean
     size?: boolean
     mimeType?: boolean
     kind?: boolean
@@ -18791,6 +18799,7 @@ export namespace Prisma {
     name?: boolean
     extension?: boolean
     storagePath?: boolean
+    thumbnailPath?: boolean
     size?: boolean
     mimeType?: boolean
     kind?: boolean
@@ -18811,6 +18820,7 @@ export namespace Prisma {
     name?: boolean
     extension?: boolean
     storagePath?: boolean
+    thumbnailPath?: boolean
     size?: boolean
     mimeType?: boolean
     kind?: boolean
@@ -18831,6 +18841,7 @@ export namespace Prisma {
     name?: boolean
     extension?: boolean
     storagePath?: boolean
+    thumbnailPath?: boolean
     size?: boolean
     mimeType?: boolean
     kind?: boolean
@@ -18841,7 +18852,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type FileOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "workspaceId" | "folderId" | "name" | "extension" | "storagePath" | "size" | "mimeType" | "kind" | "status" | "source" | "uploadedById" | "createdAt" | "updatedAt", ExtArgs["result"]["file"]>
+  export type FileOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "workspaceId" | "folderId" | "name" | "extension" | "storagePath" | "thumbnailPath" | "size" | "mimeType" | "kind" | "status" | "source" | "uploadedById" | "createdAt" | "updatedAt", ExtArgs["result"]["file"]>
   export type FileInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     workspace?: boolean | WorkspaceDefaultArgs<ExtArgs>
     folder?: boolean | File$folderArgs<ExtArgs>
@@ -18877,6 +18888,7 @@ export namespace Prisma {
       name: string
       extension: string | null
       storagePath: string
+      thumbnailPath: string | null
       size: number
       mimeType: string | null
       kind: $Enums.FileKind
@@ -19319,6 +19331,7 @@ export namespace Prisma {
     readonly name: FieldRef<"File", 'String'>
     readonly extension: FieldRef<"File", 'String'>
     readonly storagePath: FieldRef<"File", 'String'>
+    readonly thumbnailPath: FieldRef<"File", 'String'>
     readonly size: FieldRef<"File", 'Int'>
     readonly mimeType: FieldRef<"File", 'String'>
     readonly kind: FieldRef<"File", 'FileKind'>
@@ -28184,6 +28197,7 @@ export namespace Prisma {
     name: 'name',
     extension: 'extension',
     storagePath: 'storagePath',
+    thumbnailPath: 'thumbnailPath',
     size: 'size',
     mimeType: 'mimeType',
     kind: 'kind',
@@ -29701,6 +29715,7 @@ export namespace Prisma {
     name?: StringFilter<"File"> | string
     extension?: StringNullableFilter<"File"> | string | null
     storagePath?: StringFilter<"File"> | string
+    thumbnailPath?: StringNullableFilter<"File"> | string | null
     size?: IntFilter<"File"> | number
     mimeType?: StringNullableFilter<"File"> | string | null
     kind?: EnumFileKindFilter<"File"> | $Enums.FileKind
@@ -29723,6 +29738,7 @@ export namespace Prisma {
     name?: SortOrder
     extension?: SortOrderInput | SortOrder
     storagePath?: SortOrder
+    thumbnailPath?: SortOrderInput | SortOrder
     size?: SortOrder
     mimeType?: SortOrderInput | SortOrder
     kind?: SortOrder
@@ -29749,6 +29765,7 @@ export namespace Prisma {
     name?: StringFilter<"File"> | string
     extension?: StringNullableFilter<"File"> | string | null
     storagePath?: StringFilter<"File"> | string
+    thumbnailPath?: StringNullableFilter<"File"> | string | null
     size?: IntFilter<"File"> | number
     mimeType?: StringNullableFilter<"File"> | string | null
     kind?: EnumFileKindFilter<"File"> | $Enums.FileKind
@@ -29771,6 +29788,7 @@ export namespace Prisma {
     name?: SortOrder
     extension?: SortOrderInput | SortOrder
     storagePath?: SortOrder
+    thumbnailPath?: SortOrderInput | SortOrder
     size?: SortOrder
     mimeType?: SortOrderInput | SortOrder
     kind?: SortOrder
@@ -29796,6 +29814,7 @@ export namespace Prisma {
     name?: StringWithAggregatesFilter<"File"> | string
     extension?: StringNullableWithAggregatesFilter<"File"> | string | null
     storagePath?: StringWithAggregatesFilter<"File"> | string
+    thumbnailPath?: StringNullableWithAggregatesFilter<"File"> | string | null
     size?: IntWithAggregatesFilter<"File"> | number
     mimeType?: StringNullableWithAggregatesFilter<"File"> | string | null
     kind?: EnumFileKindWithAggregatesFilter<"File"> | $Enums.FileKind
@@ -31584,6 +31603,7 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
@@ -31605,6 +31625,7 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
@@ -31622,6 +31643,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
@@ -31643,6 +31665,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
@@ -31662,6 +31685,7 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
@@ -31677,6 +31701,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
@@ -31693,6 +31718,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
@@ -33380,6 +33406,7 @@ export namespace Prisma {
     name?: SortOrder
     extension?: SortOrder
     storagePath?: SortOrder
+    thumbnailPath?: SortOrder
     size?: SortOrder
     mimeType?: SortOrder
     kind?: SortOrder
@@ -33401,6 +33428,7 @@ export namespace Prisma {
     name?: SortOrder
     extension?: SortOrder
     storagePath?: SortOrder
+    thumbnailPath?: SortOrder
     size?: SortOrder
     mimeType?: SortOrder
     kind?: SortOrder
@@ -33418,6 +33446,7 @@ export namespace Prisma {
     name?: SortOrder
     extension?: SortOrder
     storagePath?: SortOrder
+    thumbnailPath?: SortOrder
     size?: SortOrder
     mimeType?: SortOrder
     kind?: SortOrder
@@ -36568,6 +36597,7 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
@@ -36588,6 +36618,7 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
@@ -37078,6 +37109,7 @@ export namespace Prisma {
     name?: StringFilter<"File"> | string
     extension?: StringNullableFilter<"File"> | string | null
     storagePath?: StringFilter<"File"> | string
+    thumbnailPath?: StringNullableFilter<"File"> | string | null
     size?: IntFilter<"File"> | number
     mimeType?: StringNullableFilter<"File"> | string | null
     kind?: EnumFileKindFilter<"File"> | $Enums.FileKind
@@ -37827,6 +37859,7 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
@@ -37846,6 +37879,7 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
@@ -39409,6 +39443,7 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
@@ -39428,6 +39463,7 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
@@ -40183,6 +40219,7 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
@@ -40203,6 +40240,7 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
@@ -40418,6 +40456,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
@@ -40438,6 +40477,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
@@ -41133,6 +41173,7 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
@@ -41153,6 +41194,7 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
@@ -41307,6 +41349,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
@@ -41327,6 +41370,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
@@ -41772,6 +41816,7 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
@@ -42075,6 +42120,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
@@ -42095,6 +42141,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
@@ -42113,6 +42160,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
@@ -42380,6 +42428,7 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
@@ -42511,6 +42560,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
@@ -42530,6 +42580,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
@@ -42548,6 +42599,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
@@ -42735,6 +42787,7 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
@@ -42801,6 +42854,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
@@ -42820,6 +42874,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
@@ -42838,6 +42893,7 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind

@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   CloudServerIcon,
@@ -1960,11 +1960,13 @@ export default function WorkspaceSettingsPage({
 }) {
   const { workspaceId } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { workspaces } = useWorkspace();
   const { data: session } = useSession();
 
   const workspace = workspaces.find((w) => w.id === workspaceId);
-  const [section, setSection] = useState<Section>("overview");
+  const initialSection = (searchParams.get("section") as Section) ?? "overview";
+  const [section, setSection] = useState<Section>(initialSection);
 
   // Derive role from the workspace's members list (already in context)
   const myMember = workspace?.members.find(

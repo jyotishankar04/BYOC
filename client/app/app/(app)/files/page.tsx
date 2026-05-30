@@ -62,7 +62,9 @@ import { UploadDialog } from "@/components/custom/dashboard/common/upload-dialog
 import { CreateShareLinkDialog } from "@/components/custom/dashboard/common/create-share-link-dialog"
 import { FILE_VISUAL } from "@/components/shared/file-visual"
 import type { FileType } from "@/components/shared/file-visual"
+import { FileThumbnail } from "@/components/shared/file-thumbnail"
 import { useWorkspace } from "@/lib/workspace-context"
+import { ProviderErrorGuard } from "@/components/custom/dashboard/common/provider-error-guard"
 import { useSyncStatus, useTriggerSync } from "@/lib/provider"
 import { Progress } from "@/components/ui/progress"
 import {
@@ -112,7 +114,7 @@ function apiFileToItem(
   file: ApiFile,
   breadcrumbs: { id: string; name: string }[],
   bucket: string,
-): FileItem & { kind: "file" } {
+): FileItem & { kind: "file"; mimeType: string | null } {
   const folderPath =
     breadcrumbs.length > 0
       ? breadcrumbs.map((b) => b.name).join(" / ")
@@ -132,6 +134,7 @@ function apiFileToItem(
     owner: file.uploadedBy?.name ?? "Unknown",
     bucket,
     storagePath: file.storagePath,
+    mimeType: file.mimeType,
     activities: [
       {
         action: "File uploaded",
@@ -146,7 +149,7 @@ function apiFileToItem(
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-type FileNode = FileItem & { kind: "file" }
+type FileNode = FileItem & { kind: "file"; mimeType: string | null }
 
 type FolderNode = {
   kind: "folder"
@@ -581,6 +584,7 @@ function NewFolderCard({
 
 function FileCard({
   file,
+  workspaceId,
   isSelected,
   onClick,
   onShare,
@@ -590,6 +594,7 @@ function FileCard({
   onDelete,
 }: {
   file: FileNode
+  workspaceId: string | undefined
   isSelected: boolean
   onClick: () => void
   onShare: () => void
@@ -610,13 +615,22 @@ function FileCard({
             isSelected && "border-primary/30 ring-2 ring-primary",
           )}
         >
-          <div className={cn("flex h-24 items-center justify-center bg-gradient-to-br", visual.gradientFrom, visual.gradientTo)}>
-            <HugeiconsIcon
-              icon={visual.icon}
-              className={cn("size-10 opacity-70 transition-transform duration-200 group-hover:scale-110", visual.iconColor)}
-              strokeWidth={1.2}
-            />
-          </div>
+          <FileThumbnail
+            workspaceId={workspaceId}
+            fileId={file.id}
+            mimeType={file.mimeType}
+            alt={file.name}
+            className="h-24"
+            fallback={
+              <div className={cn("flex h-24 w-full items-center justify-center bg-gradient-to-br", visual.gradientFrom, visual.gradientTo)}>
+                <HugeiconsIcon
+                  icon={visual.icon}
+                  className={cn("size-10 opacity-70 transition-transform duration-200 group-hover:scale-110", visual.iconColor)}
+                  strokeWidth={1.2}
+                />
+              </div>
+            }
+          />
           <div className="absolute right-1.5 top-1.5 opacity-0 transition-opacity group-hover:opacity-100">
             <DropdownMenu>
               <KebabTrigger className="bg-background/80 backdrop-blur-sm" />
@@ -733,6 +747,7 @@ function FolderListRow({
 
 function FileListRow({
   file,
+  workspaceId,
   isSelected,
   onClick,
   showBorder,
@@ -743,6 +758,7 @@ function FileListRow({
   onDelete,
 }: {
   file: FileNode
+  workspaceId: string | undefined
   isSelected: boolean
   onClick: () => void
   showBorder: boolean
@@ -764,9 +780,15 @@ function FileListRow({
             isSelected && "bg-primary/5 ring-inset ring-1 ring-primary/20",
           )}
         >
-          <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br", visual.gradientFrom, visual.gradientTo)}>
-            <HugeiconsIcon icon={visual.icon} className={cn("size-4", visual.iconColor)} strokeWidth={1.5} />
-          </div>
+          <FileThumbnail
+            workspaceId={workspaceId}
+            fileId={file.id}
+            mimeType={file.mimeType}
+            alt={file.name}
+            className={cn("size-8 shrink-0 rounded-lg bg-gradient-to-br", visual.gradientFrom, visual.gradientTo)}
+            imgClassName="object-cover"
+            fallback={<HugeiconsIcon icon={visual.icon} className={cn("size-4", visual.iconColor)} strokeWidth={1.5} />}
+          />
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-medium">{file.name}</p>
             <p className="text-[11px] text-muted-foreground">{file.folder}</p>
@@ -1150,6 +1172,10 @@ export default function FilesPage() {
 
   const isDetailOpen = selectedFile !== null
 
+  if (workspaceId && (!currentWorkspace?.storage || currentWorkspace.storage.status === "Error")) {
+    return <ProviderErrorGuard workspaceId={workspaceId} storage={currentWorkspace?.storage ?? null} />
+  }
+
   return (
     <>
       <div
@@ -1281,6 +1307,7 @@ export default function FilesPage() {
                     <FileCard
                       key={file.id}
                       file={file}
+                      workspaceId={workspaceId}
                       isSelected={selectedFile?.id === file.id}
                       onClick={() => handleFileClick(file)}
                       onShare={() => handleShareFile(file)}
@@ -1334,6 +1361,7 @@ export default function FilesPage() {
               <FileListRow
                 key={file.id}
                 file={file}
+                workspaceId={workspaceId}
                 isSelected={selectedFile?.id === file.id}
                 onClick={() => handleFileClick(file)}
                 showBorder={i > 0 || filteredFolders.length > 0 || isCreatingFolder}
@@ -1351,6 +1379,7 @@ export default function FilesPage() {
       <FileDetailsSidebar
         file={selectedFile}
         isOpen={isDetailOpen}
+        workspaceId={workspaceId}
         onClose={() => setSelectedFile(null)}
         onDownload={(f) => handleDownload(f as FileNode)}
         onShare={(f) => handleShareFile(f as FileNode)}

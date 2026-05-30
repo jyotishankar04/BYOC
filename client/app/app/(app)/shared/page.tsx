@@ -56,6 +56,8 @@ import { SearchInput } from "@/components/shared/search-input"
 import { KebabTrigger } from "@/components/shared/kebab-trigger"
 import { CreateShareLinkDialog } from "@/components/custom/dashboard/common/create-share-link-dialog"
 import { useWorkspace } from "@/lib/workspace-context"
+import { ProviderErrorGuard } from "@/components/custom/dashboard/common/provider-error-guard"
+import { FileThumbnail } from "@/components/shared/file-thumbnail"
 import {
   useListShareLinks,
   useGetShareLink,
@@ -206,6 +208,7 @@ function LinkMenuItems({ as: As, Sep, link, onCopy, onViewDetails, onDisable, on
 
 interface DisplayLink {
   id: string
+  fileId: string | null
   targetName: string
   targetKind: "file" | "folder"
   fileType: FileType
@@ -224,6 +227,7 @@ function toDisplayLink(raw: ShareLinkResponse): DisplayLink {
   const targetKind = raw.folder ? "folder" : "file"
   return {
     id: raw.id,
+    fileId: raw.file?.id ?? null,
     targetName: raw.folder?.name ?? raw.file?.name ?? "Unknown item",
     targetKind,
     fileType: targetKind === "folder" ? "Folder" : detectFileType(raw.file?.name ?? "", raw.file?.mimeType ?? null),
@@ -243,6 +247,7 @@ function toDisplayLink(raw: ShareLinkResponse): DisplayLink {
 
 function SharedLinkRow({
   link,
+  workspaceId,
   isSelected,
   copiedId,
   showBorder,
@@ -252,6 +257,7 @@ function SharedLinkRow({
   onDelete,
 }: {
   link: DisplayLink
+  workspaceId: string | undefined
   isSelected: boolean
   copiedId: string | null
   showBorder: boolean
@@ -287,9 +293,15 @@ function SharedLinkRow({
             link.status !== "Active" && "opacity-70",
           )}
         >
-          <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br", ftv.gradFrom, ftv.gradTo)}>
-            <HugeiconsIcon icon={ftv.icon} className={cn("size-4", ftv.iconColor)} strokeWidth={1.5} />
-          </div>
+          <FileThumbnail
+            workspaceId={workspaceId}
+            fileId={link.fileId ?? ""}
+            mimeType={link.targetKind === "file" ? link.fileMimeType : null}
+            alt={link.targetName}
+            className={cn("size-9 shrink-0 rounded-lg bg-gradient-to-br", ftv.gradFrom, ftv.gradTo)}
+            imgClassName="object-cover"
+            fallback={<HugeiconsIcon icon={ftv.icon} className={cn("size-4", ftv.iconColor)} strokeWidth={1.5} />}
+          />
 
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-medium">{link.targetName}</p>
@@ -542,6 +554,10 @@ export default function SharedLinksPage() {
     setSelectedId((prev) => (prev === id ? null : prev))
   }, [deleteLink])
 
+  if (workspaceId && (!currentWorkspace?.storage || currentWorkspace.storage.status === "Error")) {
+    return <ProviderErrorGuard workspaceId={workspaceId} storage={currentWorkspace?.storage ?? null} />
+  }
+
   return (
     <>
       <div className={cn("flex flex-col gap-5 transition-all duration-300", isDetailOpen && "lg:mr-[var(--detail-sidebar-width)]")}>
@@ -675,6 +691,7 @@ export default function SharedLinksPage() {
               <SharedLinkRow
                 key={link.id}
                 link={link}
+                workspaceId={workspaceId}
                 isSelected={selectedId === link.id}
                 copiedId={copiedId}
                 showBorder={i > 0}

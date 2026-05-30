@@ -34,6 +34,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { formatFileSize, formatDate } from "@/lib/file-utils"
 import { useWorkspace } from "@/lib/workspace-context"
+import { ProviderErrorGuard } from "@/components/custom/dashboard/common/provider-error-guard"
 import { useDashboard, useAnalytics } from "@/lib/analytics"
 import type { FileKind } from "@/lib/analytics"
 import { useSubscriptionSnapshot } from "@/lib/subscription"
@@ -145,6 +146,7 @@ export default function AnalyticsPage() {
   const { subscription, loading: subscriptionLoading } = useSubscriptionSnapshot()
   const workspaceId = currentWorkspace?.id
   const [range, setRange] = useState<Range>("30 days")
+
   const days = RANGE_DAYS[range]
 
   const { data: dashboard } = useDashboard(workspaceId)
@@ -221,6 +223,10 @@ export default function AnalyticsPage() {
   }, [analytics])
 
   const totalGb = dashboard ? bytesToGb(dashboard.totalSize) : 0
+
+  if (workspaceId && (!currentWorkspace?.storage || currentWorkspace.storage.status === "Error")) {
+    return <ProviderErrorGuard workspaceId={workspaceId} storage={currentWorkspace?.storage ?? null} />
+  }
 
   if (subscriptionLoading) {
     return (

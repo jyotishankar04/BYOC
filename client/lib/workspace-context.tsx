@@ -187,7 +187,11 @@ function fromApiWorkspace(raw: any): Workspace {
           bucket: raw.storageProvider.bucket,
           region: raw.storageProvider.region ?? "",
           status:
-            raw.storageProvider.status === "Active" ? "Connected" : "Checking",
+            raw.storageProvider.status === "Active"
+              ? "Connected"
+              : raw.storageProvider.status === "Unchecked"
+                ? "Checking"
+                : "Error",
           lastChecked: raw.storageProvider.lastChecked
             ? formatDate(raw.storageProvider.lastChecked)
             : "Never",

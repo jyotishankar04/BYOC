@@ -1,0 +1,114 @@
+"use client";
+
+import { useRef, useState, useEffect, useCallback } from "react";
+import { cn } from "@/lib/utils";
+import { usePreviewUrl } from "@/lib/files";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface FileThumbnailProps {
+  workspaceId: string | undefined;
+  fileId: string;
+  mimeType: string | null | undefined;
+  alt: string;
+  className?: string;
+  imgClassName?: string;
+  fallback: React.ReactNode;
+  /** Render the image at its natural dimensions instead of filling a fixed container */
+  natural?: boolean;
+}
+
+export function FileThumbnail({
+  workspaceId,
+  fileId,
+  mimeType,
+  alt,
+  className,
+  imgClassName,
+  fallback,
+  natural = false,
+}: FileThumbnailProps) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [inView, setInView] = useState(false);
+  const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
+
+  const isImage = !!mimeType?.startsWith("image/");
+
+  useEffect(() => {
+    if (!ref.current || !isImage) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" },
+    );
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [isImage]);
+
+  const { data, isLoading } = usePreviewUrl(workspaceId, fileId, mimeType, inView);
+
+  const handleError = useCallback(() => setImgError(true), []);
+  const handleLoad = useCallback(() => setImgLoaded(true), []);
+
+  const hasPreview = isImage && !imgError && !!data?.url;
+  const showSkeleton = isImage && inView && isLoading && !imgLoaded && !imgError;
+
+  if (natural) {
+    return (
+      <div ref={ref} className={cn("overflow-hidden", className)}>
+        {hasPreview ? (
+          <>
+            {showSkeleton && !imgLoaded && <Skeleton className="h-28 w-full rounded-none" />}
+            <img
+              src={data.url}
+              alt={alt}
+              onError={handleError}
+              onLoad={handleLoad}
+              className={cn(
+                "block w-full h-auto transition-opacity duration-300",
+                imgLoaded ? "opacity-100" : "opacity-0 absolute inset-0",
+                imgClassName,
+              )}
+            />
+          </>
+        ) : (
+          <div className="h-28 w-full">{fallback}</div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div ref={ref} className={cn("relative overflow-hidden", className)}>
+      {showSkeleton && <Skeleton className="absolute inset-0 rounded-none" />}
+
+      {hasPreview && (
+        <img
+          src={data.url}
+          alt={alt}
+          onError={handleError}
+          onLoad={handleLoad}
+          className={cn(
+            "absolute inset-0 h-full w-full object-cover transition-opacity duration-300",
+            imgLoaded ? "opacity-100" : "opacity-0",
+            imgClassName,
+          )}
+        />
+      )}
+
+      {/* Fallback always rendered — hidden once preview loads to prevent layout shift */}
+      <div
+        className={cn(
+          "flex h-full w-full items-center justify-center transition-opacity duration-300",
+          hasPreview && imgLoaded ? "opacity-0 pointer-events-none" : "opacity-100",
+        )}
+      >
+        {fallback}
+      </div>
+    </div>
+  );
+}

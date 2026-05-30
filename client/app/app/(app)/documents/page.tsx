@@ -46,6 +46,7 @@ import {
 import { UploadDialog } from "@/components/custom/dashboard/common/upload-dialog"
 import { CreateShareLinkDialog } from "@/components/custom/dashboard/common/create-share-link-dialog"
 import { useWorkspace } from "@/lib/workspace-context"
+import { ProviderErrorGuard } from "@/components/custom/dashboard/common/provider-error-guard"
 import { useFiles, useDeleteFile, useDownloadFile, type ApiFile } from "@/lib/files"
 import { formatFileSize, formatDate, getDocType, getStorageFolderLabel } from "@/lib/file-utils"
 
@@ -500,6 +501,10 @@ export default function DocumentsPage() {
   )
 
   const activeSort = SORT_OPTIONS.find((s) => s.key === sort)!
+
+  if (workspaceId && (!currentWorkspace?.storage || currentWorkspace.storage.status === "Error")) {
+    return <ProviderErrorGuard workspaceId={workspaceId} storage={currentWorkspace?.storage ?? null} />
+  }
 
   return (
     <>

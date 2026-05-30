@@ -23,6 +23,7 @@ export interface ApiFile {
   name: string;
   extension: string | null;
   storagePath: string;
+  thumbnailPath: string | null;
   size: number;
   mimeType: string | null;
   kind: "image" | "video" | "document" | "audio" | "archive" | "other";
@@ -60,6 +61,8 @@ export const fileKeys = {
     ["workspaces", workspaceId, "files"] as const,
   list: (workspaceId: string, query: FilesQuery) =>
     ["workspaces", workspaceId, "files", query] as const,
+  previewUrl: (workspaceId: string, fileId: string) =>
+    ["workspaces", workspaceId, "files", fileId, "preview-url"] as const,
 };
 
 // ─── Hooks ─────────────────────────────────────────────────────────────────────
@@ -212,5 +215,26 @@ export function useDownloadFile(workspaceId: string | undefined) {
       window.open(url, "_blank", "noopener,noreferrer");
     },
     onError: (err: Error) => toast.error(err.message),
+  });
+}
+
+export function usePreviewUrl(
+  workspaceId: string | undefined,
+  fileId: string,
+  mimeType: string | null | undefined,
+  enabled: boolean = true,
+) {
+  return useQuery<{ url: string; expiresIn: number } | null>({
+    queryKey: fileKeys.previewUrl(workspaceId ?? "", fileId),
+    queryFn: async () => {
+      const res = await api.get<{ url: string; expiresIn: number }>(
+        `/api/v1/workspaces/${workspaceId}/files/${fileId}/preview-url`,
+      );
+      return res.data;
+    },
+    enabled: !!workspaceId && !!mimeType?.startsWith("image/") && enabled,
+    staleTime: 50 * 60 * 1000,
+    gcTime: 55 * 60 * 1000,
+    retry: false,
   });
 }

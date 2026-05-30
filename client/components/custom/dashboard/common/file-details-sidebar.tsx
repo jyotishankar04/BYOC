@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { FileThumbnail } from "@/components/shared/file-thumbnail"
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -106,6 +107,7 @@ const DETAIL_ROWS = (file: FileItem) => [
 
 function PanelContent({
   file,
+  workspaceId,
   onClose,
   onPreview,
   onDownload,
@@ -114,6 +116,7 @@ function PanelContent({
   onDelete,
 }: {
   file: FileItem
+  workspaceId?: string
   onClose: () => void
   onPreview?: (file: FileItem) => void
   onDownload?: (file: FileItem) => void
@@ -168,19 +171,22 @@ function PanelContent({
 
         {/* ── Preview ── */}
         <div className="overflow-hidden rounded-xl border">
-          <div
-            className={cn(
-              "flex h-36 items-center justify-center bg-gradient-to-br",
-              meta.gradientFrom,
-              meta.gradientTo,
-            )}
-          >
-            <HugeiconsIcon
-              icon={meta.icon}
-              className={cn("size-14 opacity-80", meta.iconColor)}
-              strokeWidth={1.2}
-            />
-          </div>
+          <FileThumbnail
+            workspaceId={workspaceId}
+            fileId={file.id}
+            mimeType={file.mimeType ?? null}
+            alt={file.name}
+            className="h-36"
+            fallback={
+              <div className={cn("flex h-36 w-full items-center justify-center bg-gradient-to-br", meta.gradientFrom, meta.gradientTo)}>
+                <HugeiconsIcon
+                  icon={meta.icon}
+                  className={cn("size-14 opacity-80", meta.iconColor)}
+                  strokeWidth={1.2}
+                />
+              </div>
+            }
+          />
           <div className="border-t bg-card px-4 py-3">
             <p className="truncate text-sm font-medium">{file.name}</p>
             <div className="mt-1.5 flex items-center gap-2">
@@ -336,6 +342,7 @@ function PanelContent({
 interface FileDetailsSidebarProps {
   file: FileItem | null
   isOpen: boolean
+  workspaceId?: string
   onClose: () => void
   onPreview?: (file: FileItem) => void
   onDownload?: (file: FileItem) => void
@@ -347,6 +354,7 @@ interface FileDetailsSidebarProps {
 export function FileDetailsSidebar({
   file,
   isOpen,
+  workspaceId,
   onClose,
   onPreview,
   onDownload,
@@ -366,6 +374,7 @@ export function FileDetailsSidebar({
           {file && (
             <PanelContent
               file={file}
+              workspaceId={workspaceId}
               onClose={onClose}
               onPreview={onPreview}
               onDownload={onDownload}
@@ -393,6 +402,7 @@ export function FileDetailsSidebar({
       {file && (
         <PanelContent
           file={file}
+          workspaceId={workspaceId}
           onClose={onClose}
           onPreview={onPreview}
           onDownload={onDownload}

@@ -43,7 +43,9 @@ import { ViewToggle } from "@/components/shared/view-toggle"
 import { UploadDialog } from "@/components/custom/dashboard/common/upload-dialog"
 import { CreateShareLinkDialog } from "@/components/custom/dashboard/common/create-share-link-dialog"
 import { useWorkspace } from "@/lib/workspace-context"
-import { useFiles, useDeleteFile, useDownloadFile, type ApiFile } from "@/lib/files"
+import { ProviderErrorGuard } from "@/components/custom/dashboard/common/provider-error-guard"
+import { useFiles, useDeleteFile, useDownloadFile, usePreviewUrl, type ApiFile } from "@/lib/files"
+import { FileThumbnail } from "@/components/shared/file-thumbnail"
 import { formatFileSize, formatDate, getAspectRatio, getMediaType, getStorageFolderLabel } from "@/lib/file-utils"
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -65,7 +67,7 @@ interface GalleryItem {
   folder: string
   shareLink?: string
   aspect: AspectRatio
-  previewUrl?: string
+  mimeType: string | null
 }
 
 // ─── Visuals ───────────────────────────────────────────────────────────────────
@@ -80,12 +82,6 @@ const TYPE_VISUAL: Record<MediaType, {
   Video: { icon: Video01Icon, iconColor: "text-blue-500",   gradientFrom: "from-blue-500/20",   gradientTo: "to-blue-600/5"  },
 }
 
-const ASPECT_CLASSES: Record<AspectRatio, string> = {
-  square:    "aspect-square",
-  landscape: "aspect-video",
-  portrait:  "aspect-[3/4]",
-  wide:      "aspect-[2/1]",
-}
 
 const MEDIA_FILTERS: MediaFilter[] = ["All", "Images", "Videos"]
 const PAGE_SIZE = 24
@@ -105,6 +101,7 @@ function apiFileToGalleryItem(file: ApiFile): GalleryItem {
     status: "Private",
     folder: getStorageFolderLabel(file.storagePath),
     aspect: getAspectRatio(file.mimeType),
+    mimeType: file.mimeType,
   }
 }
 
@@ -123,6 +120,7 @@ function sortItems(items: GalleryItem[], sort: SortBy): GalleryItem[] {
 function Lightbox({
   item,
   allItems,
+  workspaceId,
   onClose,
   onNavigate,
   onShare,
@@ -132,6 +130,7 @@ function Lightbox({
 }: {
   item: GalleryItem
   allItems: GalleryItem[]
+  workspaceId: string | undefined
   onClose: () => void
   onNavigate: (item: GalleryItem) => void
   onShare: () => void
@@ -140,6 +139,7 @@ function Lightbox({
   onGetLink?: () => void
 }) {
   const visual  = TYPE_VISUAL[item.type]
+  const { data: thumbData } = usePreviewUrl(workspaceId, item.id, item.mimeType, true)
   const idx     = allItems.findIndex((i) => i.id === item.id)
   const hasPrev = idx > 0
   const hasNext = idx < allItems.length - 1
@@ -184,24 +184,28 @@ function Lightbox({
         </div>
 
         {/* ── Preview ── */}
-        <div
-          className={cn(
-            "flex h-64 items-center justify-center bg-gradient-to-br sm:h-72",
-            visual.gradientFrom,
-            visual.gradientTo,
-          )}
-        >
-          <HugeiconsIcon
-            icon={visual.icon}
-            className={cn("size-20 opacity-50", visual.iconColor)}
-            strokeWidth={1}
-          />
-          {item.type === "Video" && (
-            <div className="absolute flex items-center justify-center">
-              <div className="flex size-14 items-center justify-center rounded-full bg-background/80 shadow-lg backdrop-blur-sm">
-                <HugeiconsIcon icon={Video01Icon} className="size-6 text-foreground" strokeWidth={1.5} />
-              </div>
-            </div>
+        <div className={cn("relative flex h-64 items-center justify-center overflow-hidden bg-gradient-to-br sm:h-72", visual.gradientFrom, visual.gradientTo)}>
+          {thumbData?.url ? (
+            <img
+              src={thumbData.url}
+              alt={item.name}
+              className="h-full w-full object-contain"
+            />
+          ) : (
+            <>
+              <HugeiconsIcon
+                icon={visual.icon}
+                className={cn("size-20 opacity-50", visual.iconColor)}
+                strokeWidth={1}
+              />
+              {item.type === "Video" && (
+                <div className="absolute flex items-center justify-center">
+                  <div className="flex size-14 items-center justify-center rounded-full bg-background/80 shadow-lg backdrop-blur-sm">
+                    <HugeiconsIcon icon={Video01Icon} className="size-6 text-foreground" strokeWidth={1.5} />
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -292,10 +296,12 @@ function Lightbox({
 function GalleryCard({
   item,
   viewMode,
+  workspaceId,
   onClick,
 }: {
   item: GalleryItem
   viewMode: "grid" | "list"
+  workspaceId: string | undefined
   onClick: () => void
 }) {
   const visual = TYPE_VISUAL[item.type]
@@ -339,35 +345,34 @@ function GalleryCard({
   return (
     <button
       onClick={onClick}
-      className={cn(
-        "group relative w-full overflow-hidden rounded-md border bg-card",
-        "transition-all duration-150 hover:shadow-md hover:border-border/80",
-        ASPECT_CLASSES[item.aspect],
-      )}
+      className="group relative block w-full overflow-hidden"
     >
-      {/* Preview */}
-      <div
-        className={cn(
-          "absolute inset-0 flex items-center justify-center bg-gradient-to-br",
-          visual.gradientFrom, visual.gradientTo,
-        )}
-      >
-        <HugeiconsIcon
-          icon={visual.icon}
-          className={cn("size-10 opacity-50 transition-transform duration-200 group-hover:scale-110", visual.iconColor)}
-          strokeWidth={1}
-        />
-        {item.type === "Video" && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex size-10 items-center justify-center rounded-full bg-background/70 shadow backdrop-blur-sm">
-              <HugeiconsIcon icon={Video01Icon} className="size-4 text-foreground" strokeWidth={1.5} />
-            </div>
+      <FileThumbnail
+        workspaceId={workspaceId}
+        fileId={item.id}
+        mimeType={item.mimeType}
+        alt={item.name}
+        natural
+        fallback={
+          <div className={cn("flex h-28 w-full items-center justify-center bg-gradient-to-br", visual.gradientFrom, visual.gradientTo)}>
+            <HugeiconsIcon
+              icon={visual.icon}
+              className={cn("size-10 opacity-50", visual.iconColor)}
+              strokeWidth={1}
+            />
+            {item.type === "Video" && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex size-10 items-center justify-center rounded-full bg-background/70 shadow backdrop-blur-sm">
+                  <HugeiconsIcon icon={Video01Icon} className="size-4 text-foreground" strokeWidth={1.5} />
+                </div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        }
+      />
 
-      {/* Status badge top-right */}
-      <div className="absolute right-2 top-2">
+      {/* Status badge */}
+      <div className="absolute right-1.5 top-1.5">
         {item.status === "Shared" ? (
           <div className="flex size-5 items-center justify-center rounded-full bg-emerald-500/20 backdrop-blur-sm">
             <HugeiconsIcon icon={Globe02Icon} className="size-3 text-emerald-500" strokeWidth={2} />
@@ -446,6 +451,10 @@ export default function GalleryPage() {
   const openLightbox = useCallback((item: GalleryItem) => setLightbox(item), [])
   const closeLightbox = useCallback(() => setLightbox(null), [])
 
+  if (workspaceId && (!currentWorkspace?.storage || currentWorkspace.storage.status === "Error")) {
+    return <ProviderErrorGuard workspaceId={workspaceId} storage={currentWorkspace?.storage ?? null} />
+  }
+
   return (
     <>
       <div className="space-y-5">
@@ -522,7 +531,7 @@ export default function GalleryPage() {
           <div className="overflow-hidden rounded-xl border">
             {processed.map((item, i) => (
               <div key={item.id} className={cn(i > 0 && "border-t")}>
-                <GalleryCard item={item} viewMode="list" onClick={() => openLightbox(item)} />
+                <GalleryCard item={item} viewMode="list" workspaceId={workspaceId} onClick={() => openLightbox(item)} />
               </div>
             ))}
           </div>
@@ -530,10 +539,10 @@ export default function GalleryPage() {
 
         {/* ── Grid view ── */}
         {processed.length > 0 && viewMode === "grid" && (
-          <div className="columns-2 gap-3 sm:columns-3 md:columns-4 lg:columns-5">
+          <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5">
             {processed.map((item) => (
-              <div key={item.id} className="mb-3 break-inside-avoid">
-                <GalleryCard item={item} viewMode="grid" onClick={() => openLightbox(item)} />
+              <div key={item.id} className="break-inside-avoid">
+                <GalleryCard item={item} viewMode="grid" workspaceId={workspaceId} onClick={() => openLightbox(item)} />
               </div>
             ))}
           </div>
@@ -562,6 +571,7 @@ export default function GalleryPage() {
         <Lightbox
           item={lightbox}
           allItems={processed}
+          workspaceId={workspaceId}
           onClose={closeLightbox}
           onNavigate={setLightbox}
           onShare={() => { setShareItem(lightbox); closeLightbox() }}

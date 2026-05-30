@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  provider      = "prisma-client-js"
+  output        = "../src/generated/prisma"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -393,12 +394,13 @@ model File {
   folderId String? @db.Uuid
   folder   Folder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
-  name        String   @db.VarChar(255)
-  extension   String?  @db.VarChar(20)
-  storagePath String   @db.VarChar(1000)
-  size        Int      @default(0)
-  mimeType    String?  @db.VarChar(100)
-  kind        FileKind @default(other)
+  name          String   @db.VarChar(255)
+  extension     String?  @db.VarChar(20)
+  storagePath   String   @db.VarChar(1000)
+  thumbnailPath String?  @db.VarChar(1000)
+  size          Int      @default(0)
+  mimeType      String?  @db.VarChar(100)
+  kind          FileKind @default(other)
 
   status FileStatus @default(uploading)
   source String     @default("byoc") @db.VarChar(20)

@@ -50,6 +50,7 @@ import { KebabTrigger } from "@/components/shared/kebab-trigger"
 import { UploadDialog } from "@/components/custom/dashboard/common/upload-dialog"
 import { CreateShareLinkDialog } from "@/components/custom/dashboard/common/create-share-link-dialog"
 import { useWorkspace } from "@/lib/workspace-context"
+import { ProviderErrorGuard } from "@/components/custom/dashboard/common/provider-error-guard"
 import { useFiles, useDeleteFile, useDownloadFile, type ApiFile } from "@/lib/files"
 import { formatFileSize, formatDate, getStorageFolderLabel } from "@/lib/file-utils"
 
@@ -559,6 +560,10 @@ export default function VideosPage() {
 
   const openLightbox  = useCallback((v: VideoItem) => setLightbox(v), [])
   const closeLightbox = useCallback(() => setLightbox(null), [])
+
+  if (workspaceId && (!currentWorkspace?.storage || currentWorkspace.storage.status === "Error")) {
+    return <ProviderErrorGuard workspaceId={workspaceId} storage={currentWorkspace?.storage ?? null} />
+  }
 
   return (
     <>

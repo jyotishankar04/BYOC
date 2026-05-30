@@ -11,6 +11,24 @@ export interface ProviderGuide {
   steps: GuideStep[];
 }
 
+const isProd = process.env.NODE_ENV === "production";
+
+const corsOrigins = isProd
+  ? `["https://bringbucket.qwikish.com"]`
+  : `[
+      "https://bringbucket.qwikish.com",
+      "http://localhost:3000"
+    ]`;
+
+const corsSnippet = `[
+  {
+    "AllowedHeaders": ["*"],
+    "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
+    "AllowedOrigins": ${corsOrigins},
+    "ExposeHeaders": ["ETag", "Content-Length", "Content-Type"]
+  }
+]`;
+
 const AWS_S3_GUIDE: ProviderGuide = {
   providerName: "AWS S3",
   intro:
@@ -92,14 +110,7 @@ const AWS_S3_GUIDE: ProviderGuide = {
       title: "Configure CORS (required for uploads)",
       description:
         "Go to S3 → your bucket → Permissions → Cross-origin resource sharing (CORS). Paste the configuration below. This allows the browser to upload files directly to S3.",
-      code: `[
-  {
-    "AllowedHeaders": ["*"],
-    "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
-    "AllowedOrigins": ["*"],
-    "ExposeHeaders": ["ETag"]
-  }
-]`,
+      code: corsSnippet,
       link: {
         url: "https://docs.aws.amazon.com/AmazonS3/latest/userguide/cors.html",
         label: "CORS docs",
@@ -154,6 +165,16 @@ const R2_GUIDE: ProviderGuide = {
         label: "R2 AWS SDK v3 docs",
       },
     },
+    {
+      title: "Configure CORS (required for uploads)",
+      description:
+        "Go to Cloudflare Dashboard → R2 → your bucket → Settings → CORS Policy. Paste the configuration below.",
+      code: corsSnippet,
+      link: {
+        url: "https://developers.cloudflare.com/r2/buckets/cors/",
+        label: "R2 CORS docs",
+      },
+    },
   ],
 };
 
@@ -196,6 +217,16 @@ const MINIO_GUIDE: ProviderGuide = {
       title: "Get your endpoint URL",
       description:
         "If running locally, the endpoint is http://localhost:9000. If hosted on a server, use your server's address: http://your-server-ip:9000. Enter this in the Endpoint URL field.",
+    },
+    {
+      title: "Configure CORS (required for uploads)",
+      description:
+        "In MinIO Console → your bucket → Anonymous → Add Access Rule, or use the mc CLI to set a CORS policy on your bucket.",
+      code: corsSnippet,
+      link: {
+        url: "https://min.io/docs/minio/linux/administration/object-management/object-access-management.html",
+        label: "MinIO access docs",
+      },
     },
   ],
 };
@@ -241,8 +272,9 @@ const SUPABASE_GUIDE: ProviderGuide = {
       title: "CORS configuration",
       description:
         "If uploading directly from the browser, make sure CORS is configured for your bucket. In the Supabase Dashboard → Storage → your bucket, check that CORS origins are configured correctly.",
-      code: `# Using Supabase CLI
-supabase storage cors add --bucket=your-bucket --origin="*"`,
+      code: isProd
+        ? `supabase storage cors add --bucket=your-bucket --origin="https://bringbucket.qwikish.com"`
+        : `supabase storage cors add --bucket=your-bucket --origin="https://bringbucket.qwikish.com"\nsupabase storage cors add --bucket=your-bucket --origin="http://localhost:3000"`,
     },
   ],
 };
@@ -271,14 +303,7 @@ const OTHER_GUIDE: ProviderGuide = {
       title: "Configure CORS (if needed)",
       description:
         "If your provider supports CORS configuration, set it up to allow PUT, GET, DELETE, and HEAD methods from your application's origin. Check your provider's documentation for CORS setup instructions.",
-      code: `[
-  {
-    "AllowedHeaders": ["*"],
-    "AllowedMethods": ["GET", "PUT", "POST", "DELETE", "HEAD"],
-    "AllowedOrigins": ["*"],
-    "ExposeHeaders": ["ETag"]
-  }
-]`,
+      code: corsSnippet,
     },
   ],
 };

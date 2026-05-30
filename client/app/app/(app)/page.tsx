@@ -21,6 +21,7 @@ import { ProviderHealthCard } from "@/components/custom/dashboard/home/provider-
 import { useWorkspace } from "@/lib/workspace-context"
 import { useSession } from "@/lib/auth-client"
 import { useDashboard } from "@/lib/analytics"
+import { ProviderErrorGuard } from "@/components/custom/dashboard/common/provider-error-guard"
 import {
   useMyInvites,
   useAcceptInviteFromList,
@@ -122,6 +123,10 @@ export default function DashboardPage() {
   const workspaceId = currentWorkspace?.id
   const { data: dashboard, isLoading } = useDashboard(workspaceId)
 
+  if (workspaceId && (!currentWorkspace?.storage || currentWorkspace.storage.status === "Error")) {
+    return <ProviderErrorGuard workspaceId={workspaceId} storage={currentWorkspace?.storage ?? null} />
+  }
+
   return (
     <div className="space-y-6">
       <PendingInvitationsCard />
@@ -179,7 +184,7 @@ export default function DashboardPage() {
                 storageByKind={dashboard.storageByKind}
                 totalSize={dashboard.totalSize}
               />
-              <RecentFilesTable files={dashboard.recentFiles} />
+              <RecentFilesTable files={dashboard.recentFiles} workspaceId={workspaceId} />
             </div>
 
             {/* Right column */}

@@ -36,6 +36,7 @@ interface LocalFile {
   size: string;
   kind: FileKind;
   rawFile: File;
+  previewUrl?: string;
 }
 
 const KIND_META: Record<
@@ -79,15 +80,19 @@ function FileRow({
       <div className="flex items-center gap-2.5 px-3 py-2.5">
         <div
           className={cn(
-            "flex size-8 shrink-0 items-center justify-center rounded-md",
+            "flex size-8 shrink-0 items-center justify-center rounded-md overflow-hidden",
             meta.bg,
           )}
         >
-          <HugeiconsIcon
-            icon={meta.icon}
-            className={cn("size-4", meta.color)}
-            strokeWidth={1.5}
-          />
+          {file.previewUrl ? (
+            <img src={file.previewUrl} alt={file.name} className="size-8 object-cover" />
+          ) : (
+            <HugeiconsIcon
+              icon={meta.icon}
+              className={cn("size-4", meta.color)}
+              strokeWidth={1.5}
+            />
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-xs font-medium">{file.name}</p>
@@ -145,6 +150,7 @@ export function UploadDialog({
       size: formatBytes(f.size),
       kind: detectKind(f),
       rawFile: f,
+      previewUrl: f.type.startsWith("image/") ? URL.createObjectURL(f) : undefined,
     }));
     setFiles((prev) => [...prev, ...items]);
   }, []);
@@ -184,10 +190,13 @@ export function UploadDialog({
     [addFiles],
   );
 
-  const removeFile = useCallback(
-    (id: string) => setFiles((prev) => prev.filter((f) => f.id !== id)),
-    [],
-  );
+  const removeFile = useCallback((id: string) => {
+    setFiles((prev) => {
+      const target = prev.find((f) => f.id === id);
+      if (target?.previewUrl) URL.revokeObjectURL(target.previewUrl);
+      return prev.filter((f) => f.id !== id);
+    });
+  }, []);
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -204,6 +213,7 @@ export function UploadDialog({
       })),
     );
 
+    files.forEach((f) => { if (f.previewUrl) URL.revokeObjectURL(f.previewUrl); });
     setFiles([]);
     setIsDragging(false);
     if (inputRef.current) {
@@ -216,6 +226,7 @@ export function UploadDialog({
   const handleOpenChange = useCallback(
     (next: boolean) => {
       if (!next) {
+        files.forEach((f) => { if (f.previewUrl) URL.revokeObjectURL(f.previewUrl); });
         setTimeout(() => {
           setFiles([]);
           setIsDragging(false);
@@ -223,7 +234,7 @@ export function UploadDialog({
       }
       onOpenChange(next);
     },
-    [onOpenChange],
+    [onOpenChange, files],
   );
 
   const body = (

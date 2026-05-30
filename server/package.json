@@ -16,7 +16,13 @@
   "license": "ISC",
   "packageManager": "pnpm@10.33.0",
   "pnpm": {
-    "onlyBuiltDependencies": ["@prisma/engines", "prisma", "msgpackr-extract"]
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "prisma",
+      "msgpackr-extract",
+      "sharp",
+      "esbuild"
+    ]
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1045.0",
@@ -46,6 +52,7 @@
     "prisma": "7.8.0",
     "redis": "^5.12.1",
     "resend": "^6.12.3",
+    "sharp": "^0.34.5",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -59,6 +66,7 @@
     "@types/nodemailer": "^8.0.0",
     "@types/pg": "^8.20.0",
     "@types/redis": "^4.0.11",
+    "@types/sharp": "^0.32.0",
     "@types/supertest": "^7.2.0",
     "@typescript-eslint/eslint-plugin": "^8.59.2",
     "@typescript-eslint/parser": "^8.59.2",
