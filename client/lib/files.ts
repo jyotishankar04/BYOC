@@ -232,7 +232,7 @@ export function usePreviewUrl(
       );
       return res.data;
     },
-    enabled: !!workspaceId && !!mimeType?.startsWith("image/") && enabled,
+    enabled: !!workspaceId && !!(mimeType?.startsWith("image/") || mimeType?.startsWith("video/")) && enabled,
     staleTime: 50 * 60 * 1000,
     gcTime: 55 * 60 * 1000,
     retry: false,

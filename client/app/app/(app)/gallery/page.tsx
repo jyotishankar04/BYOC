@@ -5,7 +5,6 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   CloudUploadIcon,
   Image01Icon,
-  Video01Icon,
   Download01Icon,
   Share01Icon,
   Delete01Icon,
@@ -22,7 +21,6 @@ import {
 } from "@hugeicons/core-free-icons"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { ButtonGroup } from "@/components/ui/button-group"
 import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
@@ -46,19 +44,16 @@ import { useWorkspace } from "@/lib/workspace-context"
 import { ProviderErrorGuard } from "@/components/custom/dashboard/common/provider-error-guard"
 import { useFiles, useDeleteFile, useDownloadFile, usePreviewUrl, type ApiFile } from "@/lib/files"
 import { FileThumbnail } from "@/components/shared/file-thumbnail"
-import { formatFileSize, formatDate, getAspectRatio, getMediaType, getStorageFolderLabel } from "@/lib/file-utils"
+import { formatFileSize, formatDate, getAspectRatio, getStorageFolderLabel } from "@/lib/file-utils"
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-type MediaType   = "Image" | "Video"
 type AspectRatio = "square" | "landscape" | "portrait" | "wide"
-type MediaFilter = "All" | "Images" | "Videos"
 type SortBy      = "newest" | "oldest" | "name" | "size"
 
 interface GalleryItem {
   id: string
   name: string
-  type: MediaType
   size: string
   sizeBytes: number
   uploadedAt: string
@@ -70,30 +65,14 @@ interface GalleryItem {
   mimeType: string | null
 }
 
-// ─── Visuals ───────────────────────────────────────────────────────────────────
-
-const TYPE_VISUAL: Record<MediaType, {
-  icon: typeof Image01Icon
-  iconColor: string
-  gradientFrom: string
-  gradientTo: string
-}> = {
-  Image: { icon: Image01Icon, iconColor: "text-violet-500", gradientFrom: "from-violet-500/20", gradientTo: "to-violet-600/5" },
-  Video: { icon: Video01Icon, iconColor: "text-blue-500",   gradientFrom: "from-blue-500/20",   gradientTo: "to-blue-600/5"  },
-}
-
-
-const MEDIA_FILTERS: MediaFilter[] = ["All", "Images", "Videos"]
 const PAGE_SIZE = 24
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function apiFileToGalleryItem(file: ApiFile): GalleryItem {
-  const type = getMediaType(file.kind, file.mimeType)
   return {
     id: file.id,
     name: file.name,
-    type,
     size: formatFileSize(file.size),
     sizeBytes: file.size,
     uploadedAt: formatDate(file.createdAt),
@@ -138,7 +117,6 @@ function Lightbox({
   onDelete: () => void
   onGetLink?: () => void
 }) {
-  const visual  = TYPE_VISUAL[item.type]
   const { data: thumbData } = usePreviewUrl(workspaceId, item.id, item.mimeType, true)
   const idx     = allItems.findIndex((i) => i.id === item.id)
   const hasPrev = idx > 0
@@ -184,7 +162,7 @@ function Lightbox({
         </div>
 
         {/* ── Preview ── */}
-        <div className={cn("relative flex h-64 items-center justify-center overflow-hidden bg-gradient-to-br sm:h-72", visual.gradientFrom, visual.gradientTo)}>
+        <div className="relative flex h-64 items-center justify-center overflow-hidden bg-gradient-to-br from-violet-500/20 to-violet-600/5 sm:h-72">
           {thumbData?.url ? (
             <img
               src={thumbData.url}
@@ -192,20 +170,11 @@ function Lightbox({
               className="h-full w-full object-contain"
             />
           ) : (
-            <>
-              <HugeiconsIcon
-                icon={visual.icon}
-                className={cn("size-20 opacity-50", visual.iconColor)}
-                strokeWidth={1}
-              />
-              {item.type === "Video" && (
-                <div className="absolute flex items-center justify-center">
-                  <div className="flex size-14 items-center justify-center rounded-full bg-background/80 shadow-lg backdrop-blur-sm">
-                    <HugeiconsIcon icon={Video01Icon} className="size-6 text-foreground" strokeWidth={1.5} />
-                  </div>
-                </div>
-              )}
-            </>
+            <HugeiconsIcon
+              icon={Image01Icon}
+              className="size-20 text-violet-500 opacity-50"
+              strokeWidth={1}
+            />
           )}
         </div>
 
@@ -213,7 +182,7 @@ function Lightbox({
         <div className="p-5">
           {/* Badges row */}
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary" className="text-[11px]">{item.type}</Badge>
+            <Badge variant="secondary" className="text-[11px]">Image</Badge>
             <span className="text-[11px] text-muted-foreground">{item.size}</span>
             <Badge
               variant="secondary"
@@ -304,22 +273,21 @@ function GalleryCard({
   workspaceId: string | undefined
   onClick: () => void
 }) {
-  const visual = TYPE_VISUAL[item.type]
-
   if (viewMode === "list") {
     return (
       <button
         onClick={onClick}
         className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/50"
       >
-        <div
-          className={cn(
-            "flex size-10 shrink-0 items-center justify-center rounded-md bg-gradient-to-br",
-            visual.gradientFrom, visual.gradientTo,
-          )}
-        >
-          <HugeiconsIcon icon={visual.icon} className={cn("size-5", visual.iconColor)} strokeWidth={1.5} />
-        </div>
+        <FileThumbnail
+          workspaceId={workspaceId}
+          fileId={item.id}
+          mimeType={item.mimeType}
+          alt={item.name}
+          className="flex size-10 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-violet-500/20 to-violet-600/5"
+          imgClassName="object-cover"
+          fallback={<HugeiconsIcon icon={Image01Icon} className="size-5 text-violet-500" strokeWidth={1.5} />}
+        />
         <div className="min-w-0 flex-1">
           <p className="truncate text-xs font-medium">{item.name}</p>
           <p className="text-[11px] text-muted-foreground">{item.folder}</p>
@@ -354,19 +322,8 @@ function GalleryCard({
         alt={item.name}
         natural
         fallback={
-          <div className={cn("flex h-28 w-full items-center justify-center bg-gradient-to-br", visual.gradientFrom, visual.gradientTo)}>
-            <HugeiconsIcon
-              icon={visual.icon}
-              className={cn("size-10 opacity-50", visual.iconColor)}
-              strokeWidth={1}
-            />
-            {item.type === "Video" && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="flex size-10 items-center justify-center rounded-full bg-background/70 shadow backdrop-blur-sm">
-                  <HugeiconsIcon icon={Video01Icon} className="size-4 text-foreground" strokeWidth={1.5} />
-                </div>
-              </div>
-            )}
+          <div className="flex h-28 w-full items-center justify-center bg-gradient-to-br from-violet-500/20 to-violet-600/5">
+            <HugeiconsIcon icon={Image01Icon} className="size-10 text-violet-500 opacity-50" strokeWidth={1} />
           </div>
         }
       />
@@ -404,7 +361,6 @@ export default function GalleryPage() {
   const deleteFileMutation = useDeleteFile(workspaceId)
   const downloadFileMutation = useDownloadFile(workspaceId)
 
-  const [filter, setFilter]       = useState<MediaFilter>("All")
   const [sort, setSort]           = useState<SortBy>("newest")
   const [search, setSearch]       = useState("")
   const [page, setPage]           = useState(1)
@@ -413,8 +369,6 @@ export default function GalleryPage() {
   const [shareItem,  setShareItem]  = useState<GalleryItem | null>(null)
   const [uploadOpen, setUploadOpen] = useState(false)
 
-  const requestedKind =
-    filter === "All" ? "media" : filter === "Images" ? "image" : "video"
   const sortQuery =
     sort === "oldest"
       ? { sortBy: "createdAt" as const, sortDir: "asc" as const }
@@ -425,7 +379,7 @@ export default function GalleryPage() {
           : { sortBy: "createdAt" as const, sortDir: "desc" as const }
 
   const { data: mediaData, isLoading } = useFiles(currentWorkspace?.id, {
-    kind: requestedKind,
+    kind: "image",
     includeNested: true,
     search: search || undefined,
     page,
@@ -435,7 +389,7 @@ export default function GalleryPage() {
 
   useEffect(() => {
     setPage(1)
-  }, [currentWorkspace?.id, filter, sort, search])
+  }, [currentWorkspace?.id, sort, search])
 
   const processed = useMemo(
     () => sortItems((mediaData?.files ?? []).map(apiFileToGalleryItem), sort),
@@ -464,7 +418,7 @@ export default function GalleryPage() {
           <div>
             <h1 className="text-xl font-semibold tracking-tight">Gallery</h1>
             <p className="mt-1 text-xs text-muted-foreground">
-              {isLoading ? "Loading..." : `${total} ${filter === "All" ? "media files" : filter.toLowerCase()} · Page ${page} of ${totalPages}`}
+              {isLoading ? "Loading..." : `${total} images · Page ${page} of ${totalPages}`}
             </p>
           </div>
           <Button size="sm" onClick={() => setUploadOpen(true)}>
@@ -480,20 +434,6 @@ export default function GalleryPage() {
             onChange={setSearch}
             placeholder="Search media..."
           />
-
-          {/* Type filter */}
-          <ButtonGroup>
-            {MEDIA_FILTERS.map((f) => (
-              <Button
-                key={f}
-                size="sm"
-                variant={filter === f ? "default" : "outline"}
-                onClick={() => setFilter(f)}
-              >
-                {f}
-              </Button>
-            ))}
-          </ButtonGroup>
 
           {/* Sort */}
           <Select value={sort} onValueChange={(v) => setSort(v as SortBy)}>

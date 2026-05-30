@@ -52,6 +52,7 @@ import { CreateShareLinkDialog } from "@/components/custom/dashboard/common/crea
 import { useWorkspace } from "@/lib/workspace-context"
 import { ProviderErrorGuard } from "@/components/custom/dashboard/common/provider-error-guard"
 import { useFiles, useDeleteFile, useDownloadFile, type ApiFile } from "@/lib/files"
+import { VideoThumbnail } from "@/components/shared/video-thumbnail"
 import { formatFileSize, formatDate, getStorageFolderLabel } from "@/lib/file-utils"
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -64,6 +65,7 @@ interface VideoItem {
   id: string
   name: string
   extension: string
+  mimeType: string | null
   resolution: Resolution
   duration: string
   durationSecs: number
@@ -212,6 +214,7 @@ function VideoMenuItems({
 
 function VideoCard({
   video,
+  workspaceId,
   onClick,
   onDownload,
   onDelete,
@@ -221,6 +224,7 @@ function VideoCard({
   onMove,
 }: {
   video: VideoItem
+  workspaceId: string | undefined
   onClick: () => void
   onDownload: () => void
   onDelete: () => void
@@ -238,10 +242,19 @@ function VideoCard({
           onClick={onClick}
           className="group relative aspect-video w-full cursor-pointer overflow-hidden rounded-xl border bg-card transition-all duration-150 hover:border-border/80 hover:shadow-md"
         >
-          {/* Gradient background */}
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-500/15 to-blue-600/5">
-            <HugeiconsIcon icon={Video01Icon} className="size-12 text-blue-500/25" strokeWidth={1} />
-          </div>
+          {/* Frame thumbnail or gradient fallback */}
+          <VideoThumbnail
+            workspaceId={workspaceId}
+            fileId={video.id}
+            mimeType={video.mimeType}
+            alt={video.name}
+            className="absolute inset-0"
+            fallback={
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500/15 to-blue-600/5">
+                <HugeiconsIcon icon={Video01Icon} className="size-12 text-blue-500/25" strokeWidth={1} />
+              </div>
+            }
+          />
 
           {/* Play button — hidden until hover */}
           <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100">
@@ -251,9 +264,11 @@ function VideoCard({
           </div>
 
           {/* Resolution badge — top left */}
-          <span className={cn("absolute left-2 top-2 rounded px-1.5 py-0.5 text-[9px] font-bold", resStyle.badge)}>
-            {video.resolution}
-          </span>
+          {video.resolution !== "Unknown" && (
+            <span className={cn("absolute left-2 top-2 rounded px-1.5 py-0.5 text-[9px] font-bold", resStyle.badge)}>
+              {video.resolution}
+            </span>
+          )}
 
           {/* Status — top right */}
           <div className="absolute right-2 top-2">
@@ -269,9 +284,11 @@ function VideoCard({
           </div>
 
           {/* Duration — bottom right */}
-          <span className="absolute bottom-9 right-2 flex items-center gap-1 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white">
-            {video.duration}
-          </span>
+          {video.duration !== "Unknown" && (
+            <span className="absolute bottom-9 right-2 flex items-center gap-1 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-medium text-white">
+              {video.duration}
+            </span>
+          )}
 
           {/* 3-dot — bottom right of gradient, above footer */}
           <div className="absolute bottom-9 left-2 opacity-0 transition-opacity group-hover:opacity-100">
@@ -307,6 +324,7 @@ function VideoCard({
 
 function VideoListRow({
   video,
+  workspaceId,
   showBorder,
   onClick,
   onDownload,
@@ -317,6 +335,7 @@ function VideoListRow({
   onMove,
 }: {
   video: VideoItem
+  workspaceId: string | undefined
   showBorder: boolean
   onClick: () => void
   onDownload: () => void
@@ -338,9 +357,20 @@ function VideoListRow({
             showBorder && "border-t",
           )}
         >
-          {/* Icon chip */}
-          <div className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-blue-500/15 to-blue-600/5">
-            <HugeiconsIcon icon={Video01Icon} className="size-5 text-blue-500/60" strokeWidth={1.5} />
+          {/* Thumbnail chip */}
+          <div className="relative size-12 shrink-0 overflow-hidden rounded-lg">
+            <VideoThumbnail
+              workspaceId={workspaceId}
+              fileId={video.id}
+              mimeType={video.mimeType}
+              alt={video.name}
+              className="absolute inset-0"
+              fallback={
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-500/15 to-blue-600/5">
+                  <HugeiconsIcon icon={Video01Icon} className="size-5 text-blue-500/60" strokeWidth={1.5} />
+                </div>
+              }
+            />
             {/* Mini play */}
             <div className="absolute inset-0 flex items-center justify-center opacity-0 transition-opacity group-hover:opacity-100">
               <div className="flex size-7 items-center justify-center rounded-full bg-background/80">
@@ -358,11 +388,11 @@ function VideoListRow({
           {/* Metadata */}
           <div className="hidden items-center gap-4 sm:flex">
             <Badge variant="secondary" className={cn("text-[10px]", resStyle.badge)}>
-              {video.resolution}
+              {video.resolution !== "Unknown" ? video.resolution : "—"}
             </Badge>
             <span className="flex w-14 items-center justify-end gap-1 text-[11px] text-muted-foreground">
               <HugeiconsIcon icon={Clock01Icon} className="size-3 shrink-0" strokeWidth={1.5} />
-              {video.duration}
+              {video.duration !== "Unknown" ? video.duration : "—"}
             </span>
             <span className="w-14 text-right text-[11px] text-muted-foreground">{video.size}</span>
             <span className="hidden w-28 text-right text-[11px] text-muted-foreground lg:block">{video.uploadedAt}</span>
@@ -526,6 +556,7 @@ export default function VideosPage() {
       id: f.id,
       name: f.name,
       extension: f.extension?.replace(".", "") || "mp4",
+      mimeType: f.mimeType,
       resolution: "Unknown" as Resolution,
       duration: "Unknown",
       durationSecs: 0,
@@ -680,6 +711,7 @@ export default function VideosPage() {
               <VideoCard
                 key={video.id}
                 video={video}
+                workspaceId={workspaceId}
                 onClick={() => openLightbox(video)}
                 onDownload={() => downloadFileMutation.mutate(video.id)}
                 onDelete={() => { if (confirm(`Delete "${video.name}"?`)) deleteFileMutation.mutate(video.id) }}
@@ -710,6 +742,7 @@ export default function VideosPage() {
               <VideoListRow
                 key={video.id}
                 video={video}
+                workspaceId={workspaceId}
                 showBorder={i > 0}
                 onClick={() => openLightbox(video)}
                 onDownload={() => downloadFileMutation.mutate(video.id)}
