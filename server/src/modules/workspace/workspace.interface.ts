@@ -94,4 +94,8 @@ export interface IWorkspaceService {
     userId: string,
     data: UpdateSecurityDto,
   ): Promise<Record<string, unknown>>;
+  presignLogoUpload(workspaceId: string, contentType: string): Promise<{ uploadUrl: string; key: string }>;
+  confirmLogoUpload(workspaceId: string, key: string): Promise<string>;
+  presignBannerUpload(workspaceId: string, contentType: string): Promise<{ uploadUrl: string; key: string }>;
+  confirmBannerUpload(workspaceId: string, key: string): Promise<string>;
 }

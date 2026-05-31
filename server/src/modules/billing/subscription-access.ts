@@ -81,11 +81,11 @@ export const PLAN_LIMITS: Record<WorkspacePlan, PlanLimits> = {
 };
 
 export function getPlanLimits(plan: WorkspacePlan): PlanLimits {
-  return PLAN_LIMITS[appSettings.getBetaModeSync() ? WorkspacePlan.Pro : plan];
+  return PLAN_LIMITS[appSettings.getBetaModeSync() ? WorkspacePlan.Team : plan];
 }
 
 export function getFeatureAccess(plan: WorkspacePlan): PlanFeatureAccess {
-  const limits = PLAN_LIMITS[appSettings.getBetaModeSync() ? WorkspacePlan.Pro : plan];
+  const limits = PLAN_LIMITS[appSettings.getBetaModeSync() ? WorkspacePlan.Team : plan];
   return {
     passwordProtectedLinks: limits.passwordProtectedLinks,
     customDomains: limits.customDomains,
@@ -135,7 +135,7 @@ export function assertFeatureAccess(
   message: string,
   code: string,
 ): void {
-  if (!PLAN_LIMITS[plan][feature]) {
+  if (!getPlanLimits(plan)[feature]) {
     throw new AppError(message, 402, code);
   }
 }
@@ -152,7 +152,7 @@ export function assertProviderAccess(
       "PROVIDER_DISABLED",
     );
   }
-  if (!PLAN_LIMITS[plan].allowedProviders.includes(providerType)) {
+  if (!getPlanLimits(plan).allowedProviders.includes(providerType)) {
     throw new AppError(
       `${providerType} storage is not available on the ${plan} plan`,
       402,

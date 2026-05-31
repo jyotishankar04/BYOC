@@ -5,6 +5,14 @@ import { AppError } from "@/core/errors";
 import { SubscriptionSnapshotService } from "@/modules/billing/subscription-snapshot.service";
 import { assertFeatureAccess, assertQuotaAvailable, buildQuotaSummary } from "@/modules/billing/subscription-access";
 import { cache } from "@/shared/cache/cache.service";
+import {
+  getPlatformStorage,
+  buildStoredValue,
+  resolveStorageUrl,
+  mimeToExt,
+  ALLOWED_IMAGE_MIME,
+  PRESIGN_TTL_SECONDS,
+} from "@/shared/storage/platform-storage";
 import type {
   CreateWorkspaceDto,
   UpdateWorkspaceDto,
@@ -20,6 +28,14 @@ import { WorkspaceRepository } from "./workspace.repository";
 import { EmailQueueService } from "@/core/mail/mail.queue";
 import { broadcast } from "@/modules/events/events.service";
 
+async function enrichWorkspace(raw: Record<string, unknown>): Promise<Record<string, unknown>> {
+  const [logoUrl, bannerUrl] = await Promise.all([
+    resolveStorageUrl(raw.logo as string | null),
+    resolveStorageUrl(raw.banner as string | null),
+  ]);
+  return { ...raw, logoUrl, bannerUrl };
+}
+
 export class WorkspaceService implements IWorkspaceService {
   constructor(
     private prisma: PrismaClient,
@@ -29,9 +45,10 @@ export class WorkspaceService implements IWorkspaceService {
   async listWorkspaces(
     userId: string,
   ): Promise<Array<Record<string, unknown>>> {
-    return cache.wrap(`workspaces:user:${userId}`, 120, () =>
+    const workspaces = await cache.wrap(`workspaces:user:${userId}`, 120, () =>
       this.workspaceRepository.findWorkspacesByUserId(userId),
     );
+    return Promise.all(workspaces.map(enrichWorkspace));
   }
 
   async createWorkspace(
@@ -76,7 +93,7 @@ export class WorkspaceService implements IWorkspaceService {
       this.workspaceRepository.findWorkspaceById(workspaceId),
     );
     if (!workspace) throw new AppError("Workspace not found", 404, "NOT_FOUND");
-    return workspace;
+    return enrichWorkspace(workspace);
   }
 
   async updateWorkspace(
@@ -266,6 +283,54 @@ export class WorkspaceService implements IWorkspaceService {
     );
 
     return security;
+  }
+
+  async presignLogoUpload(
+    workspaceId: string,
+    contentType: string,
+  ): Promise<{ uploadUrl: string; key: string }> {
+    if (!ALLOWED_IMAGE_MIME.has(contentType)) {
+      throw new AppError("Unsupported image type", 415, "UNSUPPORTED_MEDIA_TYPE");
+    }
+    const key = `workspaces/${workspaceId}/logo${mimeToExt(contentType)}`;
+    const storage = getPlatformStorage();
+    const uploadUrl = await storage.generatePutPresignedUrl(key, contentType, PRESIGN_TTL_SECONDS);
+    return { uploadUrl, key };
+  }
+
+  async confirmLogoUpload(workspaceId: string, key: string): Promise<string> {
+    if (!key.startsWith(`workspaces/${workspaceId}/logo`)) {
+      throw new AppError("Invalid key", 400, "INVALID_KEY");
+    }
+    const storedValue = buildStoredValue(key);
+    await this.workspaceRepository.updateWorkspace(workspaceId, { logo: storedValue });
+    await cache.del(`workspace:id:${workspaceId}`);
+    const logoUrl = await resolveStorageUrl(storedValue);
+    return logoUrl ?? storedValue;
+  }
+
+  async presignBannerUpload(
+    workspaceId: string,
+    contentType: string,
+  ): Promise<{ uploadUrl: string; key: string }> {
+    if (!ALLOWED_IMAGE_MIME.has(contentType)) {
+      throw new AppError("Unsupported image type", 415, "UNSUPPORTED_MEDIA_TYPE");
+    }
+    const key = `workspaces/${workspaceId}/banner${mimeToExt(contentType)}`;
+    const storage = getPlatformStorage();
+    const uploadUrl = await storage.generatePutPresignedUrl(key, contentType, PRESIGN_TTL_SECONDS);
+    return { uploadUrl, key };
+  }
+
+  async confirmBannerUpload(workspaceId: string, key: string): Promise<string> {
+    if (!key.startsWith(`workspaces/${workspaceId}/banner`)) {
+      throw new AppError("Invalid key", 400, "INVALID_KEY");
+    }
+    const storedValue = buildStoredValue(key);
+    await this.workspaceRepository.updateWorkspace(workspaceId, { banner: storedValue });
+    await cache.del(`workspace:id:${workspaceId}`);
+    const bannerUrl = await resolveStorageUrl(storedValue);
+    return bannerUrl ?? storedValue;
   }
 }
 

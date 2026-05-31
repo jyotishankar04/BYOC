@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useMemo } from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   LegalDocument01Icon,
@@ -56,9 +56,11 @@ import { SearchInput } from "@/components/shared/search-input"
 import { KebabTrigger } from "@/components/shared/kebab-trigger"
 import { CreateShareLinkDialog } from "@/components/custom/dashboard/common/create-share-link-dialog"
 import { useWorkspace } from "@/lib/workspace-context"
+import { ProviderErrorGuard } from "@/components/custom/dashboard/common/provider-error-guard"
+import { FileThumbnail } from "@/components/shared/file-thumbnail"
+import { usePreviewUrls } from "@/lib/files"
 import {
   useListShareLinks,
-  useGetShareLink,
   useUpdateShareLink,
   useDeleteShareLink,
   type ShareLinkResponse,
@@ -169,7 +171,6 @@ interface LinkMenuItemProps {
 }
 
 function LinkMenuItems({ as: As, Sep, link, onCopy, onViewDetails, onDisable, onDelete }: LinkMenuItemProps) {
-  const accessLabel = formatAccessType(link.accessType)
   return (
     <>
       <As onClick={onCopy} className="gap-2">
@@ -206,6 +207,7 @@ function LinkMenuItems({ as: As, Sep, link, onCopy, onViewDetails, onDisable, on
 
 interface DisplayLink {
   id: string
+  fileId: string | null
   targetName: string
   targetKind: "file" | "folder"
   fileType: FileType
@@ -224,6 +226,7 @@ function toDisplayLink(raw: ShareLinkResponse): DisplayLink {
   const targetKind = raw.folder ? "folder" : "file"
   return {
     id: raw.id,
+    fileId: raw.file?.id ?? null,
     targetName: raw.folder?.name ?? raw.file?.name ?? "Unknown item",
     targetKind,
     fileType: targetKind === "folder" ? "Folder" : detectFileType(raw.file?.name ?? "", raw.file?.mimeType ?? null),
@@ -243,18 +246,22 @@ function toDisplayLink(raw: ShareLinkResponse): DisplayLink {
 
 function SharedLinkRow({
   link,
+  workspaceId,
   isSelected,
   copiedId,
   showBorder,
+  previewUrl,
   onClick,
   onCopy,
   onDisable,
   onDelete,
 }: {
   link: DisplayLink
+  workspaceId: string | undefined
   isSelected: boolean
   copiedId: string | null
   showBorder: boolean
+  previewUrl?: string
   onClick: (link: DisplayLink) => void
   onCopy: (id: string, url: string) => void
   onDisable: (id: string) => void
@@ -287,9 +294,17 @@ function SharedLinkRow({
             link.status !== "Active" && "opacity-70",
           )}
         >
-          <div className={cn("flex size-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br", ftv.gradFrom, ftv.gradTo)}>
-            <HugeiconsIcon icon={ftv.icon} className={cn("size-4", ftv.iconColor)} strokeWidth={1.5} />
-          </div>
+          <FileThumbnail
+            workspaceId={workspaceId}
+            fileId={link.fileId ?? ""}
+            mimeType={link.targetKind === "file" ? link.fileMimeType : null}
+            alt={link.targetName}
+            previewUrl={previewUrl}
+            skipFetch={link.targetKind === "file" && !!link.fileMimeType?.startsWith("image/")}
+            className={cn("size-9 shrink-0 rounded-lg bg-gradient-to-br", ftv.gradFrom, ftv.gradTo)}
+            imgClassName="object-cover"
+            fallback={<HugeiconsIcon icon={ftv.icon} className={cn("size-4", ftv.iconColor)} strokeWidth={1.5} />}
+          />
 
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-medium">{link.targetName}</p>
@@ -348,6 +363,8 @@ function SharedLinkRow({
 
 function LinkDetailsDrawer({
   link,
+  workspaceId,
+  previewUrl,
   onClose,
   copiedId,
   onCopy,
@@ -355,6 +372,8 @@ function LinkDetailsDrawer({
   onDelete,
 }: {
   link: DisplayLink
+  workspaceId: string | undefined
+  previewUrl?: string
   onClose: () => void
   copiedId: string | null
   onCopy: (id: string, url: string) => void
@@ -383,9 +402,23 @@ function LinkDetailsDrawer({
         </SheetHeader>
 
         <div className="flex-1 space-y-5 overflow-y-auto p-4">
-          <div className={cn("flex h-28 items-center justify-center rounded-xl bg-gradient-to-br", ftv.gradFrom, ftv.gradTo)}>
-            <HugeiconsIcon icon={ftv.icon} className={cn("size-12 opacity-60", ftv.iconColor)} strokeWidth={1} />
-          </div>
+          {link.fileType === "Image" && link.fileId ? (
+            <FileThumbnail
+              workspaceId={workspaceId}
+              fileId={link.fileId}
+              mimeType={link.fileMimeType}
+              alt={link.targetName}
+              previewUrl={previewUrl}
+              skipFetch={!!previewUrl}
+              className={cn("h-28 w-full rounded-xl bg-gradient-to-br", ftv.gradFrom, ftv.gradTo)}
+              imgClassName="object-contain"
+              fallback={<HugeiconsIcon icon={ftv.icon} className={cn("size-12 opacity-60", ftv.iconColor)} strokeWidth={1} />}
+            />
+          ) : (
+            <div className={cn("flex h-28 items-center justify-center rounded-xl bg-gradient-to-br", ftv.gradFrom, ftv.gradTo)}>
+              <HugeiconsIcon icon={ftv.icon} className={cn("size-12 opacity-60", ftv.iconColor)} strokeWidth={1} />
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Share URL</p>
@@ -488,10 +521,9 @@ export default function SharedLinksPage() {
   const [accessFilter, setAccessFilter] = useState<AccessFilter>("All")
   const [sortKey, setSortKey]           = useState<SortKey>("newest")
   const [searchQuery, setSearchQuery]   = useState("")
-  const [selectedId, setSelectedId]     = useState<string | null>(null)
-  const [createOpen, setCreateOpen]     = useState(false)
-  const [createFileId, setCreateFileId] = useState<string | undefined>(undefined)
-  const [copiedId, setCopiedId]         = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [copiedId, setCopiedId]     = useState<string | null>(null)
 
   const updateLink = useUpdateShareLink(workspaceId)
   const deleteLink = useDeleteShareLink(workspaceId)
@@ -509,6 +541,14 @@ export default function SharedLinksPage() {
   const { data, isLoading } = useListShareLinks(workspaceId, query)
 
   const links: DisplayLink[] = (data?.links ?? []).map(toDisplayLink)
+
+  const imageFileIds = useMemo(
+    () => links
+      .filter((l) => l.targetKind === "file" && l.fileMimeType?.startsWith("image/") && l.fileId)
+      .map((l) => l.fileId!),
+    [links],
+  )
+  const { data: batchUrls } = usePreviewUrls(workspaceId, imageFileIds)
 
   const selectedLink = links.find((l) => l.id === selectedId) ?? null
   const isDetailOpen = selectedLink !== null
@@ -542,6 +582,10 @@ export default function SharedLinksPage() {
     setSelectedId((prev) => (prev === id ? null : prev))
   }, [deleteLink])
 
+  if (workspaceId && (!currentWorkspace?.storage || currentWorkspace.storage.status === "Error")) {
+    return <ProviderErrorGuard workspaceId={workspaceId} storage={currentWorkspace?.storage ?? null} />
+  }
+
   return (
     <>
       <div className={cn("flex flex-col gap-5 transition-all duration-300", isDetailOpen && "lg:mr-[var(--detail-sidebar-width)]")}>
@@ -554,7 +598,7 @@ export default function SharedLinksPage() {
               Manage public and private share links created from your files and folders.
             </p>
           </div>
-          <Button size="sm" onClick={() => { setCreateFileId(undefined); setCreateOpen(true) }}>
+          <Button size="sm" onClick={() => setCreateOpen(true)}>
             <HugeiconsIcon icon={LinkSquare01Icon} className="size-3.5" strokeWidth={1.5} />
             Create Share Link
           </Button>
@@ -675,9 +719,11 @@ export default function SharedLinksPage() {
               <SharedLinkRow
                 key={link.id}
                 link={link}
+                workspaceId={workspaceId}
                 isSelected={selectedId === link.id}
                 copiedId={copiedId}
                 showBorder={i > 0}
+                previewUrl={batchUrls?.urls[link.fileId ?? ""]}
                 onClick={(l) => setSelectedId((prev) => (prev === l.id ? null : l.id))}
                 onCopy={handleCopy}
                 onDisable={handleDisable}
@@ -692,6 +738,8 @@ export default function SharedLinksPage() {
       {selectedLink && (
         <LinkDetailsDrawer
           link={selectedLink}
+          workspaceId={workspaceId}
+          previewUrl={batchUrls?.urls[selectedLink.fileId ?? ""]}
           onClose={() => setSelectedId(null)}
           copiedId={copiedId}
           onCopy={handleCopy}
@@ -700,12 +748,7 @@ export default function SharedLinksPage() {
         />
       )}
 
-      {/* ── Create dialog ── */}
-      <CreateShareLinkDialog
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        fileId={createFileId}
-      />
+      <CreateShareLinkDialog open={createOpen} onOpenChange={setCreateOpen} />
     </>
   )
 }

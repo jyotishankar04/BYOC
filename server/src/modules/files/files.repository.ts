@@ -34,6 +34,7 @@ export class FilesRepository {
     const where = {
       workspaceId,
       status: FileStatus.uploaded,
+      NOT: { storagePath: { startsWith: ".thumbnails/" } },
       ...(folderWhere !== undefined && { folderId: folderWhere }),
       ...(kindWhere !== undefined && { kind: kindWhere }),
       ...(search !== undefined && {
@@ -66,6 +67,7 @@ export class FilesRepository {
     const where = {
       workspaceId,
       status: FileStatus.uploaded,
+      NOT: { storagePath: { startsWith: ".thumbnails/" } },
       ...(folderWhere !== undefined && { folderId: folderWhere }),
       ...(kindWhere !== undefined && { kind: kindWhere }),
       ...(search !== undefined && {
@@ -80,6 +82,7 @@ export class FilesRepository {
       where: {
         workspaceId,
         parentId: parentId !== undefined ? parentId : null,
+        NOT: { path: { startsWith: ".thumbnails/" } },
       },
       orderBy: { name: "asc" },
     });
@@ -101,6 +104,13 @@ export class FilesRepository {
         },
         folder: { select: { id: true, name: true, path: true } },
       },
+    });
+  }
+
+  async findStoragePathsByIds(workspaceId: string, fileIds: string[]) {
+    return this.prisma.file.findMany({
+      where: { id: { in: fileIds }, workspaceId, status: { not: FileStatus.deleted } },
+      select: { id: true, storagePath: true },
     });
   }
 

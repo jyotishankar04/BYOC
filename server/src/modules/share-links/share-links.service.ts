@@ -100,7 +100,7 @@ export class ShareLinksService {
     // 4. Hash password if provided
     let passwordHash: string | undefined;
     if (password) {
-      passwordHash = await bcrypt.hash(password, 10);
+      passwordHash = await bcrypt.hash(password, 12);
     }
 
     // 5. Generate slug with collision retry

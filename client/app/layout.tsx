@@ -27,13 +27,11 @@ export const metadata: Metadata = {
     siteName: 'BringBucket',
     title: 'BringBucket — Bring Your Own Cloud',
     description: 'Connect your own S3-compatible cloud storage and manage your files from one place.',
-    images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'BringBucket' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'BringBucket — Bring Your Own Cloud',
     description: 'Connect your own S3-compatible cloud storage and manage your files from one place.',
-    images: ['/og-image.png'],
   },
   robots: { index: true, follow: true },
 };

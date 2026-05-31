@@ -84,6 +84,11 @@ export class ProviderService {
     await cache.del(`provider:${workspaceId}`);
     enqueueSyncJob(workspaceId);
 
+    broadcast(workspaceId, {
+      type: "provider.status",
+      payload: { status: StorageProviderStatus.Active, lastChecked: row.lastChecked!.toISOString() },
+    });
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { encryptedCreds: _, ...safe } = row;
     return safe;
@@ -142,6 +147,11 @@ export class ProviderService {
     });
 
     await cache.del(`provider:${workspaceId}`);
+
+    broadcast(workspaceId, {
+      type: "provider.status",
+      payload: { status: StorageProviderStatus.Active, lastChecked: row.lastChecked!.toISOString() },
+    });
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { encryptedCreds: _, ...safe } = row;

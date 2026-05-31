@@ -70,6 +70,8 @@ export interface Workspace {
   type: WorkspaceType;
   plan: WorkspacePlan;
   color: string;
+  logoUrl: string | null;
+  bannerUrl: string | null;
   owner: string;
   ownerEmail: string;
   createdAt: string;
@@ -166,6 +168,8 @@ function fromApiWorkspace(raw: any): Workspace {
     type: API_TYPE_MAP[raw.type] ?? "Personal",
     plan: (raw.plan as WorkspacePlan) ?? "Free",
     color: raw.color ?? "bg-blue-500",
+    logoUrl: raw.logoUrl ?? null,
+    bannerUrl: raw.bannerUrl ?? null,
     owner: raw.owner?.name ?? "",
     ownerEmail: raw.owner?.email ?? "",
     createdAt: formatDate(raw.createdAt),
@@ -187,7 +191,11 @@ function fromApiWorkspace(raw: any): Workspace {
           bucket: raw.storageProvider.bucket,
           region: raw.storageProvider.region ?? "",
           status:
-            raw.storageProvider.status === "Active" ? "Connected" : "Checking",
+            raw.storageProvider.status === "Active"
+              ? "Connected"
+              : raw.storageProvider.status === "Unchecked"
+                ? "Checking"
+                : "Error",
           lastChecked: raw.storageProvider.lastChecked
             ? formatDate(raw.storageProvider.lastChecked)
             : "Never",

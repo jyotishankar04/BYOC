@@ -27,7 +27,7 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,6 +39,8 @@ import {
 import { UploadDialog } from "@/components/custom/dashboard/common/upload-dialog";
 import { useNotifications } from "@/lib/notifications-context";
 import { useSession, signOut } from "@/lib/auth-client";
+import { useUserProfile } from "@/lib/user-settings";
+import { useAppConfig } from "@/lib/admin";
 import { cn } from "@/lib/utils";
 import type { NotificationType } from "@/lib/notifications";
 
@@ -75,6 +77,9 @@ export function TopNavbar() {
   const [notifOpen, setNotifOpen] = useState(false);
   const { notifications, unreadCount, isLoading, markAllAsRead, markAsRead } = useNotifications();
   const { data: session } = useSession();
+  const { data: profile } = useUserProfile();
+  const { data: appConfig } = useAppConfig();
+  const searchEnabled = appConfig?.features.search ?? false;
   const router = useRouter();
   const [searchValue, setSearchValue] = useState("");
 
@@ -90,6 +95,7 @@ export function TopNavbar() {
     .map((n) => n[0])
     .join("")
     .toUpperCase() || "U";
+  const avatarUrl = profile?.avatarUrl ?? null;
 
   const handleSignOut = async () => {
     await signOut();
@@ -102,28 +108,32 @@ export function TopNavbar() {
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="h-4" />
 
-        <div className="relative hidden flex-1 sm:flex max-w-sm">
-          <HugeiconsIcon
-            icon={Search01Icon}
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none"
-            strokeWidth={1.5}
-          />
-          <Input
-            placeholder="Search files and folders..."
-            className="pl-8 h-8 bg-muted/50 border-transparent focus:border-border focus:bg-background transition-colors"
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSearchNavigate();
-            }}
-          />
-        </div>
+        {searchEnabled && (
+          <div className="relative hidden flex-1 sm:flex max-w-sm">
+            <HugeiconsIcon
+              icon={Search01Icon}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none"
+              strokeWidth={1.5}
+            />
+            <Input
+              placeholder="Search files and folders..."
+              className="pl-8 h-8 bg-muted/50 border-transparent focus:border-border focus:bg-background transition-colors"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSearchNavigate();
+              }}
+            />
+          </div>
+        )}
 
         <div className="ml-auto flex items-center gap-1">
           {/* Mobile search */}
-          <Button size="icon" variant="ghost" className="sm:hidden" onClick={() => router.push("/app/files")}>
-            <HugeiconsIcon icon={Search01Icon} className="size-4" strokeWidth={1.5} />
-          </Button>
+          {searchEnabled && (
+            <Button size="icon" variant="ghost" className="sm:hidden" onClick={() => router.push("/app/files")}>
+              <HugeiconsIcon icon={Search01Icon} className="size-4" strokeWidth={1.5} />
+            </Button>
+          )}
 
           <Button size="sm" onClick={() => setUploadOpen(true)} className="gap-1.5">
             <HugeiconsIcon icon={CloudUploadIcon} className="size-3.5" strokeWidth={1.5} />
@@ -245,6 +255,7 @@ export function TopNavbar() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full size-8">
                 <Avatar size="sm" className="size-7">
+                  {avatarUrl && <AvatarImage src={avatarUrl} alt={user?.name ?? "Avatar"} />}
                   <AvatarFallback className="text-[11px] font-semibold">
                     {userInitials}
                   </AvatarFallback>

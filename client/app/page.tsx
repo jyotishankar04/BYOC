@@ -12,6 +12,7 @@ import FAQSection from '@/components/custom/landing/faq-section'
 import TestimonialsSection from '@/components/custom/landing/testimonials-section'
 import CTASection from '@/components/custom/landing/cta-section'
 import Footer from '@/components/custom/landing/footer-section'
+import AnnouncementBar from '@/components/custom/landing/announcement-bar'
 
 export default function LandingPage() {
   return (
@@ -31,6 +32,7 @@ export default function LandingPage() {
         <CTASection />
       </main>
       <Footer />
+      <AnnouncementBar />
     </>
   )
 }

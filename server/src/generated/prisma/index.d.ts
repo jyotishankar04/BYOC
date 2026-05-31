@@ -9267,6 +9267,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType | null
     plan: $Enums.WorkspacePlan | null
     color: string | null
+    logo: string | null
+    banner: string | null
     ownerId: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -9279,6 +9281,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType | null
     plan: $Enums.WorkspacePlan | null
     color: string | null
+    logo: string | null
+    banner: string | null
     ownerId: string | null
     createdAt: Date | null
     updatedAt: Date | null
@@ -9291,6 +9295,8 @@ export namespace Prisma {
     type: number
     plan: number
     color: number
+    logo: number
+    banner: number
     ownerId: number
     createdAt: number
     updatedAt: number
@@ -9305,6 +9311,8 @@ export namespace Prisma {
     type?: true
     plan?: true
     color?: true
+    logo?: true
+    banner?: true
     ownerId?: true
     createdAt?: true
     updatedAt?: true
@@ -9317,6 +9325,8 @@ export namespace Prisma {
     type?: true
     plan?: true
     color?: true
+    logo?: true
+    banner?: true
     ownerId?: true
     createdAt?: true
     updatedAt?: true
@@ -9329,6 +9339,8 @@ export namespace Prisma {
     type?: true
     plan?: true
     color?: true
+    logo?: true
+    banner?: true
     ownerId?: true
     createdAt?: true
     updatedAt?: true
@@ -9414,6 +9426,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan: $Enums.WorkspacePlan
     color: string
+    logo: string | null
+    banner: string | null
     ownerId: string
     createdAt: Date
     updatedAt: Date
@@ -9443,6 +9457,8 @@ export namespace Prisma {
     type?: boolean
     plan?: boolean
     color?: boolean
+    logo?: boolean
+    banner?: boolean
     ownerId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -9467,6 +9483,8 @@ export namespace Prisma {
     type?: boolean
     plan?: boolean
     color?: boolean
+    logo?: boolean
+    banner?: boolean
     ownerId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -9480,6 +9498,8 @@ export namespace Prisma {
     type?: boolean
     plan?: boolean
     color?: boolean
+    logo?: boolean
+    banner?: boolean
     ownerId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
@@ -9493,12 +9513,14 @@ export namespace Prisma {
     type?: boolean
     plan?: boolean
     color?: boolean
+    logo?: boolean
+    banner?: boolean
     ownerId?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type WorkspaceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "slug" | "type" | "plan" | "color" | "ownerId" | "createdAt" | "updatedAt", ExtArgs["result"]["workspace"]>
+  export type WorkspaceOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "slug" | "type" | "plan" | "color" | "logo" | "banner" | "ownerId" | "createdAt" | "updatedAt", ExtArgs["result"]["workspace"]>
   export type WorkspaceInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     owner?: boolean | UserDefaultArgs<ExtArgs>
     members?: boolean | Workspace$membersArgs<ExtArgs>
@@ -9542,6 +9564,8 @@ export namespace Prisma {
       type: $Enums.WorkspaceType
       plan: $Enums.WorkspacePlan
       color: string
+      logo: string | null
+      banner: string | null
       ownerId: string
       createdAt: Date
       updatedAt: Date
@@ -9985,6 +10009,8 @@ export namespace Prisma {
     readonly type: FieldRef<"Workspace", 'WorkspaceType'>
     readonly plan: FieldRef<"Workspace", 'WorkspacePlan'>
     readonly color: FieldRef<"Workspace", 'String'>
+    readonly logo: FieldRef<"Workspace", 'String'>
+    readonly banner: FieldRef<"Workspace", 'String'>
     readonly ownerId: FieldRef<"Workspace", 'String'>
     readonly createdAt: FieldRef<"Workspace", 'DateTime'>
     readonly updatedAt: FieldRef<"Workspace", 'DateTime'>
@@ -18520,10 +18546,16 @@ export namespace Prisma {
 
   export type FileAvgAggregateOutputType = {
     size: number | null
+    durationSeconds: number | null
+    width: number | null
+    height: number | null
   }
 
   export type FileSumAggregateOutputType = {
     size: number | null
+    durationSeconds: number | null
+    width: number | null
+    height: number | null
   }
 
   export type FileMinAggregateOutputType = {
@@ -18533,9 +18565,13 @@ export namespace Prisma {
     name: string | null
     extension: string | null
     storagePath: string | null
+    thumbnailPath: string | null
     size: number | null
     mimeType: string | null
     kind: $Enums.FileKind | null
+    durationSeconds: number | null
+    width: number | null
+    height: number | null
     status: $Enums.FileStatus | null
     source: string | null
     uploadedById: string | null
@@ -18550,9 +18586,13 @@ export namespace Prisma {
     name: string | null
     extension: string | null
     storagePath: string | null
+    thumbnailPath: string | null
     size: number | null
     mimeType: string | null
     kind: $Enums.FileKind | null
+    durationSeconds: number | null
+    width: number | null
+    height: number | null
     status: $Enums.FileStatus | null
     source: string | null
     uploadedById: string | null
@@ -18567,9 +18607,13 @@ export namespace Prisma {
     name: number
     extension: number
     storagePath: number
+    thumbnailPath: number
     size: number
     mimeType: number
     kind: number
+    durationSeconds: number
+    width: number
+    height: number
     status: number
     source: number
     uploadedById: number
@@ -18581,10 +18625,16 @@ export namespace Prisma {
 
   export type FileAvgAggregateInputType = {
     size?: true
+    durationSeconds?: true
+    width?: true
+    height?: true
   }
 
   export type FileSumAggregateInputType = {
     size?: true
+    durationSeconds?: true
+    width?: true
+    height?: true
   }
 
   export type FileMinAggregateInputType = {
@@ -18594,9 +18644,13 @@ export namespace Prisma {
     name?: true
     extension?: true
     storagePath?: true
+    thumbnailPath?: true
     size?: true
     mimeType?: true
     kind?: true
+    durationSeconds?: true
+    width?: true
+    height?: true
     status?: true
     source?: true
     uploadedById?: true
@@ -18611,9 +18665,13 @@ export namespace Prisma {
     name?: true
     extension?: true
     storagePath?: true
+    thumbnailPath?: true
     size?: true
     mimeType?: true
     kind?: true
+    durationSeconds?: true
+    width?: true
+    height?: true
     status?: true
     source?: true
     uploadedById?: true
@@ -18628,9 +18686,13 @@ export namespace Prisma {
     name?: true
     extension?: true
     storagePath?: true
+    thumbnailPath?: true
     size?: true
     mimeType?: true
     kind?: true
+    durationSeconds?: true
+    width?: true
+    height?: true
     status?: true
     source?: true
     uploadedById?: true
@@ -18732,9 +18794,13 @@ export namespace Prisma {
     name: string
     extension: string | null
     storagePath: string
+    thumbnailPath: string | null
     size: number
     mimeType: string | null
     kind: $Enums.FileKind
+    durationSeconds: number | null
+    width: number | null
+    height: number | null
     status: $Enums.FileStatus
     source: string
     uploadedById: string
@@ -18768,9 +18834,13 @@ export namespace Prisma {
     name?: boolean
     extension?: boolean
     storagePath?: boolean
+    thumbnailPath?: boolean
     size?: boolean
     mimeType?: boolean
     kind?: boolean
+    durationSeconds?: boolean
+    width?: boolean
+    height?: boolean
     status?: boolean
     source?: boolean
     uploadedById?: boolean
@@ -18791,9 +18861,13 @@ export namespace Prisma {
     name?: boolean
     extension?: boolean
     storagePath?: boolean
+    thumbnailPath?: boolean
     size?: boolean
     mimeType?: boolean
     kind?: boolean
+    durationSeconds?: boolean
+    width?: boolean
+    height?: boolean
     status?: boolean
     source?: boolean
     uploadedById?: boolean
@@ -18811,9 +18885,13 @@ export namespace Prisma {
     name?: boolean
     extension?: boolean
     storagePath?: boolean
+    thumbnailPath?: boolean
     size?: boolean
     mimeType?: boolean
     kind?: boolean
+    durationSeconds?: boolean
+    width?: boolean
+    height?: boolean
     status?: boolean
     source?: boolean
     uploadedById?: boolean
@@ -18831,9 +18909,13 @@ export namespace Prisma {
     name?: boolean
     extension?: boolean
     storagePath?: boolean
+    thumbnailPath?: boolean
     size?: boolean
     mimeType?: boolean
     kind?: boolean
+    durationSeconds?: boolean
+    width?: boolean
+    height?: boolean
     status?: boolean
     source?: boolean
     uploadedById?: boolean
@@ -18841,7 +18923,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type FileOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "workspaceId" | "folderId" | "name" | "extension" | "storagePath" | "size" | "mimeType" | "kind" | "status" | "source" | "uploadedById" | "createdAt" | "updatedAt", ExtArgs["result"]["file"]>
+  export type FileOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "workspaceId" | "folderId" | "name" | "extension" | "storagePath" | "thumbnailPath" | "size" | "mimeType" | "kind" | "durationSeconds" | "width" | "height" | "status" | "source" | "uploadedById" | "createdAt" | "updatedAt", ExtArgs["result"]["file"]>
   export type FileInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     workspace?: boolean | WorkspaceDefaultArgs<ExtArgs>
     folder?: boolean | File$folderArgs<ExtArgs>
@@ -18877,9 +18959,13 @@ export namespace Prisma {
       name: string
       extension: string | null
       storagePath: string
+      thumbnailPath: string | null
       size: number
       mimeType: string | null
       kind: $Enums.FileKind
+      durationSeconds: number | null
+      width: number | null
+      height: number | null
       status: $Enums.FileStatus
       source: string
       uploadedById: string
@@ -19319,9 +19405,13 @@ export namespace Prisma {
     readonly name: FieldRef<"File", 'String'>
     readonly extension: FieldRef<"File", 'String'>
     readonly storagePath: FieldRef<"File", 'String'>
+    readonly thumbnailPath: FieldRef<"File", 'String'>
     readonly size: FieldRef<"File", 'Int'>
     readonly mimeType: FieldRef<"File", 'String'>
     readonly kind: FieldRef<"File", 'FileKind'>
+    readonly durationSeconds: FieldRef<"File", 'Float'>
+    readonly width: FieldRef<"File", 'Int'>
+    readonly height: FieldRef<"File", 'Int'>
     readonly status: FieldRef<"File", 'FileStatus'>
     readonly source: FieldRef<"File", 'String'>
     readonly uploadedById: FieldRef<"File", 'String'>
@@ -28073,6 +28163,8 @@ export namespace Prisma {
     type: 'type',
     plan: 'plan',
     color: 'color',
+    logo: 'logo',
+    banner: 'banner',
     ownerId: 'ownerId',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
@@ -28184,9 +28276,13 @@ export namespace Prisma {
     name: 'name',
     extension: 'extension',
     storagePath: 'storagePath',
+    thumbnailPath: 'thumbnailPath',
     size: 'size',
     mimeType: 'mimeType',
     kind: 'kind',
+    durationSeconds: 'durationSeconds',
+    width: 'width',
+    height: 'height',
     status: 'status',
     source: 'source',
     uploadedById: 'uploadedById',
@@ -28530,6 +28626,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'Float'
+   */
+  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+  /**
+   * Reference to a field of type 'Float[]'
+   */
+  export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+    
+
+
+  /**
    * Reference to a field of type 'FileStatus'
    */
   export type EnumFileStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FileStatus'>
@@ -28610,20 +28720,6 @@ export namespace Prisma {
    * Reference to a field of type 'UploadSessionStatus[]'
    */
   export type ListEnumUploadSessionStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'UploadSessionStatus[]'>
-    
-
-
-  /**
-   * Reference to a field of type 'Float'
-   */
-  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
-    
-
-
-  /**
-   * Reference to a field of type 'Float[]'
-   */
-  export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
   /**
    * Deep Input Types
@@ -29094,6 +29190,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFilter<"Workspace"> | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFilter<"Workspace"> | $Enums.WorkspacePlan
     color?: StringFilter<"Workspace"> | string
+    logo?: StringNullableFilter<"Workspace"> | string | null
+    banner?: StringNullableFilter<"Workspace"> | string | null
     ownerId?: StringFilter<"Workspace"> | string
     createdAt?: DateTimeFilter<"Workspace"> | Date | string
     updatedAt?: DateTimeFilter<"Workspace"> | Date | string
@@ -29117,6 +29215,8 @@ export namespace Prisma {
     type?: SortOrder
     plan?: SortOrder
     color?: SortOrder
+    logo?: SortOrderInput | SortOrder
+    banner?: SortOrderInput | SortOrder
     ownerId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -29143,6 +29243,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFilter<"Workspace"> | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFilter<"Workspace"> | $Enums.WorkspacePlan
     color?: StringFilter<"Workspace"> | string
+    logo?: StringNullableFilter<"Workspace"> | string | null
+    banner?: StringNullableFilter<"Workspace"> | string | null
     ownerId?: StringFilter<"Workspace"> | string
     createdAt?: DateTimeFilter<"Workspace"> | Date | string
     updatedAt?: DateTimeFilter<"Workspace"> | Date | string
@@ -29166,6 +29268,8 @@ export namespace Prisma {
     type?: SortOrder
     plan?: SortOrder
     color?: SortOrder
+    logo?: SortOrderInput | SortOrder
+    banner?: SortOrderInput | SortOrder
     ownerId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -29184,6 +29288,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeWithAggregatesFilter<"Workspace"> | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanWithAggregatesFilter<"Workspace"> | $Enums.WorkspacePlan
     color?: StringWithAggregatesFilter<"Workspace"> | string
+    logo?: StringNullableWithAggregatesFilter<"Workspace"> | string | null
+    banner?: StringNullableWithAggregatesFilter<"Workspace"> | string | null
     ownerId?: StringWithAggregatesFilter<"Workspace"> | string
     createdAt?: DateTimeWithAggregatesFilter<"Workspace"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Workspace"> | Date | string
@@ -29701,9 +29807,13 @@ export namespace Prisma {
     name?: StringFilter<"File"> | string
     extension?: StringNullableFilter<"File"> | string | null
     storagePath?: StringFilter<"File"> | string
+    thumbnailPath?: StringNullableFilter<"File"> | string | null
     size?: IntFilter<"File"> | number
     mimeType?: StringNullableFilter<"File"> | string | null
     kind?: EnumFileKindFilter<"File"> | $Enums.FileKind
+    durationSeconds?: FloatNullableFilter<"File"> | number | null
+    width?: IntNullableFilter<"File"> | number | null
+    height?: IntNullableFilter<"File"> | number | null
     status?: EnumFileStatusFilter<"File"> | $Enums.FileStatus
     source?: StringFilter<"File"> | string
     uploadedById?: StringFilter<"File"> | string
@@ -29723,9 +29833,13 @@ export namespace Prisma {
     name?: SortOrder
     extension?: SortOrderInput | SortOrder
     storagePath?: SortOrder
+    thumbnailPath?: SortOrderInput | SortOrder
     size?: SortOrder
     mimeType?: SortOrderInput | SortOrder
     kind?: SortOrder
+    durationSeconds?: SortOrderInput | SortOrder
+    width?: SortOrderInput | SortOrder
+    height?: SortOrderInput | SortOrder
     status?: SortOrder
     source?: SortOrder
     uploadedById?: SortOrder
@@ -29749,9 +29863,13 @@ export namespace Prisma {
     name?: StringFilter<"File"> | string
     extension?: StringNullableFilter<"File"> | string | null
     storagePath?: StringFilter<"File"> | string
+    thumbnailPath?: StringNullableFilter<"File"> | string | null
     size?: IntFilter<"File"> | number
     mimeType?: StringNullableFilter<"File"> | string | null
     kind?: EnumFileKindFilter<"File"> | $Enums.FileKind
+    durationSeconds?: FloatNullableFilter<"File"> | number | null
+    width?: IntNullableFilter<"File"> | number | null
+    height?: IntNullableFilter<"File"> | number | null
     status?: EnumFileStatusFilter<"File"> | $Enums.FileStatus
     source?: StringFilter<"File"> | string
     uploadedById?: StringFilter<"File"> | string
@@ -29771,9 +29889,13 @@ export namespace Prisma {
     name?: SortOrder
     extension?: SortOrderInput | SortOrder
     storagePath?: SortOrder
+    thumbnailPath?: SortOrderInput | SortOrder
     size?: SortOrder
     mimeType?: SortOrderInput | SortOrder
     kind?: SortOrder
+    durationSeconds?: SortOrderInput | SortOrder
+    width?: SortOrderInput | SortOrder
+    height?: SortOrderInput | SortOrder
     status?: SortOrder
     source?: SortOrder
     uploadedById?: SortOrder
@@ -29796,9 +29918,13 @@ export namespace Prisma {
     name?: StringWithAggregatesFilter<"File"> | string
     extension?: StringNullableWithAggregatesFilter<"File"> | string | null
     storagePath?: StringWithAggregatesFilter<"File"> | string
+    thumbnailPath?: StringNullableWithAggregatesFilter<"File"> | string | null
     size?: IntWithAggregatesFilter<"File"> | number
     mimeType?: StringNullableWithAggregatesFilter<"File"> | string | null
     kind?: EnumFileKindWithAggregatesFilter<"File"> | $Enums.FileKind
+    durationSeconds?: FloatNullableWithAggregatesFilter<"File"> | number | null
+    width?: IntNullableWithAggregatesFilter<"File"> | number | null
+    height?: IntNullableWithAggregatesFilter<"File"> | number | null
     status?: EnumFileStatusWithAggregatesFilter<"File"> | $Enums.FileStatus
     source?: StringWithAggregatesFilter<"File"> | string
     uploadedById?: StringWithAggregatesFilter<"File"> | string
@@ -30936,6 +31062,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -30958,6 +31086,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -30980,6 +31110,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -31002,6 +31134,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -31024,6 +31158,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -31036,6 +31172,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -31047,6 +31185,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -31584,9 +31724,13 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
+    durationSeconds?: number | null
+    width?: number | null
+    height?: number | null
     status?: $Enums.FileStatus
     source?: string
     createdAt?: Date | string
@@ -31605,9 +31749,13 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
+    durationSeconds?: number | null
+    width?: number | null
+    height?: number | null
     status?: $Enums.FileStatus
     source?: string
     uploadedById: string
@@ -31622,9 +31770,13 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
+    durationSeconds?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumFileStatusFieldUpdateOperationsInput | $Enums.FileStatus
     source?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -31643,9 +31795,13 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
+    durationSeconds?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumFileStatusFieldUpdateOperationsInput | $Enums.FileStatus
     source?: StringFieldUpdateOperationsInput | string
     uploadedById?: StringFieldUpdateOperationsInput | string
@@ -31662,9 +31818,13 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
+    durationSeconds?: number | null
+    width?: number | null
+    height?: number | null
     status?: $Enums.FileStatus
     source?: string
     uploadedById: string
@@ -31677,9 +31837,13 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
+    durationSeconds?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumFileStatusFieldUpdateOperationsInput | $Enums.FileStatus
     source?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -31693,9 +31857,13 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
+    durationSeconds?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumFileStatusFieldUpdateOperationsInput | $Enums.FileStatus
     source?: StringFieldUpdateOperationsInput | string
     uploadedById?: StringFieldUpdateOperationsInput | string
@@ -32916,6 +33084,8 @@ export namespace Prisma {
     type?: SortOrder
     plan?: SortOrder
     color?: SortOrder
+    logo?: SortOrder
+    banner?: SortOrder
     ownerId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -32928,6 +33098,8 @@ export namespace Prisma {
     type?: SortOrder
     plan?: SortOrder
     color?: SortOrder
+    logo?: SortOrder
+    banner?: SortOrder
     ownerId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -32940,6 +33112,8 @@ export namespace Prisma {
     type?: SortOrder
     plan?: SortOrder
     color?: SortOrder
+    logo?: SortOrder
+    banner?: SortOrder
     ownerId?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
@@ -33361,6 +33535,28 @@ export namespace Prisma {
     not?: NestedEnumFileKindFilter<$PrismaModel> | $Enums.FileKind
   }
 
+  export type FloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
+  }
+
+  export type IntNullableFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableFilter<$PrismaModel> | number | null
+  }
+
   export type EnumFileStatusFilter<$PrismaModel = never> = {
     equals?: $Enums.FileStatus | EnumFileStatusFieldRefInput<$PrismaModel>
     in?: $Enums.FileStatus[] | ListEnumFileStatusFieldRefInput<$PrismaModel>
@@ -33380,9 +33576,13 @@ export namespace Prisma {
     name?: SortOrder
     extension?: SortOrder
     storagePath?: SortOrder
+    thumbnailPath?: SortOrder
     size?: SortOrder
     mimeType?: SortOrder
     kind?: SortOrder
+    durationSeconds?: SortOrder
+    width?: SortOrder
+    height?: SortOrder
     status?: SortOrder
     source?: SortOrder
     uploadedById?: SortOrder
@@ -33392,6 +33592,9 @@ export namespace Prisma {
 
   export type FileAvgOrderByAggregateInput = {
     size?: SortOrder
+    durationSeconds?: SortOrder
+    width?: SortOrder
+    height?: SortOrder
   }
 
   export type FileMaxOrderByAggregateInput = {
@@ -33401,9 +33604,13 @@ export namespace Prisma {
     name?: SortOrder
     extension?: SortOrder
     storagePath?: SortOrder
+    thumbnailPath?: SortOrder
     size?: SortOrder
     mimeType?: SortOrder
     kind?: SortOrder
+    durationSeconds?: SortOrder
+    width?: SortOrder
+    height?: SortOrder
     status?: SortOrder
     source?: SortOrder
     uploadedById?: SortOrder
@@ -33418,9 +33625,13 @@ export namespace Prisma {
     name?: SortOrder
     extension?: SortOrder
     storagePath?: SortOrder
+    thumbnailPath?: SortOrder
     size?: SortOrder
     mimeType?: SortOrder
     kind?: SortOrder
+    durationSeconds?: SortOrder
+    width?: SortOrder
+    height?: SortOrder
     status?: SortOrder
     source?: SortOrder
     uploadedById?: SortOrder
@@ -33430,6 +33641,9 @@ export namespace Prisma {
 
   export type FileSumOrderByAggregateInput = {
     size?: SortOrder
+    durationSeconds?: SortOrder
+    width?: SortOrder
+    height?: SortOrder
   }
 
   export type EnumFileKindWithAggregatesFilter<$PrismaModel = never> = {
@@ -33440,6 +33654,38 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumFileKindFilter<$PrismaModel>
     _max?: NestedEnumFileKindFilter<$PrismaModel>
+  }
+
+  export type FloatNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedFloatNullableFilter<$PrismaModel>
+    _min?: NestedFloatNullableFilter<$PrismaModel>
+    _max?: NestedFloatNullableFilter<$PrismaModel>
+  }
+
+  export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
   }
 
   export type EnumFileStatusWithAggregatesFilter<$PrismaModel = never> = {
@@ -35337,6 +35583,22 @@ export namespace Prisma {
     set?: $Enums.FileKind
   }
 
+  export type NullableFloatFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type NullableIntFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
   export type EnumFileStatusFieldUpdateOperationsInput = {
     set?: $Enums.FileStatus
   }
@@ -36074,6 +36336,17 @@ export namespace Prisma {
     not?: NestedEnumFileKindFilter<$PrismaModel> | $Enums.FileKind
   }
 
+  export type NestedFloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
+  }
+
   export type NestedEnumFileStatusFilter<$PrismaModel = never> = {
     equals?: $Enums.FileStatus | EnumFileStatusFieldRefInput<$PrismaModel>
     in?: $Enums.FileStatus[] | ListEnumFileStatusFieldRefInput<$PrismaModel>
@@ -36089,6 +36362,38 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumFileKindFilter<$PrismaModel>
     _max?: NestedEnumFileKindFilter<$PrismaModel>
+  }
+
+  export type NestedFloatNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedFloatNullableFilter<$PrismaModel>
+    _min?: NestedFloatNullableFilter<$PrismaModel>
+    _max?: NestedFloatNullableFilter<$PrismaModel>
+  }
+
+  export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel> | null
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedIntNullableFilter<$PrismaModel>
+    _max?: NestedIntNullableFilter<$PrismaModel>
   }
 
   export type NestedEnumFileStatusWithAggregatesFilter<$PrismaModel = never> = {
@@ -36413,6 +36718,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     members?: WorkspaceMemberCreateNestedManyWithoutWorkspaceInput
@@ -36434,6 +36741,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     members?: WorkspaceMemberUncheckedCreateNestedManyWithoutWorkspaceInput
@@ -36568,9 +36877,13 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
+    durationSeconds?: number | null
+    width?: number | null
+    height?: number | null
     status?: $Enums.FileStatus
     source?: string
     createdAt?: Date | string
@@ -36588,9 +36901,13 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
+    durationSeconds?: number | null
+    width?: number | null
+    height?: number | null
     status?: $Enums.FileStatus
     source?: string
     createdAt?: Date | string
@@ -36947,6 +37264,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFilter<"Workspace"> | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFilter<"Workspace"> | $Enums.WorkspacePlan
     color?: StringFilter<"Workspace"> | string
+    logo?: StringNullableFilter<"Workspace"> | string | null
+    banner?: StringNullableFilter<"Workspace"> | string | null
     ownerId?: StringFilter<"Workspace"> | string
     createdAt?: DateTimeFilter<"Workspace"> | Date | string
     updatedAt?: DateTimeFilter<"Workspace"> | Date | string
@@ -37078,9 +37397,13 @@ export namespace Prisma {
     name?: StringFilter<"File"> | string
     extension?: StringNullableFilter<"File"> | string | null
     storagePath?: StringFilter<"File"> | string
+    thumbnailPath?: StringNullableFilter<"File"> | string | null
     size?: IntFilter<"File"> | number
     mimeType?: StringNullableFilter<"File"> | string | null
     kind?: EnumFileKindFilter<"File"> | $Enums.FileKind
+    durationSeconds?: FloatNullableFilter<"File"> | number | null
+    width?: IntNullableFilter<"File"> | number | null
+    height?: IntNullableFilter<"File"> | number | null
     status?: EnumFileStatusFilter<"File"> | $Enums.FileStatus
     source?: StringFilter<"File"> | string
     uploadedById?: StringFilter<"File"> | string
@@ -37827,9 +38150,13 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
+    durationSeconds?: number | null
+    width?: number | null
+    height?: number | null
     status?: $Enums.FileStatus
     source?: string
     createdAt?: Date | string
@@ -37846,9 +38173,13 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
+    durationSeconds?: number | null
+    width?: number | null
+    height?: number | null
     status?: $Enums.FileStatus
     source?: string
     uploadedById: string
@@ -38321,6 +38652,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -38342,6 +38675,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -38517,6 +38852,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -38538,6 +38875,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -38709,6 +39048,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -38730,6 +39071,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -38767,6 +39110,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -38788,6 +39133,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -38809,6 +39156,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -38830,6 +39179,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -38867,6 +39218,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -38888,6 +39241,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -39197,6 +39552,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -39218,6 +39575,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -39255,6 +39614,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -39276,6 +39637,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -39297,6 +39660,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -39318,6 +39683,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -39409,9 +39776,13 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
+    durationSeconds?: number | null
+    width?: number | null
+    height?: number | null
     status?: $Enums.FileStatus
     source?: string
     createdAt?: Date | string
@@ -39428,9 +39799,13 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
+    durationSeconds?: number | null
+    width?: number | null
+    height?: number | null
     status?: $Enums.FileStatus
     source?: string
     uploadedById: string
@@ -39510,6 +39885,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -39531,6 +39908,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -39637,6 +40016,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -39658,6 +40039,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -39883,6 +40266,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -39904,6 +40289,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -40069,6 +40456,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -40090,6 +40479,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -40183,9 +40574,13 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
+    durationSeconds?: number | null
+    width?: number | null
+    height?: number | null
     status?: $Enums.FileStatus
     source?: string
     createdAt?: Date | string
@@ -40203,9 +40598,13 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
+    durationSeconds?: number | null
+    width?: number | null
+    height?: number | null
     status?: $Enums.FileStatus
     source?: string
     uploadedById: string
@@ -40292,6 +40691,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -40313,6 +40714,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -40418,9 +40821,13 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
+    durationSeconds?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumFileStatusFieldUpdateOperationsInput | $Enums.FileStatus
     source?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -40438,9 +40845,13 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
+    durationSeconds?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumFileStatusFieldUpdateOperationsInput | $Enums.FileStatus
     source?: StringFieldUpdateOperationsInput | string
     uploadedById?: StringFieldUpdateOperationsInput | string
@@ -40600,6 +41011,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -40621,6 +41034,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -40727,6 +41142,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -40748,6 +41165,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -40844,6 +41263,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -40865,6 +41286,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -40971,6 +41394,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -40992,6 +41417,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -41088,6 +41515,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     owner: UserCreateNestedOneWithoutWorkspacesInput
@@ -41109,6 +41538,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     ownerId: string
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -41133,9 +41564,13 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
+    durationSeconds?: number | null
+    width?: number | null
+    height?: number | null
     status?: $Enums.FileStatus
     source?: string
     createdAt?: Date | string
@@ -41153,9 +41588,13 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
+    durationSeconds?: number | null
+    width?: number | null
+    height?: number | null
     status?: $Enums.FileStatus
     source?: string
     uploadedById: string
@@ -41256,6 +41695,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     owner?: UserUpdateOneRequiredWithoutWorkspacesNestedInput
@@ -41277,6 +41718,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     ownerId?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -41307,9 +41750,13 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
+    durationSeconds?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumFileStatusFieldUpdateOperationsInput | $Enums.FileStatus
     source?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -41327,9 +41774,13 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
+    durationSeconds?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumFileStatusFieldUpdateOperationsInput | $Enums.FileStatus
     source?: StringFieldUpdateOperationsInput | string
     uploadedById?: StringFieldUpdateOperationsInput | string
@@ -41733,6 +42184,8 @@ export namespace Prisma {
     type: $Enums.WorkspaceType
     plan?: $Enums.WorkspacePlan
     color?: string
+    logo?: string | null
+    banner?: string | null
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -41772,9 +42225,13 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
+    durationSeconds?: number | null
+    width?: number | null
+    height?: number | null
     status?: $Enums.FileStatus
     source?: string
     createdAt?: Date | string
@@ -41940,6 +42397,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     members?: WorkspaceMemberUpdateManyWithoutWorkspaceNestedInput
@@ -41961,6 +42420,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     members?: WorkspaceMemberUncheckedUpdateManyWithoutWorkspaceNestedInput
@@ -41982,6 +42443,8 @@ export namespace Prisma {
     type?: EnumWorkspaceTypeFieldUpdateOperationsInput | $Enums.WorkspaceType
     plan?: EnumWorkspacePlanFieldUpdateOperationsInput | $Enums.WorkspacePlan
     color?: StringFieldUpdateOperationsInput | string
+    logo?: NullableStringFieldUpdateOperationsInput | string | null
+    banner?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -42075,9 +42538,13 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
+    durationSeconds?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumFileStatusFieldUpdateOperationsInput | $Enums.FileStatus
     source?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -42095,9 +42562,13 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
+    durationSeconds?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumFileStatusFieldUpdateOperationsInput | $Enums.FileStatus
     source?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -42113,9 +42584,13 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
+    durationSeconds?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumFileStatusFieldUpdateOperationsInput | $Enums.FileStatus
     source?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -42380,9 +42855,13 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
+    durationSeconds?: number | null
+    width?: number | null
+    height?: number | null
     status?: $Enums.FileStatus
     source?: string
     uploadedById: string
@@ -42511,9 +42990,13 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
+    durationSeconds?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumFileStatusFieldUpdateOperationsInput | $Enums.FileStatus
     source?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -42530,9 +43013,13 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
+    durationSeconds?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumFileStatusFieldUpdateOperationsInput | $Enums.FileStatus
     source?: StringFieldUpdateOperationsInput | string
     uploadedById?: StringFieldUpdateOperationsInput | string
@@ -42548,9 +43035,13 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
+    durationSeconds?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumFileStatusFieldUpdateOperationsInput | $Enums.FileStatus
     source?: StringFieldUpdateOperationsInput | string
     uploadedById?: StringFieldUpdateOperationsInput | string
@@ -42735,9 +43226,13 @@ export namespace Prisma {
     name: string
     extension?: string | null
     storagePath: string
+    thumbnailPath?: string | null
     size?: number
     mimeType?: string | null
     kind?: $Enums.FileKind
+    durationSeconds?: number | null
+    width?: number | null
+    height?: number | null
     status?: $Enums.FileStatus
     source?: string
     uploadedById: string
@@ -42801,9 +43296,13 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
+    durationSeconds?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumFileStatusFieldUpdateOperationsInput | $Enums.FileStatus
     source?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -42820,9 +43319,13 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
+    durationSeconds?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumFileStatusFieldUpdateOperationsInput | $Enums.FileStatus
     source?: StringFieldUpdateOperationsInput | string
     uploadedById?: StringFieldUpdateOperationsInput | string
@@ -42838,9 +43341,13 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     extension?: NullableStringFieldUpdateOperationsInput | string | null
     storagePath?: StringFieldUpdateOperationsInput | string
+    thumbnailPath?: NullableStringFieldUpdateOperationsInput | string | null
     size?: IntFieldUpdateOperationsInput | number
     mimeType?: NullableStringFieldUpdateOperationsInput | string | null
     kind?: EnumFileKindFieldUpdateOperationsInput | $Enums.FileKind
+    durationSeconds?: NullableFloatFieldUpdateOperationsInput | number | null
+    width?: NullableIntFieldUpdateOperationsInput | number | null
+    height?: NullableIntFieldUpdateOperationsInput | number | null
     status?: EnumFileStatusFieldUpdateOperationsInput | $Enums.FileStatus
     source?: StringFieldUpdateOperationsInput | string
     uploadedById?: StringFieldUpdateOperationsInput | string

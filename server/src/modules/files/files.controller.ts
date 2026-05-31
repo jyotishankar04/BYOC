@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { FilesService } from "./files.service";
+import { AppError } from "@/core/errors";
 import {
   listFilesQuerySchema,
   renameFileSchema,
@@ -41,13 +42,27 @@ export class FilesController {
     }
   };
 
+  getBatchPreviewUrls = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const fileIds = req.body?.fileIds;
+      if (!Array.isArray(fileIds)) { next(new AppError("fileIds must be an array", 400, "VALIDATION_ERROR")); return; }
+      const result = await this.filesService.getBatchPreviewUrls(
+        req.params["workspaceId"] as string,
+        fileIds as string[],
+      );
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  };
+
   getPreviewUrl = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const url = await this.filesService.getPreviewUrl(
         req.params["workspaceId"] as string,
         req.params["fileId"] as string,
       );
-      res.json({ url, expiresIn: 60 });
+      res.json({ url, expiresIn: 3600 });
     } catch (err) {
       next(err);
     }

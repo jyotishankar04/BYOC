@@ -44,16 +44,22 @@ export class FilesService {
       this.repository.findFolders(workspaceId, folderId),
     ]);
 
-    // Walk up the folder hierarchy to build breadcrumbs
+    // Build breadcrumbs with a single recursive CTE instead of N+1 queries
     const breadcrumbs: { id: string; name: string }[] = [];
     if (folderId) {
-      let currentId: string | null = folderId;
-      while (currentId) {
-        const folder = await this.repository.findFolderById(currentId, workspaceId);
-        if (!folder) break;
-        breadcrumbs.unshift({ id: folder.id, name: folder.name });
-        currentId = folder.parentId;
-      }
+      const rows = await this.prisma.$queryRaw<{ id: string; name: string; depth: number }[]>`
+        WITH RECURSIVE bc AS (
+          SELECT id, name, "parentId", 0 AS depth
+          FROM folders
+          WHERE id = ${folderId}::uuid AND "workspaceId" = ${workspaceId}::uuid
+          UNION ALL
+          SELECT f.id, f.name, f."parentId", bc.depth + 1
+          FROM folders f
+          INNER JOIN bc ON f.id = bc."parentId"
+        )
+        SELECT id, name, depth FROM bc ORDER BY depth DESC
+      `;
+      breadcrumbs.push(...rows.map((r) => ({ id: r.id, name: r.name })));
     }
 
     return { files, folders, breadcrumbs, total, page, limit };
@@ -179,6 +185,19 @@ export class FilesService {
     });
   }
 
+  async getBatchPreviewUrls(workspaceId: string, fileIds: string[]): Promise<{ urls: Record<string, string>; expiresIn: number }> {
+    if (fileIds.length === 0) return { urls: {}, expiresIn: 3600 };
+    const files = await this.repository.findStoragePathsByIds(workspaceId, fileIds);
+    const storage = await this.providerService.getDecryptedProvider(workspaceId);
+    const entries = await Promise.all(
+      files.map(async (file) => {
+        const url = await storage.generateGetPresignedUrl(file.storagePath, 3600);
+        return [file.id, url] as [string, string];
+      }),
+    );
+    return { urls: Object.fromEntries(entries), expiresIn: 3600 };
+  }
+
   async getPreviewUrl(workspaceId: string, fileId: string): Promise<string> {
     const file = await this.getFile(workspaceId, fileId);
     const storage =
@@ -202,7 +221,7 @@ export class FilesService {
       throw err;
     }
 
-    return storage.generateGetPresignedUrl(file.storagePath, 60);
+    return storage.generateGetPresignedUrl(file.storagePath, 3600);
   }
 
   async getDownloadUrl(workspaceId: string, fileId: string): Promise<string> {

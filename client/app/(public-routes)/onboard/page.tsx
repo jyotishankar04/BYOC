@@ -23,6 +23,7 @@ import { useSession } from "@/lib/auth-client";
 import api from "@/lib/axios";
 import { useUserProfile } from "@/lib/user-settings";
 import { useAppConfig, type ProviderKey } from "@/lib/admin";
+import { getPlanLimits } from "@/lib/billing-constraints";
 import { toast } from "sonner";
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
@@ -100,10 +101,7 @@ export default function OnboardPage() {
 
   const handleSelectProvider = (p: Provider) => {
     if (!p.available) return;
-    if (
-      profile?.subscription &&
-      !profile.subscription.limits.allowedProviders.includes(p.apiType)
-    ) {
+    if (!allowedProviders.includes(p.apiType)) {
       toast.error(`Upgrade to Pro to connect ${p.name}.`);
       return;
     }
@@ -160,7 +158,9 @@ export default function OnboardPage() {
     step === 1 ? 15 : step === 2 ? 50 : isVerified ? 100 : 75;
 
   const isR2 = selectedProvider?.id === "r2";
-  const allowedProviders = profile?.subscription?.limits.allowedProviders ?? [];
+  const betaMode = appConfig?.betaMode ?? true;
+  const effectivePlan = profile?.subscription?.plan ?? "Free";
+  const allowedProviders = getPlanLimits(effectivePlan, betaMode).allowedProviders;
 
   if (isPending) {
     return (

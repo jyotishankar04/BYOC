@@ -1,7 +1,7 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { use, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   CloudServerIcon,
@@ -18,13 +18,14 @@ import {
   Copy01Icon,
   ArrowDown01Icon,
   Shield01Icon,
+  ImageUploadIcon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Select,
   SelectContent,
@@ -95,6 +96,8 @@ import {
   useUpdateSecurity,
   useDeleteWorkspace,
   useTransferOwnership,
+  useUploadWorkspaceLogo,
+  useUploadWorkspaceBanner,
 } from "@/lib/workspace-settings";
 import {
   canUseProvider,
@@ -173,6 +176,23 @@ function Toggle({
   );
 }
 
+// ─── Default banner gradient ───────────────────────────────────────────────────
+
+const COLOR_GRADIENT: Record<string, string> = {
+  "bg-blue-500":    "from-blue-400 to-blue-600",
+  "bg-emerald-500": "from-emerald-400 to-emerald-600",
+  "bg-orange-500":  "from-orange-400 to-orange-600",
+  "bg-violet-500":  "from-violet-400 to-violet-600",
+  "bg-rose-500":    "from-rose-400 to-rose-600",
+  "bg-amber-500":   "from-amber-400 to-amber-600",
+  "bg-cyan-500":    "from-cyan-400 to-cyan-600",
+};
+
+function DefaultBanner({ color }: { color: string }) {
+  const gradient = COLOR_GRADIENT[color] ?? "from-primary/60 to-primary";
+  return <div className={cn("h-full w-full bg-gradient-to-br", gradient)} />;
+}
+
 // ─── Section: Overview ─────────────────────────────────────────────────────────
 
 function OverviewSection({ workspace }: { workspace: Workspace }) {
@@ -186,28 +206,42 @@ function OverviewSection({ workspace }: { workspace: Workspace }) {
       </div>
       <Separator />
 
-      {/* Avatar */}
-      <div className="flex items-center gap-4">
-        <div
-          className={cn(
-            "flex size-16 items-center justify-center rounded-xl text-2xl font-bold text-white",
-            workspace.color,
+      {/* Banner + logo card */}
+      <div className="rounded-xl border">
+        {/* Banner */}
+        <div className="relative h-44 w-full overflow-hidden rounded-t-xl">
+          {workspace.bannerUrl ? (
+            <img src={workspace.bannerUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <DefaultBanner color={workspace.color} />
           )}
-        >
-          {workspace.name.charAt(0)}
+          {/* Bottom gradient so text/logo remain legible over any image */}
+          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/60 to-transparent" />
         </div>
-        <div>
-          <p className="font-semibold">{workspace.name}</p>
-          <p className="text-sm text-muted-foreground">
-            bringbucket.app/{workspace.slug}
-          </p>
-        </div>
-        <Badge className={cn("ml-auto", PLAN_STYLE[workspace.plan])}>
-          {workspace.plan}
-        </Badge>
-      </div>
 
-      <Separator />
+        {/* Logo + name row — logo sits half-over the banner edge */}
+        <div className="relative z-10 flex items-end gap-4 px-5 pb-4 -mt-8 bg-gradient-to-b from-transparent to-black/60 rounded-b-xl">
+          <div
+            className={cn(
+              "relative z-20 flex size-16 shrink-0 items-center justify-center rounded-xl border-4 border-background text-xl font-bold text-white shadow-md overflow-hidden",
+              !workspace.logoUrl && workspace.color,
+            )}
+          >
+            {workspace.logoUrl ? (
+              <img src={workspace.logoUrl} alt={workspace.name} className="size-full object-cover" />
+            ) : (
+              workspace.name.charAt(0)
+            )}
+          </div>
+          <div className="min-w-0 flex-1 pb-0.5">
+            <p className="font-semibold truncate">{workspace.name}</p>
+            <p className="text-xs text-muted-foreground">bringbucket.app/{workspace.slug}</p>
+          </div>
+          <Badge className={cn("mb-1 shrink-0", PLAN_STYLE[workspace.plan])}>
+            {workspace.plan}
+          </Badge>
+        </div>
+      </div>
 
       {/* Info grid */}
       <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -245,63 +279,128 @@ function GeneralSection({ workspace }: { workspace: Workspace }) {
   const [name, setName] = useState(workspace.name);
   const [slug, setSlug] = useState(workspace.slug);
   const update = useUpdateWorkspace(workspace.id);
+  const uploadLogo = useUploadWorkspaceLogo(workspace.id);
+  const uploadBanner = useUploadWorkspaceBanner(workspace.id);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
 
   const dirty =
     name.trim() !== workspace.name || slug.trim() !== workspace.slug;
 
   const handleSave = () => {
     const payload: { name?: string; slug?: string } = {};
-    if (name.trim() && name.trim() !== workspace.name)
-      payload.name = name.trim();
-    if (slug.trim() && slug.trim() !== workspace.slug)
-      payload.slug = slug.trim();
+    if (name.trim() && name.trim() !== workspace.name) payload.name = name.trim();
+    if (slug.trim() && slug.trim() !== workspace.slug) payload.slug = slug.trim();
     if (!Object.keys(payload).length) return;
     update.mutate(payload);
   };
+
+  async function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadLogo.mutateAsync(file);
+    e.target.value = "";
+  }
+
+  async function handleBannerChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadBanner.mutateAsync(file);
+    e.target.value = "";
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-base font-semibold">General</h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          Update your workspace name and slug.
+          Workspace branding, name, and slug.
         </p>
       </div>
       <Separator />
 
-      <div className="max-w-md space-y-5">
+      <div className="max-w-lg space-y-6">
+        {/* Banner upload */}
         <div className="space-y-2">
-          <Label className="text-xs font-medium">Workspace logo</Label>
-          <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                "flex size-12 items-center justify-center rounded-lg text-lg font-bold text-white",
-                workspace.color,
+          <Label className="text-xs font-medium">Banner</Label>
+          <button
+            type="button"
+            className="group relative h-44 w-full overflow-hidden rounded-lg border focus:outline-none"
+            onClick={() => bannerInputRef.current?.click()}
+            disabled={uploadBanner.isPending}
+          >
+            {workspace.bannerUrl ? (
+              <img src={workspace.bannerUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <DefaultBanner color={workspace.color} />
+            )}
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 group-disabled:opacity-100">
+              {uploadBanner.isPending ? (
+                <HugeiconsIcon icon={Loading01Icon} className="size-5 animate-spin text-white" strokeWidth={2} />
+              ) : (
+                <>
+                  <HugeiconsIcon icon={ImageUploadIcon} className="size-5 text-white" strokeWidth={1.5} />
+                  <span className="text-[11px] font-medium text-white">Click to upload banner</span>
+                </>
               )}
-            >
-              {workspace.name.charAt(0)}
             </div>
-            <input
-              type="file"
-              accept="image/png,image/jpeg"
-              className="hidden"
-              id="ws-logo-upload"
-              onChange={() => {}}
-              disabled
-            />
-            <Button size="sm" variant="outline" disabled title="Logo upload coming soon">
-              Upload logo
-            </Button>
-          </div>
+          </button>
+          <input
+            ref={bannerInputRef}
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            className="hidden"
+            onChange={handleBannerChange}
+          />
           <p className="text-[11px] text-muted-foreground">
-            PNG or JPG up to 2 MB. Square recommended.
+            Recommended 1200×300 px. JPG, PNG or WebP, up to 5 MB.
           </p>
         </div>
 
+        {/* Logo upload */}
+        <div className="space-y-2">
+          <Label className="text-xs font-medium">Logo</Label>
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              className="group relative size-14 shrink-0 overflow-hidden rounded-xl focus:outline-none"
+              onClick={() => logoInputRef.current?.click()}
+              disabled={uploadLogo.isPending}
+            >
+              <div
+                className={cn(
+                  "flex size-full items-center justify-center text-xl font-bold text-white",
+                  !workspace.logoUrl && workspace.color,
+                )}
+              >
+                {workspace.logoUrl ? (
+                  <img src={workspace.logoUrl} alt="" className="size-full object-cover" />
+                ) : (
+                  workspace.name.charAt(0)
+                )}
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/50 opacity-0 transition-opacity group-hover:opacity-100 group-disabled:opacity-100">
+                {uploadLogo.isPending ? (
+                  <HugeiconsIcon icon={Loading01Icon} className="size-4 animate-spin text-white" strokeWidth={2} />
+                ) : (
+                  <HugeiconsIcon icon={ImageUploadIcon} className="size-4 text-white" strokeWidth={1.5} />
+                )}
+              </div>
+            </button>
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              className="hidden"
+              onChange={handleLogoChange}
+            />
+            <p className="text-xs text-muted-foreground">Square image recommended. Up to 5 MB.</p>
+          </div>
+        </div>
+
+        {/* Name */}
         <div className="space-y-1.5">
-          <Label htmlFor="g-name" className="text-xs font-medium">
-            Workspace name
-          </Label>
+          <Label htmlFor="g-name" className="text-xs font-medium">Workspace name</Label>
           <Input
             id="g-name"
             value={name}
@@ -310,10 +409,9 @@ function GeneralSection({ workspace }: { workspace: Workspace }) {
           />
         </div>
 
+        {/* Slug */}
         <div className="space-y-1.5">
-          <Label htmlFor="g-slug" className="text-xs font-medium">
-            Slug
-          </Label>
+          <Label htmlFor="g-slug" className="text-xs font-medium">Slug</Label>
           <div className="flex items-center">
             <span className="flex h-8 items-center rounded-l-md border border-r-0 bg-muted px-2.5 text-xs text-muted-foreground shrink-0">
               bringbucket.app/
@@ -327,29 +425,11 @@ function GeneralSection({ workspace }: { workspace: Workspace }) {
           </div>
         </div>
 
-        <Button
-          size="sm"
-          onClick={handleSave}
-          disabled={!dirty || update.isPending}
-        >
+        <Button size="sm" onClick={handleSave} disabled={!dirty || update.isPending}>
           {update.isPending ? (
-            <>
-              <HugeiconsIcon
-                icon={Loading01Icon}
-                className="size-3.5 animate-spin"
-                strokeWidth={2}
-              />{" "}
-              Saving…
-            </>
+            <><HugeiconsIcon icon={Loading01Icon} className="size-3.5 animate-spin" strokeWidth={2} /> Saving…</>
           ) : update.isSuccess ? (
-            <>
-              <HugeiconsIcon
-                icon={CheckmarkCircle01Icon}
-                className="size-3.5"
-                strokeWidth={2}
-              />{" "}
-              Saved
-            </>
+            <><HugeiconsIcon icon={CheckmarkCircle01Icon} className="size-3.5" strokeWidth={2} /> Saved</>
           ) : (
             "Save changes"
           )}
@@ -647,14 +727,22 @@ function MembersSection({
 
 // ─── CORS setup card ───────────────────────────────────────────────────────────
 
-const CORS_JSON = `[
+function buildCorsJson(origin: string) {
+  return `[
   {
     "AllowedHeaders": ["*"],
     "AllowedMethods": ["GET", "PUT", "HEAD", "DELETE"],
-    "AllowedOrigins": ["*"],
-    "ExposeHeaders": ["ETag", "Content-Length", "Content-Type"]
+    "AllowedOrigins": ["${origin}"],
+    "ExposeHeaders": [
+      "ETag",
+      "Content-Length",
+      "Content-Type",
+      "Content-Range",
+      "Accept-Ranges"
+    ]
   }
 ]`;
+}
 
 function IamPolicyCard({ bucketName }: { bucketName: string }) {
   const [open, setOpen] = useState(false);
@@ -761,8 +849,11 @@ function CorsSetupCard({ providerName }: { providerName: string; bucketName: str
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://yourdomain.com";
+  const corsJson = buildCorsJson(origin);
+
   const copy = () => {
-    navigator.clipboard.writeText(CORS_JSON).then(() => {
+    navigator.clipboard.writeText(corsJson).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
@@ -805,8 +896,7 @@ function CorsSetupCard({ providerName }: { providerName: string; bucketName: str
               CORS configuration required
             </p>
             <p className="mt-0.5 text-[11px] text-amber-700/80 dark:text-amber-300/70">
-              Browser uploads go directly to your storage. Your bucket needs a CORS policy
-              to allow this.
+              Required for browser uploads, image previews, and video playback. Without this, media will fail to load.
             </p>
           </div>
           <HugeiconsIcon
@@ -820,15 +910,16 @@ function CorsSetupCard({ providerName }: { providerName: string; bucketName: str
         </button>
 
         {open && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <p className="text-[11px] text-amber-700/80 dark:text-amber-300/70">
-              In the {instr.title} →{" "}
-              <span className="font-medium">{instr.path}</span>
-              , paste:
+              Open the{" "}
+              <span className="font-medium">{instr.title}</span> →{" "}
+              <span className="font-medium">{instr.path}</span> and paste the
+              policy below:
             </p>
             <div className="relative">
               <pre className="overflow-x-auto rounded-md bg-amber-100/80 dark:bg-amber-900/30 p-3 text-[11px] font-mono text-amber-900 dark:text-amber-100 leading-relaxed">
-                {CORS_JSON}
+                {corsJson}
               </pre>
               <button
                 onClick={copy}
@@ -841,6 +932,15 @@ function CorsSetupCard({ providerName }: { providerName: string; bucketName: str
                 />
                 {copied ? "Copied!" : "Copy"}
               </button>
+            </div>
+            <div className="space-y-1.5 text-[11px] text-amber-700/80 dark:text-amber-300/70">
+              <p className="font-medium">Why each field matters:</p>
+              <ul className="space-y-1 list-none">
+                <li><span className="font-mono font-medium">AllowedMethods</span> — GET/HEAD for streaming previews; PUT/DELETE for uploads</li>
+                <li><span className="font-mono font-medium">AllowedOrigins</span> — set to your app's domain (<span className="font-mono">{origin}</span>)</li>
+                <li><span className="font-mono font-medium">Content-Range / Accept-Ranges</span> — required for video seeking and range requests</li>
+                <li><span className="font-mono font-medium">ETag</span> — required for multipart upload completion</li>
+              </ul>
             </div>
           </div>
         )}
@@ -1960,11 +2060,13 @@ export default function WorkspaceSettingsPage({
 }) {
   const { workspaceId } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { workspaces } = useWorkspace();
   const { data: session } = useSession();
 
   const workspace = workspaces.find((w) => w.id === workspaceId);
-  const [section, setSection] = useState<Section>("overview");
+  const initialSection = (searchParams.get("section") as Section) ?? "overview";
+  const [section, setSection] = useState<Section>(initialSection);
 
   // Derive role from the workspace's members list (already in context)
   const myMember = workspace?.members.find(

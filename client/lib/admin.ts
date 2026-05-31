@@ -168,6 +168,7 @@ export interface AppConfig {
     shareLinks: boolean;
     analytics: boolean;
     passwordProtectedLinks: boolean;
+    search: boolean;
   };
 }
 
@@ -180,7 +181,7 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
     S3: "enabled", R2: "enabled", GCS: "coming_soon",
     Azure: "coming_soon", MinIO: "enabled", Supabase: "enabled", Other: "enabled",
   },
-  features: { shareLinks: true, analytics: true, passwordProtectedLinks: true },
+  features: { shareLinks: true, analytics: true, passwordProtectedLinks: true, search: false },
 };
 
 export function useAdminSettings() {

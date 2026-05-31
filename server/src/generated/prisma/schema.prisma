@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
+  provider      = "prisma-client-js"
+  output        = "../src/generated/prisma"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -232,7 +233,9 @@ model Workspace {
   type WorkspaceType
   plan WorkspacePlan @default(Free)
 
-  color String @default("#6366f1") @db.VarChar(7)
+  color  String  @default("#6366f1") @db.VarChar(7)
+  logo   String?
+  banner String?
 
   ownerId String
   owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
@@ -393,12 +396,16 @@ model File {
   folderId String? @db.Uuid
   folder   Folder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
-  name        String   @db.VarChar(255)
-  extension   String?  @db.VarChar(20)
-  storagePath String   @db.VarChar(1000)
-  size        Int      @default(0)
-  mimeType    String?  @db.VarChar(100)
-  kind        FileKind @default(other)
+  name            String   @db.VarChar(255)
+  extension       String?  @db.VarChar(20)
+  storagePath     String   @db.VarChar(1000)
+  thumbnailPath   String?  @db.VarChar(1000)
+  size            Int      @default(0)
+  mimeType        String?  @db.VarChar(100)
+  kind            FileKind @default(other)
+  durationSeconds Float?
+  width           Int?
+  height          Int?
 
   status FileStatus @default(uploading)
   source String     @default("byoc") @db.VarChar(20)

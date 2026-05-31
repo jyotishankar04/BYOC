@@ -216,10 +216,14 @@ export function WorkspaceSwitcher() {
               >
                 {/* Avatar chip */}
                 <div className={cn(
-                  "flex size-7 shrink-0 items-center justify-center rounded-md text-[11px] font-bold text-white",
-                  currentWorkspace.color,
+                  "flex size-7 shrink-0 items-center justify-center rounded-md overflow-hidden text-[11px] font-bold text-white",
+                  !currentWorkspace.logoUrl && currentWorkspace.color,
                 )}>
-                  {currentWorkspace.name.charAt(0)}
+                  {currentWorkspace.logoUrl ? (
+                    <img src={currentWorkspace.logoUrl} alt="" className="size-full object-cover" />
+                  ) : (
+                    currentWorkspace.name.charAt(0)
+                  )}
                 </div>
 
                 {/* Name + plan (hidden when collapsed) */}
@@ -245,8 +249,12 @@ export function WorkspaceSwitcher() {
               {/* Current workspace info */}
               <DropdownMenuLabel className="font-normal">
                 <div className="flex items-center gap-2.5">
-                  <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-md text-xs font-bold text-white", currentWorkspace.color)}>
-                    {currentWorkspace.name.charAt(0)}
+                  <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-md overflow-hidden text-xs font-bold text-white", !currentWorkspace.logoUrl && currentWorkspace.color)}>
+                    {currentWorkspace.logoUrl ? (
+                      <img src={currentWorkspace.logoUrl} alt="" className="size-full object-cover" />
+                    ) : (
+                      currentWorkspace.name.charAt(0)
+                    )}
                   </div>
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold">{currentWorkspace.name}</p>
@@ -270,8 +278,12 @@ export function WorkspaceSwitcher() {
                   onClick={() => handleSwitch(ws.id)}
                   className="gap-2.5"
                 >
-                  <div className={cn("flex size-6 shrink-0 items-center justify-center rounded text-[10px] font-bold text-white", ws.color)}>
-                    {ws.name.charAt(0)}
+                  <div className={cn("flex size-6 shrink-0 items-center justify-center rounded overflow-hidden text-[10px] font-bold text-white", !ws.logoUrl && ws.color)}>
+                    {ws.logoUrl ? (
+                      <img src={ws.logoUrl} alt="" className="size-full object-cover" />
+                    ) : (
+                      ws.name.charAt(0)
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs font-medium">{ws.name}</p>

@@ -7,6 +7,7 @@ import {
   SESSION_EXPIRY_MS,
 } from "./auth.config";
 import { env } from "@/config";
+import logger from "@/core/logger";
 
 export class AuthController {
   constructor(private authService: IAuthService) {}
@@ -60,7 +61,7 @@ export class AuthController {
         res.redirect(`${env.FRONTEND_URL}/app`);
       }
     } catch (err) {
-      console.error("Google callback error:", err);
+      logger.error({ err }, "Google callback error");
       res.redirect(`${env.FRONTEND_URL}/auth/login?error=oauth_failed`);
     }
   };

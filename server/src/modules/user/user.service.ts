@@ -1,11 +1,18 @@
 import { AppError } from "@/core/errors";
-import type { IUserService } from "./user.interface";
-import type { IUserRepository } from "./user.interface";
+import type { IUserService, IUserRepository } from "./user.interface";
 import type { UpdateProfileDto, UpdatePreferencesDto } from "./user.schema";
 import redis from "@/config/redis.config";
 import prisma from "@/config/db.config";
 import { cache } from "@/shared/cache/cache.service";
 import { SubscriptionSnapshotService } from "@/modules/billing/subscription-snapshot.service";
+import {
+  getPlatformStorage,
+  buildStoredValue,
+  resolveStorageUrl,
+  mimeToExt,
+  ALLOWED_IMAGE_MIME,
+  PRESIGN_TTL_SECONDS,
+} from "@/shared/storage/platform-storage";
 
 export class UserService implements IUserService {
   constructor(private userRepository: IUserRepository) {}
@@ -17,7 +24,10 @@ export class UserService implements IUserService {
       const subscriptionSnapshot = await new SubscriptionSnapshotService(
         prisma,
       ).getUserSnapshot(userId);
-      return { ...user, subscription: subscriptionSnapshot };
+
+      const avatarUrl = await resolveStorageUrl(user.avatar as string | null);
+
+      return { ...user, avatarUrl, subscription: subscriptionSnapshot };
     });
   }
 
@@ -28,6 +38,31 @@ export class UserService implements IUserService {
     const result = await this.userRepository.update(userId, data as Record<string, unknown>);
     await cache.del(`user:profile:${userId}`);
     return result;
+  }
+
+  async presignAvatarUpload(
+    userId: string,
+    contentType: string,
+  ): Promise<{ uploadUrl: string; key: string }> {
+    if (!ALLOWED_IMAGE_MIME.has(contentType)) {
+      throw new AppError("Unsupported image type", 415, "UNSUPPORTED_MEDIA_TYPE");
+    }
+    const key = `avatars/${userId}${mimeToExt(contentType)}`;
+    const storage = getPlatformStorage();
+    const uploadUrl = await storage.generatePutPresignedUrl(key, contentType, PRESIGN_TTL_SECONDS);
+    return { uploadUrl, key };
+  }
+
+  async confirmAvatarUpload(userId: string, key: string): Promise<string> {
+    if (!key.startsWith(`avatars/${userId}`)) {
+      throw new AppError("Invalid key", 400, "INVALID_KEY");
+    }
+    const storedValue = buildStoredValue(key);
+    await this.userRepository.update(userId, { avatar: storedValue });
+    await cache.del(`user:profile:${userId}`);
+
+    const avatarUrl = await resolveStorageUrl(storedValue);
+    return avatarUrl ?? storedValue;
   }
 
   async getPreferences(userId: string): Promise<Record<string, unknown>> {

@@ -60,6 +60,15 @@ const envSchema = z.object({
   // Generic webhook secret (S3 webhooks)
   WEBHOOK_SECRET: z.string().default(""),
 
+  // Platform-level S3 storage (for avatars and other platform assets)
+  PLATFORM_S3_PROVIDER: z.enum(["S3", "R2", "MinIO", "Supabase", "Other"]).default("S3"),
+  PLATFORM_S3_ACCESS_KEY_ID: z.string().default(""),
+  PLATFORM_S3_SECRET_ACCESS_KEY: z.string().default(""),
+  PLATFORM_S3_BUCKET: z.string().default(""),
+  PLATFORM_S3_REGION: z.string().default("us-east-1"),
+  PLATFORM_S3_ENDPOINT: z.string().default(""),
+  PLATFORM_S3_PUBLIC_URL: z.string().default(""),
+
   // Polar.sh billing
   POLAR_ACCESS_TOKEN: z.string().default(""),
   POLAR_SERVER: z.enum(["sandbox", "production"]).default("sandbox"),
@@ -83,5 +92,12 @@ if (!parsedEnv.success) {
 }
 
 const env = parsedEnv.data;
+
+if (env.NODE_ENV === "production" && !env.CRED_ENCRYPTION_KEY) {
+  process.stderr.write(
+    "FATAL: CRED_ENCRYPTION_KEY must be set in production — provider credentials would be stored unencrypted.\n",
+  );
+  process.exit(1);
+}
 
 export default env;

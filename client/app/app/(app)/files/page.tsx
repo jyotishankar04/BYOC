@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef as useInputRef, Fragment, useCallback } from "react"
+import { useState, useEffect, useRef as useInputRef, Fragment, useCallback, useMemo } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -58,15 +58,20 @@ import {
   FileDetailsSidebar,
   type FileItem,
 } from "@/components/custom/dashboard/common/file-details-sidebar"
+import { ImageLightbox } from "@/components/custom/dashboard/files/image-lightbox"
+import { VideoLightbox, type VideoItem } from "@/components/custom/dashboard/videos/video-lightbox"
 import { UploadDialog } from "@/components/custom/dashboard/common/upload-dialog"
 import { CreateShareLinkDialog } from "@/components/custom/dashboard/common/create-share-link-dialog"
 import { FILE_VISUAL } from "@/components/shared/file-visual"
 import type { FileType } from "@/components/shared/file-visual"
+import { FileThumbnail } from "@/components/shared/file-thumbnail"
 import { useWorkspace } from "@/lib/workspace-context"
+import { ProviderErrorGuard } from "@/components/custom/dashboard/common/provider-error-guard"
 import { useSyncStatus, useTriggerSync } from "@/lib/provider"
 import { Progress } from "@/components/ui/progress"
 import {
   useFiles,
+  usePreviewUrls,
   useCreateFolder,
   useDeleteFolder,
   useRenameFolder,
@@ -112,7 +117,7 @@ function apiFileToItem(
   file: ApiFile,
   breadcrumbs: { id: string; name: string }[],
   bucket: string,
-): FileItem & { kind: "file" } {
+): FileItem & { kind: "file"; mimeType: string | null } {
   const folderPath =
     breadcrumbs.length > 0
       ? breadcrumbs.map((b) => b.name).join(" / ")
@@ -132,6 +137,7 @@ function apiFileToItem(
     owner: file.uploadedBy?.name ?? "Unknown",
     bucket,
     storagePath: file.storagePath,
+    mimeType: file.mimeType,
     activities: [
       {
         action: "File uploaded",
@@ -146,7 +152,7 @@ function apiFileToItem(
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
-type FileNode = FileItem & { kind: "file" }
+type FileNode = FileItem & { kind: "file"; mimeType: string | null }
 
 type FolderNode = {
   kind: "folder"
@@ -581,7 +587,10 @@ function NewFolderCard({
 
 function FileCard({
   file,
+  workspaceId,
   isSelected,
+  previewUrl,
+  skipFetch,
   onClick,
   onShare,
   onDownload,
@@ -590,7 +599,10 @@ function FileCard({
   onDelete,
 }: {
   file: FileNode
+  workspaceId: string | undefined
   isSelected: boolean
+  previewUrl?: string
+  skipFetch?: boolean
   onClick: () => void
   onShare: () => void
   onDownload: () => void
@@ -610,13 +622,24 @@ function FileCard({
             isSelected && "border-primary/30 ring-2 ring-primary",
           )}
         >
-          <div className={cn("flex h-24 items-center justify-center bg-gradient-to-br", visual.gradientFrom, visual.gradientTo)}>
-            <HugeiconsIcon
-              icon={visual.icon}
-              className={cn("size-10 opacity-70 transition-transform duration-200 group-hover:scale-110", visual.iconColor)}
-              strokeWidth={1.2}
-            />
-          </div>
+          <FileThumbnail
+            workspaceId={workspaceId}
+            fileId={file.id}
+            mimeType={file.mimeType}
+            alt={file.name}
+            previewUrl={previewUrl}
+            skipFetch={skipFetch}
+            className="h-24"
+            fallback={
+              <div className={cn("flex h-24 w-full items-center justify-center bg-gradient-to-br", visual.gradientFrom, visual.gradientTo)}>
+                <HugeiconsIcon
+                  icon={visual.icon}
+                  className={cn("size-10 opacity-70 transition-transform duration-200 group-hover:scale-110", visual.iconColor)}
+                  strokeWidth={1.2}
+                />
+              </div>
+            }
+          />
           <div className="absolute right-1.5 top-1.5 opacity-0 transition-opacity group-hover:opacity-100">
             <DropdownMenu>
               <KebabTrigger className="bg-background/80 backdrop-blur-sm" />
@@ -733,7 +756,10 @@ function FolderListRow({
 
 function FileListRow({
   file,
+  workspaceId,
   isSelected,
+  previewUrl,
+  skipFetch,
   onClick,
   showBorder,
   onShare,
@@ -743,7 +769,10 @@ function FileListRow({
   onDelete,
 }: {
   file: FileNode
+  workspaceId: string | undefined
   isSelected: boolean
+  previewUrl?: string
+  skipFetch?: boolean
   onClick: () => void
   showBorder: boolean
   onShare: () => void
@@ -764,9 +793,17 @@ function FileListRow({
             isSelected && "bg-primary/5 ring-inset ring-1 ring-primary/20",
           )}
         >
-          <div className={cn("flex size-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br", visual.gradientFrom, visual.gradientTo)}>
-            <HugeiconsIcon icon={visual.icon} className={cn("size-4", visual.iconColor)} strokeWidth={1.5} />
-          </div>
+          <FileThumbnail
+            workspaceId={workspaceId}
+            fileId={file.id}
+            mimeType={file.mimeType}
+            alt={file.name}
+            previewUrl={previewUrl}
+            skipFetch={skipFetch}
+            className={cn("size-8 shrink-0 rounded-lg bg-gradient-to-br", visual.gradientFrom, visual.gradientTo)}
+            imgClassName="object-cover"
+            fallback={<HugeiconsIcon icon={visual.icon} className={cn("size-4", visual.iconColor)} strokeWidth={1.5} />}
+          />
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-medium">{file.name}</p>
             <p className="text-[11px] text-muted-foreground">{file.folder}</p>
@@ -1057,6 +1094,12 @@ export default function FilesPage() {
   )
   const filteredFiles = allFiles.filter((f) => matchesFilter(f, activeFilter))
 
+  const imageFileIds = useMemo(
+    () => filteredFiles.filter((f) => f.mimeType?.startsWith("image/")).map((f) => f.id),
+    [filteredFiles],
+  )
+  const { data: batchUrls } = usePreviewUrls(workspaceId, imageFileIds)
+
   const isEmpty = filteredFolders.length === 0 && filteredFiles.length === 0 && !isCreatingFolder && !isLoading
 
   // ── Navigation ──────────────────────────────────────────────────────────────
@@ -1148,7 +1191,19 @@ export default function FilesPage() {
 
   const handleDownload = (file: FileNode) => downloadFileMutation.mutate(file.id)
 
+  const [previewFile, setPreviewFile] = useState<FileNode | null>(null)
+
+  const handlePreview = useCallback((file: FileNode) => {
+    if (file.mimeType?.startsWith("image/") || file.mimeType?.startsWith("video/")) {
+      setPreviewFile(file)
+    }
+  }, [])
+
   const isDetailOpen = selectedFile !== null
+
+  if (workspaceId && (!currentWorkspace?.storage || currentWorkspace.storage.status === "Error")) {
+    return <ProviderErrorGuard workspaceId={workspaceId} storage={currentWorkspace?.storage ?? null} />
+  }
 
   return (
     <>
@@ -1281,7 +1336,10 @@ export default function FilesPage() {
                     <FileCard
                       key={file.id}
                       file={file}
+                      workspaceId={workspaceId}
                       isSelected={selectedFile?.id === file.id}
+                      previewUrl={batchUrls?.urls[file.id]}
+                      skipFetch={file.mimeType?.startsWith("image/")}
                       onClick={() => handleFileClick(file)}
                       onShare={() => handleShareFile(file)}
                       onDownload={() => handleDownload(file)}
@@ -1334,7 +1392,10 @@ export default function FilesPage() {
               <FileListRow
                 key={file.id}
                 file={file}
+                workspaceId={workspaceId}
                 isSelected={selectedFile?.id === file.id}
+                previewUrl={batchUrls?.urls[file.id]}
+                skipFetch={file.mimeType?.startsWith("image/")}
                 onClick={() => handleFileClick(file)}
                 showBorder={i > 0 || filteredFolders.length > 0 || isCreatingFolder}
                 onShare={() => handleShareFile(file)}
@@ -1351,12 +1412,51 @@ export default function FilesPage() {
       <FileDetailsSidebar
         file={selectedFile}
         isOpen={isDetailOpen}
+        workspaceId={workspaceId}
         onClose={() => setSelectedFile(null)}
+        onPreview={(f) => handlePreview(f as FileNode)}
         onDownload={(f) => handleDownload(f as FileNode)}
         onShare={(f) => handleShareFile(f as FileNode)}
         onRename={(f) => handleRenameFile(f as FileNode)}
         onDelete={(f) => handleDeleteFile(f as FileNode)}
       />
+
+      {/* ── Previews ── */}
+      {previewFile?.mimeType?.startsWith("image/") && (
+        <ImageLightbox
+          key={previewFile.id}
+          fileId={previewFile.id}
+          fileName={previewFile.name}
+          mimeType={previewFile.mimeType}
+          workspaceId={workspaceId}
+          onClose={() => setPreviewFile(null)}
+          onDownload={() => { handleDownload(previewFile); setPreviewFile(null) }}
+        />
+      )}
+      {previewFile?.mimeType?.startsWith("video/") && (
+        <VideoLightbox
+          key={previewFile.id}
+          video={{
+            id: previewFile.id,
+            name: previewFile.name,
+            extension: previewFile.extension ?? "mp4",
+            mimeType: previewFile.mimeType,
+            resolution: "Unknown",
+            duration: "Unknown",
+            durationSecs: 0,
+            size: previewFile.size,
+            sizeBytes: 0,
+            folder: previewFile.folder,
+            uploadedAt: previewFile.uploadedAt,
+            uploadedMs: 0,
+            status: previewFile.status,
+          } satisfies VideoItem}
+          workspaceId={workspaceId}
+          onClose={() => setPreviewFile(null)}
+          onDownload={() => { handleDownload(previewFile); setPreviewFile(null) }}
+          onDelete={() => { handleDeleteFile(previewFile); setPreviewFile(null) }}
+        />
+      )}
 
       <UploadDialog open={uploadOpen} onOpenChange={setUploadOpen} folderId={currentFolderId} onUploadComplete={handleUploadComplete} />
       <CreateShareLinkDialog

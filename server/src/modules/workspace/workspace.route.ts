@@ -56,6 +56,32 @@ router.patch(
   workspaceController.updateSecurity,
 );
 
+router.post(
+  "/:workspaceId/logo/presign",
+  requireWorkspaceMember,
+  requireRole(WorkspaceRole.Admin),
+  workspaceController.presignLogo,
+);
+router.post(
+  "/:workspaceId/logo/confirm",
+  requireWorkspaceMember,
+  requireRole(WorkspaceRole.Admin),
+  workspaceController.confirmLogo,
+);
+
+router.post(
+  "/:workspaceId/banner/presign",
+  requireWorkspaceMember,
+  requireRole(WorkspaceRole.Admin),
+  workspaceController.presignBanner,
+);
+router.post(
+  "/:workspaceId/banner/confirm",
+  requireWorkspaceMember,
+  requireRole(WorkspaceRole.Admin),
+  workspaceController.confirmBanner,
+);
+
 router.use("/:workspaceId/members", membersRouter);
 router.use("/:workspaceId/provider", providerRouter);
 router.use("/:workspaceId/folders", foldersRouter);

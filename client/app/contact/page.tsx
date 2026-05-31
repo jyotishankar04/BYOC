@@ -44,20 +44,16 @@ export default function ContactPage() {
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!name || !email || !subject || !message) {
       toast.error('Please fill in all fields.')
       return
     }
     setSubmitting(true)
-    // TODO: wire to POST /api/v1/contact
-    await new Promise((r) => setTimeout(r, 600))
-    toast.success("Message sent! We'll reply within 24 hours.")
-    setName('')
-    setEmail('')
-    setSubject('')
-    setMessage('')
+    const subjectLabel = subject || 'General Question'
+    const body = `Name: ${name}\nEmail: ${email}\nSubject: ${subjectLabel}\n\n${message}`
+    window.location.href = `mailto:support@bringbucket.com?subject=${encodeURIComponent(`[${subjectLabel}] Contact form`)}&body=${encodeURIComponent(body)}`
     setSubmitting(false)
   }
 

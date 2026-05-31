@@ -39,6 +39,7 @@ export class FoldersRepository {
       where: {
         workspaceId,
         parentId: parentId ?? null,
+        NOT: { path: { startsWith: ".thumbnails/" } },
       },
       orderBy: { name: "asc" },
     });

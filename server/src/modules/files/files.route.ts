@@ -12,6 +12,13 @@ const filesController = new FilesController(prisma);
 // GET /workspaces/:workspaceId/files
 filesRouter.get("/", requireWorkspaceMember, filesController.listFiles);
 
+// POST /workspaces/:workspaceId/files/preview-urls  (batch)
+filesRouter.post(
+  "/preview-urls",
+  requireWorkspaceMember,
+  filesController.getBatchPreviewUrls,
+);
+
 // GET /workspaces/:workspaceId/files/:fileId
 filesRouter.get("/:fileId", requireWorkspaceMember, filesController.getFile);
 

@@ -228,7 +228,7 @@ export default function DocsPage() {
 
               <Step n={3} title="Select your cloud provider">
                 Choose the provider where your bucket lives: AWS S3, Cloudflare R2, MinIO, or
-                Supabase Storage. MinIO and Supabase require a Pro plan.
+                Supabase Storage. MinIO and Supabase require a Pro or Team plan.
               </Step>
 
               <Step n={4} title="Enter your credentials">
@@ -414,8 +414,8 @@ export default function DocsPage() {
               <CredField label="Secret Access Key" value="minio-service-account-secret" />
             </div>
             <Info>
-              MinIO requires a <strong>Pro plan</strong>. Your MinIO server must be reachable
-              over HTTPS. Self-signed certificates are not supported.
+              MinIO requires a <strong>Pro or Team plan</strong>. Your MinIO server must be
+              reachable over HTTPS. Self-signed certificates are not supported.
             </Info>
 
             {/* Supabase */}
@@ -457,7 +457,7 @@ export default function DocsPage() {
               <CredField label="Secret Access Key" value="your-service-role-secret" />
             </div>
             <Info>
-              Supabase Storage requires a <strong>Pro plan</strong>.
+              Supabase Storage requires a <strong>Pro or Team plan</strong>.
             </Info>
           </section>
 
@@ -555,11 +555,21 @@ export default function DocsPage() {
                 <p className="leading-relaxed">
                   Select any file in the file manager, then click{' '}
                   <strong className="text-foreground">Share</strong> in the File Details panel.
-                  BringBucket generates a short, public link:
+                  Configure the link options and click <strong className="text-foreground">Create Link</strong>.
+                  BringBucket generates a short, shareable link:
                 </p>
                 <code className="mt-2 block font-mono text-xs bg-muted px-3 py-2 rounded-lg text-foreground">
-                  https://app.bringbucket.com/share/[token]
+                  https://app.bringbucket.com/s/[token]
                 </code>
+              </div>
+
+              <div>
+                <p className="font-medium text-foreground mb-1">Link options</p>
+                <ul className="mt-1 space-y-1.5 leading-relaxed list-disc list-outside pl-4">
+                  <li><strong className="text-foreground">Expiry</strong> — set the link to expire after 1 hour, 1 day, 7 days, 30 days, or never.</li>
+                  <li><strong className="text-foreground">Password protection</strong> — optionally require a password before the recipient can access the file.</li>
+                  <li><strong className="text-foreground">Allow download</strong> — choose whether the recipient can download the file or only preview it.</li>
+                </ul>
               </div>
 
               <div>
@@ -573,18 +583,18 @@ export default function DocsPage() {
               </div>
 
               <div>
-                <p className="font-medium text-foreground mb-1">Copying the link</p>
+                <p className="font-medium text-foreground mb-1">Managing links</p>
                 <p className="leading-relaxed">
-                  After clicking Share, the link is automatically copied to your clipboard and
-                  shown in a toast. You can also re-open the share dialog from the Details
-                  panel at any time.
+                  Open the File Details panel and click the share icon to view all active links
+                  for a file. You can disable or permanently delete any link at any time. Disabled
+                  links return a 404 to visitors immediately.
                 </p>
               </div>
             </div>
 
             <Info>
-              Password protection and custom expiry times for share links are on the roadmap.
-              Today, links remain active until you delete the share record from the Details panel.
+              Share links are served directly from your cloud provider bucket via pre-signed URLs.
+              BringBucket never proxies your file content.
             </Info>
           </section>
 
