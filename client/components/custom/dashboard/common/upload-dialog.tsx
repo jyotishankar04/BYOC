@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 import { useUploadStore } from "@/stores/upload-store";
 import { formatBytes, detectKind } from "@/lib/file-utils";
 import { useWorkspace } from "@/lib/workspace-context";
+import { useSubscriptionSnapshot } from "@/lib/subscription";
 
 type FileKind = "Video" | "Image" | "Document" | "Archive" | "Other";
 
@@ -132,9 +133,11 @@ export function UploadDialog({
 }: UploadDialogProps) {
   const isMobile = useIsMobile();
   const { currentWorkspace } = useWorkspace();
+  const { checks } = useSubscriptionSnapshot();
   const addUploads = useUploadStore((s) => s.addUploads);
 
   const workspaceId = currentWorkspace?.id;
+  const storageExceeded = checks.storageExceeded;
   const providerName = currentWorkspace?.storage?.name;
   const providerBucket = currentWorkspace?.storage?.bucket;
 
@@ -347,6 +350,14 @@ export function UploadDialog({
         )}
       </div>
 
+      {storageExceeded && (
+        <div className="mx-5 mb-3 flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2.5">
+          <HugeiconsIcon icon={AlertCircleIcon} className="mt-0.5 size-3.5 shrink-0 text-destructive" strokeWidth={1.5} />
+          <p className="text-xs text-destructive">
+            Storage quota exceeded. Upgrade your plan to upload more files.
+          </p>
+        </div>
+      )}
       <div className="shrink-0 flex items-center justify-between gap-3 border-t px-5 py-4">
         <Button
           variant="outline"
@@ -355,7 +366,7 @@ export function UploadDialog({
         >
           Cancel
         </Button>
-        <Button size="sm" disabled={files.length === 0 || submitting} onClick={startUpload}>
+        <Button size="sm" disabled={files.length === 0 || submitting || storageExceeded} onClick={startUpload}>
           {submitting ? (
             <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
           ) : (

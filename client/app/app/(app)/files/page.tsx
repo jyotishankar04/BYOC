@@ -87,6 +87,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query"
 import { useDragAndDrop } from "@/hooks/use-drag-and-drop"
 import { useUploadStore } from "@/stores/upload-store"
+import { useSubscriptionSnapshot } from "@/lib/subscription"
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -1002,6 +1003,7 @@ export default function FilesPage() {
   const searchParams = useSearchParams()
   const { currentWorkspace } = useWorkspace()
   const workspaceId = currentWorkspace?.id
+  const { checks: subscriptionChecks } = useSubscriptionSnapshot()
 
   const [currentFolderId, setCurrentFolderId] = useState<string | undefined>(undefined)
   const [selectedFile, setSelectedFile]       = useState<FileNode | null>(null)
@@ -1205,7 +1207,7 @@ export default function FilesPage() {
   const addUploads = useUploadStore((s) => s.addUploads)
   const { isDragging, dragProps } = useDragAndDrop({
     onDrop: (files) => {
-      if (!workspaceId) return
+      if (!workspaceId || subscriptionChecks.storageExceeded) return
       addUploads(files.map((file) => ({ file, workspaceId, folderId: currentFolderId })))
     },
   })
@@ -1220,9 +1222,20 @@ export default function FilesPage() {
     <>
       {/* Page-level drag-and-drop overlay */}
       {isDragging && (
-        <div className="pointer-events-none fixed inset-0 z-40 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-primary/50 bg-primary/5 backdrop-blur-[2px]">
-          <HugeiconsIcon icon={CloudUploadIcon} className="size-14 text-primary/60" strokeWidth={1} />
-          <p className="text-sm font-medium text-primary/80">Drop files to upload</p>
+        <div className={cn(
+          "pointer-events-none fixed inset-0 z-40 flex flex-col items-center justify-center gap-3 border-2 border-dashed backdrop-blur-[2px]",
+          subscriptionChecks.storageExceeded
+            ? "border-destructive/50 bg-destructive/5"
+            : "border-primary/50 bg-primary/5",
+        )}>
+          <HugeiconsIcon
+            icon={subscriptionChecks.storageExceeded ? AlertCircleIcon : CloudUploadIcon}
+            className={cn("size-14", subscriptionChecks.storageExceeded ? "text-destructive/60" : "text-primary/60")}
+            strokeWidth={1}
+          />
+          <p className={cn("text-sm font-medium", subscriptionChecks.storageExceeded ? "text-destructive/80" : "text-primary/80")}>
+            {subscriptionChecks.storageExceeded ? "Storage quota exceeded — upgrade to upload" : "Drop files to upload"}
+          </p>
         </div>
       )}
       <div

@@ -17,6 +17,8 @@ export interface PlanLimits {
   maxTeamMembers: number | null;
   maxActiveShareLinks: number | null;
   maxUploadFileSize: number | null;
+  /** null means unlimited */
+  maxStorageBytes: number | null;
   activityLogRetentionDays: number;
   allowedProviders: string[];
   passwordProtectedLinks: boolean;
@@ -38,6 +40,7 @@ export const PLAN_LIMITS: Record<WorkspacePlan, PlanLimits> = {
     maxTeamMembers: 3,
     maxActiveShareLinks: 5,
     maxUploadFileSize: null,
+    maxStorageBytes: 10 * 1024 * 1024 * 1024, // 10 GB
     activityLogRetentionDays: 7,
     allowedProviders: ["S3", "R2"],
     passwordProtectedLinks: false,
@@ -53,6 +56,7 @@ export const PLAN_LIMITS: Record<WorkspacePlan, PlanLimits> = {
     maxTeamMembers: 20,
     maxActiveShareLinks: null,
     maxUploadFileSize: null,
+    maxStorageBytes: 100 * 1024 * 1024 * 1024, // 100 GB
     activityLogRetentionDays: 30,
     allowedProviders: ALL_PROVIDERS,
     passwordProtectedLinks: true,
@@ -68,6 +72,7 @@ export const PLAN_LIMITS: Record<WorkspacePlan, PlanLimits> = {
     maxTeamMembers: null,
     maxActiveShareLinks: null,
     maxUploadFileSize: null,
+    maxStorageBytes: null, // unlimited
     activityLogRetentionDays: 90,
     allowedProviders: ALL_PROVIDERS,
     passwordProtectedLinks: true,

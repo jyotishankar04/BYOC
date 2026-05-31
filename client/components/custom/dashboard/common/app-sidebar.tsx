@@ -49,6 +49,7 @@ import { useUserProfile } from "@/lib/user-settings"
 import { featureUpgradeMessage, useSubscriptionSnapshot } from "@/lib/subscription"
 import { UpgradeTooltip } from "@/components/custom/subscription/upgrade-tooltip"
 import { cn } from "@/lib/utils"
+import { Progress } from "@/components/ui/progress"
 
 const NAV_MAIN = [
   { label: "Dashboard",    href: "/app",            icon: DashboardSquare02Icon, exact: true  },
@@ -80,6 +81,49 @@ function isActive(pathname: string, href: string, exact: boolean) {
 
 function isSettingsActive(pathname: string) {
   return pathname === "/app/settings" || pathname.startsWith("/app/settings/") || pathname.startsWith("/app/workspaces/")
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`
+}
+
+function StorageUsageBar() {
+  const { workspaceUsage, workspaceLimits, checks } = useSubscriptionSnapshot()
+  const { state } = useSidebar()
+
+  if (state === "collapsed") return null
+  if (!workspaceUsage || !workspaceLimits) return null
+  if (workspaceLimits.maxStorageBytes === null) return null
+
+  const used = workspaceUsage.storageBytesUsed ?? 0
+  const limit = workspaceLimits.maxStorageBytes
+  const pct = Math.min(100, Math.round((used / limit) * 100))
+  const exceeded = checks.storageExceeded
+
+  return (
+    <div className="px-2 pb-1 pt-0.5">
+      <div className="rounded-md border bg-sidebar-accent/40 px-3 py-2.5">
+        <div className="mb-1.5 flex items-center justify-between">
+          <span className="text-[11px] font-medium text-muted-foreground">Storage</span>
+          <span className={cn("text-[11px] font-medium tabular-nums", exceeded ? "text-destructive" : "text-muted-foreground")}>
+            {formatBytes(used)} / {formatBytes(limit)}
+          </span>
+        </div>
+        <Progress
+          value={pct}
+          className={cn("h-1.5", exceeded && "[&>div]:bg-destructive")}
+        />
+        {exceeded && (
+          <p className="mt-1.5 text-[10px] text-destructive">
+            Quota exceeded — upgrade to upload more files
+          </p>
+        )}
+      </div>
+    </div>
+  )
 }
 
 function SidebarUserMenu() {
@@ -243,6 +287,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
+        <StorageUsageBar />
         <SidebarUserMenu />
       </SidebarFooter>
 

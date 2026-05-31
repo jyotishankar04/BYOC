@@ -90,6 +90,15 @@ export class UploadService {
       "File size exceeds the limit for this workspace plan",
       "UPLOAD_SIZE_LIMIT_REACHED",
     );
+    const storageQuota = buildQuotaSummary(
+      snapshot.limits.maxStorageBytes,
+      snapshot.usage.storageBytesUsed + dto.size,
+    );
+    assertQuotaAvailable(
+      storageQuota,
+      "Storage quota exceeded for this workspace",
+      "STORAGE_QUOTA_EXCEEDED",
+    );
 
     if (dto.size >= SMALL_FILE_MAX) {
       throw new AppError(
@@ -225,6 +234,7 @@ export class UploadService {
     const snapshot = await new SubscriptionSnapshotService(
       this.prisma,
     ).getWorkspaceSnapshot(workspaceId);
+    const totalNewBytes = files.reduce((sum, f) => sum + f.size, 0);
     for (const file of files) {
       const sizeQuota = buildQuotaSummary(
         snapshot.limits.maxUploadFileSize,
@@ -236,6 +246,15 @@ export class UploadService {
         "UPLOAD_SIZE_LIMIT_REACHED",
       );
     }
+    const storageQuota = buildQuotaSummary(
+      snapshot.limits.maxStorageBytes,
+      snapshot.usage.storageBytesUsed + totalNewBytes,
+    );
+    assertQuotaAvailable(
+      storageQuota,
+      "Storage quota exceeded for this workspace",
+      "STORAGE_QUOTA_EXCEEDED",
+    );
 
     const activeSessions = await this.repository.countActiveUploadSessions(workspaceId);
 
