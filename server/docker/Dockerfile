@@ -35,6 +35,11 @@ RUN pnpm install --frozen-lockfile --prod
 COPY --from=builder /app/dist ./dist
 COPY prisma ./prisma
 COPY prisma.config.ts ./
+
+# Generate Prisma client while still root so engine binaries are pre-extracted;
+# the node user won't need write access to node_modules at runtime.
+RUN pnpm exec prisma generate
+
 RUN printf '#!/bin/sh\nset -e\npnpm exec prisma migrate deploy\nexec node dist/src/server.js\n' > start.sh && chmod +x start.sh
 
 EXPOSE 4000
