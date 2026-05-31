@@ -8,12 +8,17 @@ import { AppError } from "@/core/errors";
 import { ProviderService } from "@/modules/provider/provider.service";
 import { broadcast } from "@/modules/events/events.service";
 import { FilesRepository } from "./files.repository";
+import { cache } from "@/shared/cache/cache.service";
 import type {
   ListFilesQuery,
   RenameFileDto,
   MoveFileDto,
   ListFilesResult,
 } from "./files.interface";
+
+function fileListKey(workspaceId: string, q: ListFilesQuery): string {
+  return `files:list:${workspaceId}:${q.folderId ?? ""}:${q.kind ?? ""}:${q.includeNested ? "1" : "0"}:${q.search ?? ""}:${q.sortBy}:${q.sortDir}:${q.page}:${q.limit}`;
+}
 
 const THUMBNAIL_SIZES = { sm: 300, md: 800, lg: 1200 } as const;
 type ThumbnailSize = keyof typeof THUMBNAIL_SIZES;
@@ -40,39 +45,42 @@ export class FilesService {
   }
 
   async listFiles(workspaceId: string, query: ListFilesQuery): Promise<ListFilesResult> {
-    const { folderId, page, limit } = query;
+    return cache.wrap(fileListKey(workspaceId, query), 30, async () => {
+      const { folderId, page, limit } = query;
 
-    const [files, total, folders] = await Promise.all([
-      this.repository.findMany(workspaceId, query),
-      this.repository.count(workspaceId, query),
-      this.repository.findFolders(workspaceId, folderId),
-    ]);
+      const [files, total, folders] = await Promise.all([
+        this.repository.findMany(workspaceId, query),
+        this.repository.count(workspaceId, query),
+        this.repository.findFolders(workspaceId, folderId),
+      ]);
 
-    // Build breadcrumbs with a single recursive CTE instead of N+1 queries
-    const breadcrumbs: { id: string; name: string }[] = [];
-    if (folderId) {
-      const rows = await this.prisma.$queryRaw<{ id: string; name: string; depth: number }[]>`
-        WITH RECURSIVE bc AS (
-          SELECT id, name, "parentId", 0 AS depth
-          FROM folders
-          WHERE id = ${folderId}::uuid AND "workspaceId" = ${workspaceId}::uuid
-          UNION ALL
-          SELECT f.id, f.name, f."parentId", bc.depth + 1
-          FROM folders f
-          INNER JOIN bc ON f.id = bc."parentId"
-        )
-        SELECT id, name, depth FROM bc ORDER BY depth DESC
-      `;
-      breadcrumbs.push(...rows.map((r) => ({ id: r.id, name: r.name })));
-    }
+      const breadcrumbs: { id: string; name: string }[] = [];
+      if (folderId) {
+        const rows = await this.prisma.$queryRaw<{ id: string; name: string; depth: number }[]>`
+          WITH RECURSIVE bc AS (
+            SELECT id, name, "parentId", 0 AS depth
+            FROM folders
+            WHERE id = ${folderId}::uuid AND "workspaceId" = ${workspaceId}::uuid
+            UNION ALL
+            SELECT f.id, f.name, f."parentId", bc.depth + 1
+            FROM folders f
+            INNER JOIN bc ON f.id = bc."parentId"
+          )
+          SELECT id, name, depth FROM bc ORDER BY depth DESC
+        `;
+        breadcrumbs.push(...rows.map((r) => ({ id: r.id, name: r.name })));
+      }
 
-    return { files, folders, breadcrumbs, total, page, limit };
+      return { files, folders, breadcrumbs, total, page, limit };
+    });
   }
 
   async getFile(workspaceId: string, fileId: string) {
-    const file = await this.repository.findById(workspaceId, fileId);
-    if (!file) throw new AppError("File not found", 404, "NOT_FOUND");
-    return file;
+    return cache.wrap(`file:${workspaceId}:${fileId}`, 60, async () => {
+      const file = await this.repository.findById(workspaceId, fileId);
+      if (!file) throw new AppError("File not found", 404, "NOT_FOUND");
+      return file;
+    });
   }
 
   async renameFile(workspaceId: string, fileId: string, dto: RenameFileDto) {
@@ -102,6 +110,11 @@ export class FilesService {
       extension,
       storagePath: newStoragePath,
     });
+
+    await Promise.all([
+      cache.del(`file:${workspaceId}:${fileId}`),
+      cache.delPattern(`files:list:${workspaceId}:*`),
+    ]);
 
     broadcast(workspaceId, {
       type: "file.renamed",
@@ -137,10 +150,17 @@ export class FilesService {
       }
     }
 
-    return this.repository.update(file.id, {
+    const moved = await this.repository.update(file.id, {
       folderId: dto.folderId,
       storagePath: newStoragePath,
     });
+
+    await Promise.all([
+      cache.del(`file:${workspaceId}:${fileId}`),
+      cache.delPattern(`files:list:${workspaceId}:*`),
+    ]);
+
+    return moved;
   }
 
   async deleteFile(workspaceId: string, fileId: string, userId: string) {
@@ -155,6 +175,11 @@ export class FilesService {
     }
 
     await this.repository.deleteFileSoftly(file.id);
+
+    await Promise.all([
+      cache.del(`file:${workspaceId}:${fileId}`),
+      cache.delPattern(`files:list:${workspaceId}:*`),
+    ]);
 
     broadcast(workspaceId, {
       type: "file.deleted",

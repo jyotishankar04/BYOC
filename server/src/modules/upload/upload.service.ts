@@ -13,6 +13,7 @@ import { SubscriptionSnapshotService } from "@/modules/billing/subscription-snap
 import { assertQuotaAvailable, buildQuotaSummary } from "@/modules/billing/subscription-access";
 import { appSettings } from "@/config/app-settings";
 import { extractVideoMeta } from "@/shared/video-meta";
+import { cache } from "@/shared/cache/cache.service";
 import type {
   PresignDto,
   InitiateDto,
@@ -208,6 +209,11 @@ export class UploadService {
       type: "file.uploaded",
       payload: confirmed,
     });
+
+    await Promise.all([
+      cache.delPattern(`files:list:${workspaceId}:*`),
+      cache.del(`billing:snapshot:${workspaceId}`),
+    ]);
 
     await this.prisma.activityLog.create({
       data: {
@@ -449,6 +455,11 @@ export class UploadService {
       type: "file.uploaded",
       payload: file,
     });
+
+    await Promise.all([
+      cache.delPattern(`files:list:${workspaceId}:*`),
+      cache.del(`billing:snapshot:${workspaceId}`),
+    ]);
 
     await this.prisma.activityLog.create({
       data: {

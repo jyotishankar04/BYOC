@@ -3,6 +3,7 @@ import type { PrismaClient } from "@/generated/prisma/client";
 import { AppError } from "@/core/errors";
 import { ProviderService } from "@/modules/provider/provider.service";
 import { FoldersRepository } from "./folders.repository";
+import { cache } from "@/shared/cache/cache.service";
 import type {
   CreateFolderDto,
   RenameFolderDto,
@@ -70,6 +71,8 @@ export class FolderService {
       parentId: dto.parentId ?? null,
       source: "bringbucket",
     });
+
+    await cache.delPattern(`files:list:${workspaceId}:*`);
 
     await this.prisma.activityLog.create({
       data: {
@@ -151,6 +154,8 @@ export class FolderService {
       `;
     }
 
+    await cache.delPattern(`files:list:${workspaceId}:*`);
+
     await this.prisma.activityLog.create({
       data: {
         id: randomUUID(),
@@ -216,6 +221,8 @@ export class FolderService {
     }
 
     await this.repository.delete(folderId);
+
+    await cache.delPattern(`files:list:${workspaceId}:*`);
 
     await this.prisma.activityLog.create({
       data: {
@@ -311,6 +318,8 @@ export class FolderService {
         WHERE  folders.id = sub.id
       `;
     }
+
+    await cache.delPattern(`files:list:${workspaceId}:*`);
 
     await this.prisma.activityLog.create({
       data: {
