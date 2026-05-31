@@ -60,6 +60,7 @@ import {
 } from "@/components/custom/dashboard/common/file-details-sidebar"
 import { ImageLightbox } from "@/components/custom/dashboard/files/image-lightbox"
 import { VideoLightbox, type VideoItem } from "@/components/custom/dashboard/videos/video-lightbox"
+import { PdfLightbox } from "@/components/custom/dashboard/files/pdf-lightbox"
 import { UploadDialog } from "@/components/custom/dashboard/common/upload-dialog"
 import { CreateShareLinkDialog } from "@/components/custom/dashboard/common/create-share-link-dialog"
 import { FILE_VISUAL } from "@/components/shared/file-visual"
@@ -84,6 +85,8 @@ import {
   type ApiFile,
 } from "@/lib/files"
 import { useQueryClient } from "@tanstack/react-query"
+import { useDragAndDrop } from "@/hooks/use-drag-and-drop"
+import { useUploadStore } from "@/stores/upload-store"
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -1194,10 +1197,18 @@ export default function FilesPage() {
   const [previewFile, setPreviewFile] = useState<FileNode | null>(null)
 
   const handlePreview = useCallback((file: FileNode) => {
-    if (file.mimeType?.startsWith("image/") || file.mimeType?.startsWith("video/")) {
+    if (file.mimeType?.startsWith("image/") || file.mimeType?.startsWith("video/") || file.mimeType === "application/pdf") {
       setPreviewFile(file)
     }
   }, [])
+
+  const addUploads = useUploadStore((s) => s.addUploads)
+  const { isDragging, dragProps } = useDragAndDrop({
+    onDrop: (files) => {
+      if (!workspaceId) return
+      addUploads(files.map((file) => ({ file, workspaceId, folderId: currentFolderId })))
+    },
+  })
 
   const isDetailOpen = selectedFile !== null
 
@@ -1207,7 +1218,15 @@ export default function FilesPage() {
 
   return (
     <>
+      {/* Page-level drag-and-drop overlay */}
+      {isDragging && (
+        <div className="pointer-events-none fixed inset-0 z-40 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-primary/50 bg-primary/5 backdrop-blur-[2px]">
+          <HugeiconsIcon icon={CloudUploadIcon} className="size-14 text-primary/60" strokeWidth={1} />
+          <p className="text-sm font-medium text-primary/80">Drop files to upload</p>
+        </div>
+      )}
       <div
+        {...dragProps}
         className={cn(
           "flex flex-col gap-5 transition-all duration-300",
           isDetailOpen && "lg:mr-[var(--detail-sidebar-width)]",
@@ -1455,6 +1474,18 @@ export default function FilesPage() {
           onClose={() => setPreviewFile(null)}
           onDownload={() => { handleDownload(previewFile); setPreviewFile(null) }}
           onDelete={() => { handleDeleteFile(previewFile); setPreviewFile(null) }}
+        />
+      )}
+
+      {previewFile?.mimeType === "application/pdf" && (
+        <PdfLightbox
+          key={previewFile.id}
+          fileId={previewFile.id}
+          fileName={previewFile.name}
+          mimeType={previewFile.mimeType}
+          workspaceId={workspaceId}
+          onClose={() => setPreviewFile(null)}
+          onDownload={() => { handleDownload(previewFile); setPreviewFile(null) }}
         />
       )}
 

@@ -263,7 +263,7 @@ export function usePreviewUrl(
       );
       return res.data;
     },
-    enabled: !!workspaceId && !!(mimeType?.startsWith("image/") || mimeType?.startsWith("video/")) && enabled,
+    enabled: !!workspaceId && !!(mimeType?.startsWith("image/") || mimeType?.startsWith("video/") || mimeType === "application/pdf") && enabled,
     staleTime: (query) => {
       const expiresIn = (query.state.data as { expiresIn?: number } | null)?.expiresIn
       return expiresIn ? expiresIn * 1000 * 0.85 : 0
