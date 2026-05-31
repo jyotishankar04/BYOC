@@ -1,3 +1,4 @@
+import sharp from "sharp";
 import {
   FileStatus,
   NotificationType,
@@ -13,6 +14,9 @@ import type {
   MoveFileDto,
   ListFilesResult,
 } from "./files.interface";
+
+const THUMBNAIL_SIZES = { sm: 300, md: 800, lg: 1200 } as const;
+type ThumbnailSize = keyof typeof THUMBNAIL_SIZES;
 
 function sanitizeFilename(name: string): string {
   return name.replace(/[^a-zA-Z0-9._\-]/g, "_").slice(0, 200);
@@ -249,5 +253,37 @@ export class FilesService {
 
     const disposition = `attachment; filename="${file.name.replace(/"/g, '\\"')}"`;
     return storage.generateGetPresignedUrl(file.storagePath, 300, disposition);
+  }
+
+  async getThumbnailUrl(
+    workspaceId: string,
+    fileId: string,
+    size: ThumbnailSize,
+  ): Promise<string | null> {
+    const file = await this.getFile(workspaceId, fileId);
+
+    // Only generate thumbnails for images
+    if (!file.mimeType?.startsWith("image/")) return null;
+
+    const storage = await this.providerService.getDecryptedProvider(workspaceId);
+    const thumbnailKey = `thumbnails/${fileId}-${size}.webp`;
+    const width = THUMBNAIL_SIZES[size];
+
+    // Return existing thumbnail if it's already been generated
+    try {
+      await storage.headObject(thumbnailKey);
+      return storage.generateGetPresignedUrl(thumbnailKey, 3600);
+    } catch {
+      // Thumbnail doesn't exist yet — generate it
+    }
+
+    const original = await storage.getObject(file.storagePath);
+    const thumbnail = await sharp(original)
+      .resize(width, undefined, { withoutEnlargement: true })
+      .webp({ quality: 85 })
+      .toBuffer();
+
+    await storage.putObject(thumbnailKey, thumbnail, "image/webp");
+    return storage.generateGetPresignedUrl(thumbnailKey, 3600);
   }
 }

@@ -50,6 +50,7 @@ export class FilesController {
         req.params["workspaceId"] as string,
         fileIds as string[],
       );
+      res.set("Cache-Control", "private, max-age=3000");
       res.json(result);
     } catch (err) {
       next(err);
@@ -62,6 +63,7 @@ export class FilesController {
         req.params["workspaceId"] as string,
         req.params["fileId"] as string,
       );
+      res.set("Cache-Control", "private, max-age=3000");
       res.json({ url, expiresIn: 3600 });
     } catch (err) {
       next(err);
@@ -74,7 +76,27 @@ export class FilesController {
         req.params["workspaceId"] as string,
         req.params["fileId"] as string,
       );
+      res.set("Cache-Control", "private, max-age=240");
       res.json({ url, expiresIn: 300 });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  getThumbnail = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const size = (req.query["size"] as string) || "sm";
+      if (!["sm", "md", "lg"].includes(size)) {
+        next(new AppError("size must be sm, md, or lg", 400, "VALIDATION_ERROR"));
+        return;
+      }
+      const url = await this.filesService.getThumbnailUrl(
+        req.params["workspaceId"] as string,
+        req.params["fileId"] as string,
+        size as "sm" | "md" | "lg",
+      );
+      res.set("Cache-Control", "private, max-age=3000");
+      res.json({ url, expiresIn: 3600 });
     } catch (err) {
       next(err);
     }

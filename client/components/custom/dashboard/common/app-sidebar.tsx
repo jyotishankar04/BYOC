@@ -110,7 +110,7 @@ function SidebarUserMenu() {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent">
               <Avatar size="sm">
-                {avatarUrl && <AvatarImage src={avatarUrl} alt={userName} />}
+                {avatarUrl && <AvatarImage src={avatarUrl} alt={userName} fetchPriority="high" />}
                 <AvatarFallback className="text-[11px] font-semibold">{userInitials}</AvatarFallback>
               </Avatar>
               <div className="flex min-w-0 flex-col text-left leading-none">

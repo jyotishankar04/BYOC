@@ -310,7 +310,7 @@ export class ShareLinksService {
         providerRecord.region || undefined
       );
 
-      const previewUrl = await provider.generateGetPresignedUrl(file.storagePath, 120, "inline");
+      const previewUrl = await provider.generateGetPresignedUrl(file.storagePath, 3600, "inline");
       let downloadUrl: string | undefined;
 
       if (link.allowDownload) {

@@ -29,6 +29,13 @@ filesRouter.get(
   filesController.getPreviewUrl,
 );
 
+// GET /workspaces/:workspaceId/files/:fileId/thumbnail?size=sm|md|lg
+filesRouter.get(
+  "/:fileId/thumbnail",
+  requireWorkspaceMember,
+  filesController.getThumbnail,
+);
+
 // GET /workspaces/:workspaceId/files/:fileId/download-url
 filesRouter.get(
   "/:fileId/download-url",

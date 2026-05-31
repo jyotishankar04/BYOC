@@ -52,6 +52,7 @@ export interface IStorageProvider {
   ): Promise<string>;
 
   // Object ops
+  getObject(key: string): Promise<Buffer>;
   putObject(key: string, body: Buffer, contentType: string): Promise<void>;
   headObject(key: string): Promise<ObjectMeta>;
   copyObject(sourceKey: string, destKey: string): Promise<void>;

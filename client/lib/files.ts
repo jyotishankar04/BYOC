@@ -68,6 +68,8 @@ export const fileKeys = {
     ["workspaces", workspaceId, "files", fileId, "preview-url"] as const,
   batchPreviewUrls: (workspaceId: string, fileIds: string[]) =>
     ["workspaces", workspaceId, "files", "batch-preview-urls", [...fileIds].sort().join(",")] as const,
+  thumbnailUrl: (workspaceId: string, fileId: string, size: string) =>
+    ["workspaces", workspaceId, "files", fileId, "thumbnail", size] as const,
 };
 
 // ─── Hooks ─────────────────────────────────────────────────────────────────────
@@ -262,6 +264,31 @@ export function usePreviewUrl(
       return res.data;
     },
     enabled: !!workspaceId && !!(mimeType?.startsWith("image/") || mimeType?.startsWith("video/")) && enabled,
+    staleTime: (query) => {
+      const expiresIn = (query.state.data as { expiresIn?: number } | null)?.expiresIn
+      return expiresIn ? expiresIn * 1000 * 0.85 : 0
+    },
+    gcTime: 65 * 60 * 1000,
+    retry: false,
+  });
+}
+
+export function useThumbnailUrl(
+  workspaceId: string | undefined,
+  fileId: string,
+  mimeType: string | null | undefined,
+  size: "sm" | "md" | "lg" = "sm",
+  enabled: boolean = true,
+) {
+  return useQuery<{ url: string | null; expiresIn: number } | null>({
+    queryKey: fileKeys.thumbnailUrl(workspaceId ?? "", fileId, size),
+    queryFn: async () => {
+      const res = await api.get<{ url: string | null; expiresIn: number }>(
+        `/api/v1/workspaces/${workspaceId}/files/${fileId}/thumbnail?size=${size}`,
+      );
+      return res.data;
+    },
+    enabled: !!workspaceId && !!mimeType?.startsWith("image/") && enabled,
     staleTime: (query) => {
       const expiresIn = (query.state.data as { expiresIn?: number } | null)?.expiresIn
       return expiresIn ? expiresIn * 1000 * 0.85 : 0
