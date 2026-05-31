@@ -38,7 +38,9 @@ COPY prisma.config.ts ./
 
 # Generate Prisma client while still root so engine binaries are pre-extracted;
 # the node user won't need write access to node_modules at runtime.
-RUN pnpm exec prisma generate
+# DATABASE_URL is required by prisma.config.ts at load time but never used for
+# an actual connection during generate — the dummy value is intentional.
+RUN DATABASE_URL="postgresql://build:build@build:5432/build" pnpm exec prisma generate
 
 RUN printf '#!/bin/sh\nset -e\npnpm exec prisma migrate deploy\nexec node dist/src/server.js\n' > start.sh && chmod +x start.sh
 
