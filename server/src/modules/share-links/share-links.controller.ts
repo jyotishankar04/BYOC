@@ -140,6 +140,7 @@ export class ShareLinksController {
         userId: req.userId,
       });
 
+      res.set("Cache-Control", "private, max-age=3000");
       res.json(result);
     } catch (err) {
       next(err);

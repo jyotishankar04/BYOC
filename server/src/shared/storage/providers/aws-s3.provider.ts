@@ -191,6 +191,13 @@ export class AwsS3Provider implements IStorageProvider {
     );
   }
 
+  async getObject(key: string): Promise<Buffer> {
+    const res = await this.client.send(
+      new GetObjectCommand({ Bucket: this.bucket, Key: key }),
+    );
+    return Buffer.from(await res.Body!.transformToByteArray());
+  }
+
   async putObject(
     key: string,
     body: Buffer,

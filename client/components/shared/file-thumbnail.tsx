@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { usePreviewUrl } from "@/lib/files";
+import { useThumbnailUrl } from "@/lib/files";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface FileThumbnailProps {
@@ -59,12 +59,12 @@ export function FileThumbnail({
   }, [isImage]);
 
   // Individual fetch disabled when skipFetch is true (batch mode) or a URL is already provided
-  const { data, isLoading } = usePreviewUrl(workspaceId, fileId, mimeType, !skipFetch && !previewUrl && inView);
+  const { data, isLoading } = useThumbnailUrl(workspaceId, fileId, mimeType, "sm", !skipFetch && !previewUrl && inView);
 
   const handleError = useCallback(() => setImgError(true), []);
   const handleLoad = useCallback(() => setImgLoaded(true), []);
 
-  const resolvedUrl = previewUrl ?? data?.url;
+  const resolvedUrl = previewUrl ?? data?.url ?? undefined;
   // In batch mode, gate rendering on inView so images outside viewport don't download
   const hasPreview = isImage && !imgError && !!resolvedUrl && (skipFetch ? inView : true);
   const showSkeleton = isImage && inView && !imgLoaded && !imgError && (

@@ -13,6 +13,7 @@ import { broadcast } from "@/modules/events/events.service";
 import prisma from "@/config/db.config";
 import { SubscriptionSnapshotService } from "@/modules/billing/subscription-snapshot.service";
 import { assertFeatureAccess, assertQuotaAvailable, buildQuotaSummary } from "@/modules/billing/subscription-access";
+import { cache } from "@/shared/cache/cache.service";
 
 const ROLE_WEIGHT: Record<WorkspaceRole, number> = {
   [WorkspaceRole.Owner]: 4,
@@ -25,11 +26,15 @@ class MembersService implements IMemberService {
   constructor(private memberRepository: MembersRepository) {}
 
   async listMembers(workspaceId: string): Promise<MemberRow[]> {
-    return this.memberRepository.listMembers(workspaceId);
+    return cache.wrap(`members:${workspaceId}`, 120, () =>
+      this.memberRepository.listMembers(workspaceId),
+    );
   }
 
   async listInvites(workspaceId: string): Promise<InviteRow[]> {
-    return this.memberRepository.listInvites(workspaceId);
+    return cache.wrap(`invites:${workspaceId}`, 60, () =>
+      this.memberRepository.listInvites(workspaceId),
+    );
   }
 
   async inviteMember(
@@ -74,6 +79,8 @@ class MembersService implements IMemberService {
       WorkspaceRole.Member,
       invitedBy,
     );
+
+    await cache.del(`members:${workspaceId}`, `invites:${workspaceId}`, `billing:snapshot:${workspaceId}`);
 
     if (workspace && invitee && inviter) {
       EmailQueueService.enqueue({
@@ -140,6 +147,8 @@ class MembersService implements IMemberService {
       role,
     );
 
+    await cache.del(`members:${workspaceId}`);
+
     const [workspace, member, changer] = await Promise.all([
       this.memberRepository.findWorkspaceById(workspaceId),
       this.memberRepository.findUserById(targetUserId),
@@ -171,6 +180,8 @@ class MembersService implements IMemberService {
     }
     await this.memberRepository.removeMember(workspaceId, userId);
 
+    await cache.del(`members:${workspaceId}`, `billing:snapshot:${workspaceId}`);
+
     broadcast(workspaceId, {
       type: "member.removed",
       payload: { memberId: userId },
@@ -186,6 +197,8 @@ class MembersService implements IMemberService {
       throw new AppError("Pending invite not found", 404, "NOT_FOUND");
     }
     await this.memberRepository.acceptInvite(workspaceId, userId);
+
+    await cache.del(`members:${workspaceId}`, `invites:${workspaceId}`, `billing:snapshot:${workspaceId}`);
 
     const members = await this.memberRepository.listMembers(workspaceId);
     const joinedMember = members.find((member) => member.userId === userId);
@@ -225,6 +238,8 @@ class MembersService implements IMemberService {
     }
 
     await this.memberRepository.rejectInvite(workspaceId, userId);
+
+    await cache.del(`invites:${workspaceId}`);
   }
 
   async getMyInvite(

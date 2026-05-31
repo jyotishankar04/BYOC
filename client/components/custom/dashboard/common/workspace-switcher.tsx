@@ -220,7 +220,7 @@ export function WorkspaceSwitcher() {
                   !currentWorkspace.logoUrl && currentWorkspace.color,
                 )}>
                   {currentWorkspace.logoUrl ? (
-                    <img src={currentWorkspace.logoUrl} alt="" className="size-full object-cover" />
+                    <img src={currentWorkspace.logoUrl} alt="" className="size-full object-cover" fetchPriority="high" />
                   ) : (
                     currentWorkspace.name.charAt(0)
                   )}

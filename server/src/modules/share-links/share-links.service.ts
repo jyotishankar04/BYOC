@@ -12,6 +12,11 @@ import { SubscriptionSnapshotService } from "@/modules/billing/subscription-snap
 import { assertFeatureAccess, assertQuotaAvailable, buildQuotaSummary } from "@/modules/billing/subscription-access";
 import { appSettings } from "@/config/app-settings";
 import { EmailQueueService } from "@/core/mail/mail.queue";
+import { cache } from "@/shared/cache/cache.service";
+
+function shareLinkListKey(workspaceId: string, q: ShareLinkListQuery): string {
+  return `sharelinks:list:${workspaceId}:${q.status ?? ""}:${q.accessType ?? ""}:${q.search ?? ""}:${q.sortBy ?? ""}:${q.sortOrder ?? ""}:${q.page ?? ""}:${q.limit ?? ""}`;
+}
 
 export class ShareLinksService {
   private repo: ShareLinksRepository;
@@ -161,6 +166,8 @@ export class ShareLinksService {
       }
     }
 
+    await cache.delPattern(`sharelinks:list:${workspaceId}:*`);
+
     return {
       ...shareLink,
       shareUrl: `${env.FRONTEND_URL}/s/${slug}`,
@@ -168,23 +175,27 @@ export class ShareLinksService {
   }
 
   async listShareLinks(workspaceId: string, query: ShareLinkListQuery) {
-    const result = await this.repo.listShareLinks(workspaceId, query);
-    return {
-      ...result,
-      links: result.links.map((link) => ({
-        ...link,
-        shareUrl: `${env.FRONTEND_URL}/s/${link.slug}`,
-      })),
-    };
+    return cache.wrap(shareLinkListKey(workspaceId, query), 60, async () => {
+      const result = await this.repo.listShareLinks(workspaceId, query);
+      return {
+        ...result,
+        links: result.links.map((link) => ({
+          ...link,
+          shareUrl: `${env.FRONTEND_URL}/s/${link.slug}`,
+        })),
+      };
+    });
   }
 
   async getShareLink(workspaceId: string, linkId: string) {
-    const link = await this.repo.findById(linkId, workspaceId);
-    if (!link) throw new AppError("Share link not found", 404);
-    return {
-      ...link,
-      shareUrl: `${env.FRONTEND_URL}/s/${link.slug}`,
-    };
+    return cache.wrap(`sharelink:id:${workspaceId}:${linkId}`, 120, async () => {
+      const link = await this.repo.findById(linkId, workspaceId);
+      if (!link) throw new AppError("Share link not found", 404);
+      return {
+        ...link,
+        shareUrl: `${env.FRONTEND_URL}/s/${link.slug}`,
+      };
+    });
   }
 
   async updateShareLink(workspaceId: string, linkId: string, data: any) {
@@ -230,6 +241,12 @@ export class ShareLinksService {
     }
 
     const updated = await this.repo.updateShareLink(linkId, workspaceId, data);
+
+    await Promise.all([
+      cache.del(`sharelink:id:${workspaceId}:${linkId}`),
+      cache.delPattern(`sharelinks:list:${workspaceId}:*`),
+    ]);
+
     return {
       ...updated,
       shareUrl: `${env.FRONTEND_URL}/s/${updated.slug}`,
@@ -241,6 +258,11 @@ export class ShareLinksService {
     if (!link) throw new AppError("Share link not found", 404);
 
     await this.repo.deleteShareLink(linkId, workspaceId);
+
+    await Promise.all([
+      cache.del(`sharelink:id:${workspaceId}:${linkId}`),
+      cache.delPattern(`sharelinks:list:${workspaceId}:*`),
+    ]);
 
     await this.activityService.logActivity({
       workspaceId,
@@ -310,7 +332,7 @@ export class ShareLinksService {
         providerRecord.region || undefined
       );
 
-      const previewUrl = await provider.generateGetPresignedUrl(file.storagePath, 120, "inline");
+      const previewUrl = await provider.generateGetPresignedUrl(file.storagePath, 3600, "inline");
       let downloadUrl: string | undefined;
 
       if (link.allowDownload) {

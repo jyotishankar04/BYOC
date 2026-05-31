@@ -24,6 +24,7 @@ export interface WorkspaceUsageSnapshot {
   membersCount: number;
   pendingInvitesCount: number;
   activeLinksCount: number;
+  storageBytesUsed: number;
   providerConnected: boolean;
 }
 
@@ -113,7 +114,7 @@ export class SubscriptionSnapshotService {
 
     const workspaces = await Promise.all(
       memberships.map(async ({ workspace }) => {
-        const [membersCount, pendingInvitesCount, activeLinksCount, provider] =
+        const [membersCount, pendingInvitesCount, activeLinksCount, storageAgg, provider] =
           await Promise.all([
             this.prisma.workspaceMember.count({
               where: { workspaceId: workspace.id, status: MemberStatus.Active },
@@ -123,6 +124,10 @@ export class SubscriptionSnapshotService {
             }),
             this.prisma.shareLink.count({
               where: { workspaceId: workspace.id, status: ShareLinkStatus.Active },
+            }),
+            this.prisma.file.aggregate({
+              where: { workspaceId: workspace.id, status: "uploaded" },
+              _sum: { size: true },
             }),
             this.prisma.storageProvider.findUnique({
               where: { workspaceId: workspace.id },
@@ -137,6 +142,7 @@ export class SubscriptionSnapshotService {
           membersCount,
           pendingInvitesCount,
           activeLinksCount,
+          storageBytesUsed: storageAgg._sum.size ?? 0,
           providerConnected: Boolean(provider && provider.status !== "Invalid"),
         };
       }),

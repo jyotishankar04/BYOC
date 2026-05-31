@@ -9,7 +9,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import { usePreviewUrl } from "@/lib/files"
+import { useThumbnailUrl } from "@/lib/files"
 
 interface ImageLightboxProps {
   fileId: string
@@ -28,8 +28,8 @@ export function ImageLightbox({
   onClose,
   onDownload,
 }: ImageLightboxProps) {
-  const { data: previewData, isLoading } = usePreviewUrl(workspaceId, fileId, mimeType, true)
-  const imgUrl = previewData?.url
+  const { data: previewData, isLoading } = useThumbnailUrl(workspaceId, fileId, mimeType, "lg", true)
+  const imgUrl = previewData?.url ?? undefined
 
   const [scale, setScale]       = useState(1)
   const [offset, setOffset]     = useState({ x: 0, y: 0 })

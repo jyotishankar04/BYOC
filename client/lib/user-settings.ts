@@ -29,6 +29,7 @@ export interface PlanLimits {
   maxTeamMembers: number | null;
   maxActiveShareLinks: number | null;
   maxUploadFileSize: number | null;
+  maxStorageBytes: number | null;
   activityLogRetentionDays: number;
   allowedProviders: string[];
   passwordProtectedLinks: boolean;
@@ -47,6 +48,7 @@ export interface WorkspaceUsageSnapshot {
   membersCount: number;
   pendingInvitesCount: number;
   activeLinksCount: number;
+  storageBytesUsed: number;
   providerConnected: boolean;
 }
 

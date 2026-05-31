@@ -89,6 +89,11 @@ export class GoogleCloudStorageProvider implements IStorageProvider {
     return url;
   }
 
+  async getObject(key: string): Promise<Buffer> {
+    const [contents] = await this.storage.bucket(this.bucketName).file(key).download();
+    return contents;
+  }
+
   async putObject(
     key: string,
     body: Buffer,

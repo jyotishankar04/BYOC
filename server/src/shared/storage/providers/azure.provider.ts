@@ -99,6 +99,13 @@ export class AzureBlobStorageProvider implements IStorageProvider {
     return `https://${this.accountName}.blob.core.windows.net/${this.containerName}/${key}?${sasToken}`;
   }
 
+  async getObject(key: string): Promise<Buffer> {
+    const containerClient = this.client.getContainerClient(this.containerName);
+    const blockBlobClient = containerClient.getBlockBlobClient(key);
+    const response = await blockBlobClient.downloadToBuffer();
+    return response;
+  }
+
   async putObject(
     key: string,
     body: Buffer,

@@ -89,6 +89,10 @@ export function useSubscriptionSnapshot() {
         workspaceLimits.maxActiveShareLinks,
         workspaceUsage.activeLinksCount,
       ),
+      storageBytes: remainingQuota(
+        workspaceLimits.maxStorageBytes,
+        workspaceUsage.storageBytesUsed ?? 0,
+      ),
     };
   }, [workspaceLimits, workspaceUsage]);
 
@@ -115,6 +119,14 @@ export function useSubscriptionSnapshot() {
         ? !reachedLimit(
             workspaceLimits.maxActiveShareLinks,
             workspaceUsage.activeLinksCount,
+          )
+        : false,
+    ),
+    storageExceeded: Boolean(
+      workspaceUsage && workspaceLimits
+        ? reachedLimit(
+            workspaceLimits.maxStorageBytes,
+            workspaceUsage.storageBytesUsed ?? 0,
           )
         : false,
     ),

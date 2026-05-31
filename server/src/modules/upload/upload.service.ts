@@ -13,6 +13,7 @@ import { SubscriptionSnapshotService } from "@/modules/billing/subscription-snap
 import { assertQuotaAvailable, buildQuotaSummary } from "@/modules/billing/subscription-access";
 import { appSettings } from "@/config/app-settings";
 import { extractVideoMeta } from "@/shared/video-meta";
+import { cache } from "@/shared/cache/cache.service";
 import type {
   PresignDto,
   InitiateDto,
@@ -89,6 +90,15 @@ export class UploadService {
       sizeQuota,
       "File size exceeds the limit for this workspace plan",
       "UPLOAD_SIZE_LIMIT_REACHED",
+    );
+    const storageQuota = buildQuotaSummary(
+      snapshot.limits.maxStorageBytes,
+      snapshot.usage.storageBytesUsed + dto.size,
+    );
+    assertQuotaAvailable(
+      storageQuota,
+      "Storage quota exceeded for this workspace",
+      "STORAGE_QUOTA_EXCEEDED",
     );
 
     if (dto.size >= SMALL_FILE_MAX) {
@@ -200,6 +210,11 @@ export class UploadService {
       payload: confirmed,
     });
 
+    await Promise.all([
+      cache.delPattern(`files:list:${workspaceId}:*`),
+      cache.del(`billing:snapshot:${workspaceId}`),
+    ]);
+
     await this.prisma.activityLog.create({
       data: {
         id: randomUUID(),
@@ -225,6 +240,7 @@ export class UploadService {
     const snapshot = await new SubscriptionSnapshotService(
       this.prisma,
     ).getWorkspaceSnapshot(workspaceId);
+    const totalNewBytes = files.reduce((sum, f) => sum + f.size, 0);
     for (const file of files) {
       const sizeQuota = buildQuotaSummary(
         snapshot.limits.maxUploadFileSize,
@@ -236,6 +252,15 @@ export class UploadService {
         "UPLOAD_SIZE_LIMIT_REACHED",
       );
     }
+    const storageQuota = buildQuotaSummary(
+      snapshot.limits.maxStorageBytes,
+      snapshot.usage.storageBytesUsed + totalNewBytes,
+    );
+    assertQuotaAvailable(
+      storageQuota,
+      "Storage quota exceeded for this workspace",
+      "STORAGE_QUOTA_EXCEEDED",
+    );
 
     const activeSessions = await this.repository.countActiveUploadSessions(workspaceId);
 
@@ -430,6 +455,11 @@ export class UploadService {
       type: "file.uploaded",
       payload: file,
     });
+
+    await Promise.all([
+      cache.delPattern(`files:list:${workspaceId}:*`),
+      cache.del(`billing:snapshot:${workspaceId}`),
+    ]);
 
     await this.prisma.activityLog.create({
       data: {

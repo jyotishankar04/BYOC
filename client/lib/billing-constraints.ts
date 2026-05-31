@@ -5,6 +5,7 @@ export interface PlanLimits {
   maxTeamMembers: number | null;
   maxActiveShareLinks: number | null;
   maxUploadFileSize: number | null;
+  maxStorageBytes: number | null;
   activityLogRetentionDays: number;
   allowedProviders: string[];
   passwordProtectedLinks: boolean;
@@ -22,6 +23,7 @@ export const PLAN_LIMITS: Record<WorkspacePlan, PlanLimits> = {
     maxTeamMembers: 3,
     maxActiveShareLinks: 5,
     maxUploadFileSize: null,
+    maxStorageBytes: 10 * 1024 * 1024 * 1024, // 10 GB
     activityLogRetentionDays: 7,
     allowedProviders: ["S3", "R2"],
     passwordProtectedLinks: false,
@@ -37,6 +39,7 @@ export const PLAN_LIMITS: Record<WorkspacePlan, PlanLimits> = {
     maxTeamMembers: 20,
     maxActiveShareLinks: null,
     maxUploadFileSize: null,
+    maxStorageBytes: 100 * 1024 * 1024 * 1024, // 100 GB
     activityLogRetentionDays: 30,
     allowedProviders: ["S3", "R2", "GCS", "Azure", "MinIO", "Supabase", "Other"],
     passwordProtectedLinks: true,
@@ -52,6 +55,7 @@ export const PLAN_LIMITS: Record<WorkspacePlan, PlanLimits> = {
     maxTeamMembers: null,
     maxActiveShareLinks: null,
     maxUploadFileSize: null,
+    maxStorageBytes: null, // unlimited
     activityLogRetentionDays: 90,
     allowedProviders: ["S3", "R2", "GCS", "Azure", "MinIO", "Supabase", "Other"],
     passwordProtectedLinks: true,
@@ -74,7 +78,7 @@ export function formatPlanLimit(plan: WorkspacePlan, key: keyof PlanLimits): str
   if (value === null) return "Unlimited";
   if (typeof value === "boolean") return value ? "Yes" : "No";
   if (typeof value === "number") {
-    if (key === "maxUploadFileSize") {
+    if (key === "maxUploadFileSize" || key === "maxStorageBytes") {
       const gb = value / (1024 * 1024 * 1024);
       return gb >= 1 ? `${gb} GB` : `${value / (1024 * 1024)} MB`;
     }
